@@ -1,0 +1,25 @@
+{
+    "customers": [
+        "legal_name",
+        "trade_name",
+        "tax_id",
+        "email"
+    ],
+    "employees": [
+        "full_name",
+        "cpf",
+        "email"
+    ],
+    "suppliers": [
+        "legal_name",
+        "trade_name",
+        "tax_id"
+    ],
+    "fiscal_invoices": [
+        "nfe_access_key",
+        "xml_storage_uri"
+    ],
+    "goods_receipts": [
+        "notes"
+    ]
+}
