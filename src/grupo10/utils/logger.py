@@ -4,10 +4,9 @@ import sys
 #Manter o severity level em INFO mesmo ou menos verboso com WARNING?
 def get_logger(name: str, level: int = logging.INFO) -> logging.Logger:
     """
-    Returns a named logger that writes formatted messages to stdout.
-    Databricks Job runs capture driver stdout, so logs will appear in the run output.
+    Retorna um logger nomeado que envia mensagens formatadas para stdout
 
-    Usage:
+    Como usar:
         from grupo10.utils.logger import get_logger
         logger = get_logger("sqlserver_ingest")
         logger.info("Starting extraction: customers")
@@ -15,7 +14,7 @@ def get_logger(name: str, level: int = logging.INFO) -> logging.Logger:
     """
     logger = logging.getLogger(name)
 
-    # Avoid adding duplicate handlers when the cell is re-run in an interactive session
+    # Evitar que mais de um handler seja anexado ao logger em caso de sessões interativas
     if not logger.handlers:
         handler = logging.StreamHandler(sys.stdout)
         handler.setFormatter(
@@ -27,7 +26,7 @@ def get_logger(name: str, level: int = logging.INFO) -> logging.Logger:
         logger.addHandler(handler)
 
     logger.setLevel(level)
-    # Prevent log records from propagating to the root logger (avoids duplicate output)
+    #TODO precisa mesmo evitar a propagação na estrutura atual do nosso projeto? Como o databricks iria tratar este log caso a propadação não estivesse 'False'
     logger.propagate = False
 
     return logger
