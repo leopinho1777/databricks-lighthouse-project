@@ -12,9 +12,11 @@ def get_logger(name: str, level: int = logging.INFO) -> logging.Logger:
         logger.info("Starting extraction: customers")
         logger.error("Failed: customers — <error>")
     """
+    #Idempotência
     logger = logging.getLogger(name)
 
     # Evitar que mais de um handler seja anexado ao logger em caso de sessões interativas
+    #Idempotência
     if not logger.handlers:
         handler = logging.StreamHandler(sys.stdout)
         handler.setFormatter(
