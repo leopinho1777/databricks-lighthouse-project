@@ -1,4 +1,4 @@
-"""
+""" EVA
 Funções de ingestão da camada Bronze (extração do SQL Server + carga em Delta).
 
 Este módulo concentra a lógica reutilizável que antes vivia inline dentro do
@@ -7,9 +7,6 @@ modularização (ver `docs/modularidade.md`) é deixar o notebook responsável
 apenas por *orquestrar* (segredos, loop, logging, auditoria) e mover a
 complexidade técnica (opções JDBC, colunas de auditoria, modo de escrita)
 para funções puras e testáveis aqui.
-
-EVA — Transferência das funções do Markdown (`docs/modularidade.md`) para
-código Python de verdade, conforme a task de modularidade.
 """
 
 from databricks.sdk.runtime import spark
