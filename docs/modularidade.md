@@ -13,13 +13,12 @@ A proposta é criar um arquivo novo, **`src/grupo10/ingestion.py`**, com duas fu
 
 ```python
 # src/grupo10/ingestion.py
-from datetime import datetime
 from databricks.sdk.runtime import spark
 import pyspark.sql.functions as F
 from pyspark.sql import DataFrame
 
 
-def extrair_tabela(tabela: str, jdbc_url: str, conn: dict) -> DataFrame:
+def extrair_tabela(tabela: str, jdbc_url: str, conn: dict, batch_id: str) -> DataFrame:
     """Lê uma tabela do SQL Server e adiciona colunas de auditoria."""
     jdbc_options = {
         "url": jdbc_url,
@@ -32,7 +31,6 @@ def extrair_tabela(tabela: str, jdbc_url: str, conn: dict) -> DataFrame:
         "loginTimeout": "30",
         "fetchsize": "1000",
     }
-    batch_id = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
     return (
         spark.read.format("jdbc").options(**jdbc_options).load()
         .withColumn("_ingested_at", F.current_timestamp())
@@ -43,10 +41,10 @@ def extrair_tabela(tabela: str, jdbc_url: str, conn: dict) -> DataFrame:
 
 Explicação:
 
-- ** `(tabela: str, jdbc_url: str, conn: dict) -> DataFrame`** a função recebe o nome de uma tabela, a URL de conexão e um dicionário com as credenciais, e devolve um DataFrame. Os (`str`, `dict`, `DataFrame`) são uma boa prática — documentam o que entra e o que sai, e seguem o mesmo estilo que já existe no `taxis.py` do projeto.
+- ** `(tabela: str, jdbc_url: str, conn: dict, batch_id: str) -> DataFrame`** a função recebe o nome de uma tabela, a URL de conexão, um dicionário com as credenciais e o id do lote, e devolve um DataFrame. Os type hints (`str`, `dict`, `DataFrame`) são uma boa prática — documentam o que entra e o que sai, e seguem o mesmo estilo que já existe no `taxis.py` do projeto.
 - ** `jdbc_url` e `conn` como parâmetros** em vez de buscar os segredos dentro da função? Porque uma função modular não deve depender de variáveis globais escondidas. Quem chama a função é responsável por fornecer as credenciais (que vêm dos segredos no notebook). Isso deixa a função **pura e testável**: num teste, você pode passar uma conexão de mentira.
 - **As colunas de auditoria** (`_ingested_at`, `_source_origin`, `_batch_id`) A diferença é que agora ficam centralizadas: toda tabela extraída ganha essas colunas automaticamente, e se a regra mudar, muda só aqui.
-- O `batch_id` inclui hora/minuto/segundo (`"%Y-%m-%dT%H:%M:%S"`) em vez de só a data. Isso é o ajuste de granularidade: garante que dois runs no mesmo dia tenham IDs diferentes — útil para o futuro.
+- **O `batch_id` agora vem por parâmetro** (e não é gerado dentro da função). Decisão de design: um `_batch_id` representa um *run* inteiro, então todas as tabelas do mesmo run precisam compartilhar o mesmo valor. Se a função gerasse o id internamente, cada tabela receberia um `batch_id` diferente (porque `datetime.now()` muda a cada chamada) e o "lote" deixaria de identificar o run. Quem gera o id é o orquestrador, **uma vez antes do loop**. Esse contrato é também o ponto de contato com a orquestração incremental em batches do Gabriel — ele controla o que é um "lote".
 
 ### Função de carga — `carregar_bronze()`
 
@@ -68,6 +66,7 @@ Explicação:
 ### O notebook orquestrador (depois da modularização)
 
 ```python
+from datetime import datetime
 from grupo10.ingestion import extrair_tabela, carregar_bronze
 
 conn = {
@@ -76,12 +75,15 @@ conn = {
 }
 jdbc_url = f"jdbc:sqlserver://{host}:{port};databaseName={db}"
 
+# Um único batch_id para todo o run — compartilhado por todas as tabelas
+batch_id = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+
 for tabela in tabelas_nomes:
-    df = extrair_tabela(tabela, jdbc_url, conn)
+    df = extrair_tabela(tabela, jdbc_url, conn, batch_id)
     destino = carregar_bronze(df, tabela)
     print(f"Tabela {destino} salva!")
 ```
 
-Busca os segredos, monta a URL, e para cada tabela chama as duas funções. Qualquer pessoa do time bate o olho e entende o fluxo inteiro em segundos. Toda a complexidade técnica (opções do JDBC, colunas de auditoria, modo de escrita) está escondida dentro das funções, em `ingestion.py`.
+Busca os segredos, monta a URL, gera o `batch_id` do run, e para cada tabela chama as duas funções. Qualquer pessoa do time bate o olho e entende o fluxo inteiro em segundos. Toda a complexidade técnica (opções do JDBC, colunas de auditoria, modo de escrita) está escondida dentro das funções, em `ingestion.py`.
 
 
