@@ -7,6 +7,8 @@ A estrutura do bundle é:
 
 A proposta é criar um arquivo novo, **`src/grupo10/ingestion.py`**, com duas funções: `extrair_tabela()` e `carregar_bronze()`. O notebook passa a **importar** essas funções de lá.
 
+> **Status:** já implementado. O módulo `src/grupo10/ingestion.py` existe e o notebook `src/sqlserver_ingest.ipynb` já foi refatorado para importar e chamar essas funções (a lógica inline de JDBC, colunas de auditoria e escrita saiu do notebook).
+
 ## Exemplo de código
 
 ### Função de extração — `extrair_tabela()`
@@ -65,10 +67,13 @@ Explicação:
 
 ### O notebook orquestrador (depois da modularização)
 
+Esta é a forma que o `src/sqlserver_ingest.ipynb` realmente tem hoje. Além de chamar as duas funções, o orquestrador é também o responsável por **logging** e **auditoria** (que ficam de fora das funções puras, de propósito):
+
 ```python
 from datetime import datetime
 from grupo10.ingestion import extrair_tabela, carregar_bronze
 
+# Credenciais agrupadas num dict -> mantém as funções puras e testáveis
 conn = {
     "user": dbutils.secrets.get(scope="sqlserver", key="username"),
     "password": dbutils.secrets.get(scope="sqlserver", key="password"),
@@ -78,12 +83,36 @@ jdbc_url = f"jdbc:sqlserver://{host}:{port};databaseName={db}"
 # Um único batch_id para todo o run — compartilhado por todas as tabelas
 batch_id = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
-for tabela in tabelas_nomes:
-    df = extrair_tabela(tabela, jdbc_url, conn, batch_id)
-    destino = carregar_bronze(df, tabela)
-    print(f"Tabela {destino} salva!")
+failed_tables = []
+for table in target_tables:
+    start = time.time()
+    try:
+        logger.info(f"Starting extraction: {table}")
+
+        df = extrair_tabela(table, jdbc_url, conn, batch_id)
+        output_table = carregar_bronze(df, table)
+
+        row_count = df.count()
+        duration = time.time() - start
+        logger.info(f"Done: {output_table} | rows={row_count} | duration={duration:.2f}s")
+        write_audit_record(spark=spark, table_name=table, status="success",
+                           duration_seconds=duration, row_count=row_count,
+                           audit_table=AUDIT_TABLE)
+    except Exception as e:
+        duration = time.time() - start
+        logger.error(f"Failed: {table} | duration={duration:.2f}s | error={e}")
+        failed_tables.append(table)
+        write_audit_record(spark=spark, table_name=table, status="failed",
+                           duration_seconds=duration, error_message=str(e),
+                           audit_table=AUDIT_TABLE)
 ```
 
-Busca os segredos, monta a URL, gera o `batch_id` do run, e para cada tabela chama as duas funções. Qualquer pessoa do time bate o olho e entende o fluxo inteiro em segundos. Toda a complexidade técnica (opções do JDBC, colunas de auditoria, modo de escrita) está escondida dentro das funções, em `ingestion.py`.
+Busca os segredos, monta a URL, gera **um** `batch_id` do run e, para cada tabela, chama as duas funções. Toda a complexidade técnica (opções do JDBC, colunas de auditoria, modo de escrita) está escondida dentro das funções, em `ingestion.py`. O que **sobra** no notebook é justamente o papel de orquestração:
+
+- **Logging** (`logger.info/error`) — acompanhar o progresso e o tempo de cada tabela.
+- **Auditoria** (`write_audit_record`) — registrar sucesso/falha de cada tabela na tabela `_ingestion_audit`.
+- **Tolerância a falha** (`try/except` + `failed_tables`) — uma tabela que falha não derruba o run inteiro; as falhas são coletadas e reportadas no final.
+
+Essas três responsabilidades ficam de fora das funções de propósito: `extrair_tabela`/`carregar_bronze` continuam puras (sem efeitos colaterais de log/print), e quem decide o que fazer com o resultado é o orquestrador.
 
 
