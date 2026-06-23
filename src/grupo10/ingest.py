@@ -5,11 +5,12 @@ from delta.tables import DeltaTable
 import logging
 from pyspark.sql import SparkSession
 
+from grupo10 import config
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_LINES_PER_BATCH = 100
-DEFAULT_TARGET_CATALOG_SCHEMA = "lh_nautical.bronze"
+DEFAULT_TARGET_CATALOG_SCHEMA = config.TARGET_CATALOG_SCHEMA
 DEFAULT_INCREMENTAL_KEY = "id"
 CONTROL_TABLE_DDL = """
 CREATE TABLE IF NOT EXISTS {control_table} (
@@ -61,6 +62,19 @@ def get_last_processed_id(spark: SparkSession, control_table: str, target_table_
     return last_id
 
 
+def _build_jdbc_base_options(url: str, user: str, password: str) -> dict:
+    """Builds the shared JDBC connection options for SQL Server."""
+    return {
+        "url": url,
+        "user": user,
+        "password": password,
+        "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
+        "encrypt": "true",
+        "trustServerCertificate": "true",
+        "loginTimeout": "30",
+    }
+
+
 def get_source_max_id(
     spark: SparkSession,
     url: str,
@@ -71,14 +85,8 @@ def get_source_max_id(
 ) -> int:
     """Consulta o ID máximo absoluto atual na origem via query JDBC leve."""
     jdbc_options_max = {
-        "url": url,
+        **_build_jdbc_base_options(url, user, password),
         "dbtable": f"(SELECT MAX({incremental_key}) as max_id FROM {source_table}) as src",
-        "user": user,
-        "password": password,
-        "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
-        "encrypt": "true",
-        "trustServerCertificate": "true",
-        "loginTimeout": "30",
     }
     df_max = spark.read.format("jdbc").options(**jdbc_options_max).load()
     row = df_max.collect()[0]
@@ -138,14 +146,8 @@ def run_incremental_ingestion(
         query_base = f"(SELECT * FROM {table_name} WHERE {incremental_key} > {last_id} AND {incremental_key} <= {current_max_id}) as src"
 
         jdbc_options_batch = {
-            "url": url,
+            **_build_jdbc_base_options(url, user, password),
             "dbtable": query_base,
-            "user": user,
-            "password": password,
-            "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
-            "encrypt": "true",
-            "trustServerCertificate": "true",
-            "loginTimeout": "30",
             "partitionColumn": incremental_key,
             "lowerBound": str(last_id + 1),
             "upperBound": str(current_max_id),
@@ -180,6 +182,6 @@ def run_incremental_ingestion(
         except Exception as e:
             logger.error(f"Batch failed for '{table_name}' ids {last_id + 1}-{current_max_id}: {e}")
             raise
-
+    # TODO this log does not appear on databricks logger
     logger.info(f"Ingestion complete for '{table_name}' | total_rows~{total_rows_table}")
     return total_rows_table

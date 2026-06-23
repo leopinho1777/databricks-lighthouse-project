@@ -1,6 +1,8 @@
 """This file configures pytest, initializes Databricks Connect, and provides fixtures for Spark and loading test data."""
 
-import os, sys, pathlib
+import os
+import sys
+import pathlib
 from contextlib import contextmanager
 
 
@@ -14,7 +16,7 @@ try:
     import os
 except ImportError:
     raise ImportError(
-        "Test dependencies not found.\n\nRun tests using 'uv run pytest'. See http://docs.astral.sh/uv to learn more about uv."
+        "Test dependencies not found.\n\nRun tests using 'uv run pytest'."
     )
 
 

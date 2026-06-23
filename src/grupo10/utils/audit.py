@@ -4,6 +4,10 @@ from typing import Optional
 from pyspark.sql import SparkSession
 from pyspark.sql.types import DoubleType, LongType, StringType, StructField, StructType, TimestampType
 
+from grupo10 import config
+
+_DEFAULT_AUDIT_TABLE = f"{config.TARGET_CATALOG_SCHEMA}._ingestion_audit"
+
 # Idempotência - If not exists
 AUDIT_TABLE_DDL = """
 CREATE TABLE IF NOT EXISTS {audit_table} (
@@ -19,7 +23,7 @@ COMMENT 'Audit log for SQL Server ingestion runs'
 """
 
 
-def ensure_audit_table(spark: SparkSession, audit_table: str = "lh_nautical.bronze._ingestion_audit") -> None:
+def ensure_audit_table(spark: SparkSession, audit_table: str = _DEFAULT_AUDIT_TABLE) -> None:
     """Creates the audit Delta table if it does not already exist."""
     # TODO entender melhor o format()
     spark.sql(AUDIT_TABLE_DDL.format(audit_table=audit_table))
@@ -32,7 +36,7 @@ def write_audit_record(
     duration_seconds: float,
     row_count: Optional[int] = None,
     error_message: Optional[str] = None,
-    audit_table: str = "lh_nautical.bronze._ingestion_audit",
+    audit_table: str = _DEFAULT_AUDIT_TABLE,
 ) -> None:
     """
     Appends a single audit record to the Delta audit table.
