@@ -2,8 +2,9 @@ import uuid
 from datetime import datetime
 from pyspark.sql import functions as F
 from delta.tables import DeltaTable
-from databricks.sdk.runtime import spark
 import logging
+from pyspark.sql import SparkSession
+
 
 
 logger = logging.getLogger(__name__)
@@ -21,12 +22,12 @@ COMMENT 'Incremental ingestion control state'
 """
 
 
-def ensure_control_table(control_table: str) -> None:
+def ensure_control_table(spark: SparkSession, control_table: str) -> None:
     """Creates the control Delta table if it does not already exist."""
     spark.sql(CONTROL_TABLE_DDL.format(control_table=control_table))
 
 
-def get_last_processed_id(control_table: str, target_table_name: str) -> int:
+def get_last_processed_id(spark: SparkSession, control_table: str, target_table_name: str) -> int:
     """Recupera o último ID processado para uma tabela informada."""
     if not spark.catalog.tableExists(control_table):
         logger.debug(f"Control table '{control_table}' does not exist yet, starting from -1")
@@ -43,7 +44,7 @@ def get_last_processed_id(control_table: str, target_table_name: str) -> int:
     return last_id
 
 
-def get_source_max_id(url: str, user: str, password: str, source_table: str, incremental_key: str = DEFAULT_INCREMENTAL_KEY) -> int:
+def get_source_max_id(spark: SparkSession, url: str, user: str, password: str, source_table: str, incremental_key: str = DEFAULT_INCREMENTAL_KEY) -> int:
     """Consulta o ID máximo absoluto atual na origem via query JDBC leve."""
     jdbc_options_max = {
         "url": url,
@@ -60,7 +61,7 @@ def get_source_max_id(url: str, user: str, password: str, source_table: str, inc
     return row["max_id"] if row["max_id"] is not None else -1
 
 
-def update_control_table(control_table: str, target_table_name: str, new_max_id: int):
+def update_control_table(spark: SparkSession, control_table: str, target_table_name: str, new_max_id: int):
     """Atualiza a tabela de controle com o novo ID processado via Merge."""
     update_data = [(target_table_name, new_max_id, datetime.now())]
     df_update = spark.createDataFrame(update_data, ["source_table", "last_processed_id", "updated_at"])
@@ -72,6 +73,7 @@ def update_control_table(control_table: str, target_table_name: str, new_max_id:
 
 
 def run_incremental_ingestion(
+    spark: SparkSession,
     table_name: str,
     url: str,
     user: str,
