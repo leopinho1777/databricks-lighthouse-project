@@ -8,6 +8,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_TARGET_CATALOG_SCHEMA = "lh_nautical.bronze"
+DEFAULT_INCREMENTAL_KEY = "id"
 CONTROL_TABLE_DDL = """
 CREATE TABLE IF NOT EXISTS {control_table} (
     source_table        STRING    NOT NULL COMMENT 'Source table being ingested',
@@ -41,7 +43,7 @@ def get_last_processed_id(control_table: str, target_table_name: str) -> int:
     return last_id
 
 
-def get_source_max_id(url: str, user: str, password: str, source_table: str, incremental_key: str) -> int:
+def get_source_max_id(url: str, user: str, password: str, source_table: str, incremental_key: str = DEFAULT_INCREMENTAL_KEY) -> int:
     """Consulta o ID máximo absoluto atual na origem via query JDBC leve."""
     jdbc_options_max = {
         "url": url,
@@ -71,13 +73,13 @@ def update_control_table(control_table: str, target_table_name: str, new_max_id:
 
 def run_incremental_ingestion(
     table_name: str,
-    incremental_key: str,
     url: str,
     user: str,
     password: str,
     control_table: str,
     lines_per_batch: int,
-    target_catalog_schema: str = "lh_nautical.bronze",
+    incremental_key: str = DEFAULT_INCREMENTAL_KEY,
+    target_catalog_schema: str = DEFAULT_TARGET_CATALOG_SCHEMA,
 ) -> int:
     """Orquestra a ingestão particionada consumindo os blocos modulares externos."""
     target_catalog_table = f"{target_catalog_schema}.{table_name}"
