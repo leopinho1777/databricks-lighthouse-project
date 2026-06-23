@@ -70,14 +70,14 @@ def update_control_table(control_table: str, target_table_name: str, new_max_id:
 
 
 def run_incremental_ingestion(
-    table_name: str, 
-    incremental_key: str, 
-    url: str, 
-    user: str, 
-    password: str, 
-    control_table: str, 
+    table_name: str,
+    incremental_key: str,
+    url: str,
+    user: str,
+    password: str,
+    control_table: str,
     lines_per_batch: int,
-    target_catalog_schema: str = "lh_nautical.bronze"
+    target_catalog_schema: str = "lh_nautical.bronze",
 ) -> int:
     """Orquestra a ingestão particionada consumindo os blocos modulares externos."""
     target_catalog_table = f"{target_catalog_schema}.{table_name}"
@@ -129,11 +129,14 @@ def run_incremental_ingestion(
         )
 
         # Escrita incremental acumulativa (Modo Append)
-        batch_count = df_source.count()
-        df_with_metadata.write.format("delta").mode("append").saveAsTable(target_catalog_table)
-
-        total_rows_table += batch_count
-        update_control_table(control_table, table_name, current_max_id)
-        last_id = current_max_id
+        batch_count = current_max_id - last_id  # Aproximação. Reduz número de acesso ao banco de dados oa invés de dar count() no df_with_metadata)
+        try:
+            df_with_metadata.write.format("delta").mode("append").saveAsTable(target_catalog_table)
+            update_control_table(control_table, table_name, current_max_id)
+            total_rows_table += batch_count
+            last_id = current_max_id
+        except Exception as e:
+            logger.error(f"Batch failed for '{table_name}' ids {last_id + 1}-{current_max_id}: {e}")
+            raise
 
     return total_rows_table
