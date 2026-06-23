@@ -6,9 +6,9 @@ import logging
 from pyspark.sql import SparkSession
 
 
-
 logger = logging.getLogger(__name__)
 
+DEFAULT_LINES_PER_BATCH = 100
 DEFAULT_TARGET_CATALOG_SCHEMA = "lh_nautical.bronze"
 DEFAULT_INCREMENTAL_KEY = "id"
 CONTROL_TABLE_DDL = """
@@ -25,6 +25,7 @@ COMMENT 'Incremental ingestion control state'
 def ensure_control_table(spark: SparkSession, control_table: str) -> None:
     """Creates the control Delta table if it does not already exist."""
     spark.sql(CONTROL_TABLE_DDL.format(control_table=control_table))
+    logger.info(f"Control table ready: {control_table}")
 
 
 def get_last_processed_id(spark: SparkSession, control_table: str, target_table_name: str) -> int:
@@ -44,7 +45,14 @@ def get_last_processed_id(spark: SparkSession, control_table: str, target_table_
     return last_id
 
 
-def get_source_max_id(spark: SparkSession, url: str, user: str, password: str, source_table: str, incremental_key: str = DEFAULT_INCREMENTAL_KEY) -> int:
+def get_source_max_id(
+    spark: SparkSession,
+    url: str,
+    user: str,
+    password: str,
+    source_table: str,
+    incremental_key: str = DEFAULT_INCREMENTAL_KEY,
+) -> int:
     """Consulta o ID máximo absoluto atual na origem via query JDBC leve."""
     jdbc_options_max = {
         "url": url,
@@ -58,7 +66,9 @@ def get_source_max_id(spark: SparkSession, url: str, user: str, password: str, s
     }
     df_max = spark.read.format("jdbc").options(**jdbc_options_max).load()
     row = df_max.collect()[0]
-    return row["max_id"] if row["max_id"] is not None else -1
+    max_id = row["max_id"] if row["max_id"] is not None else -1
+    logger.debug(f"Source max {incremental_key} for '{source_table}': {max_id}")
+    return max_id
 
 
 def update_control_table(spark: SparkSession, control_table: str, target_table_name: str, new_max_id: int):
@@ -70,6 +80,7 @@ def update_control_table(spark: SparkSession, control_table: str, target_table_n
     delta_control.alias("target").merge(
         df_update.alias("source"), "target.source_table = source.source_table"
     ).whenMatchedUpdateAll().whenNotMatchedInsertAll().execute()
+    logger.debug(f"Control table updated: '{target_table_name}' → last_processed_id={new_max_id}")
 
 
 def run_incremental_ingestion(
@@ -79,7 +90,7 @@ def run_incremental_ingestion(
     user: str,
     password: str,
     control_table: str,
-    lines_per_batch: int,
+    lines_per_batch: int = DEFAULT_LINES_PER_BATCH,
     incremental_key: str = DEFAULT_INCREMENTAL_KEY,
     target_catalog_schema: str = DEFAULT_TARGET_CATALOG_SCHEMA,
 ) -> int:
@@ -87,14 +98,18 @@ def run_incremental_ingestion(
     target_catalog_table = f"{target_catalog_schema}.{table_name}"
 
     # 1. Busca o ID máximo absoluto na origem
-    absolute_max_id = get_source_max_id(url, user, password, table_name, incremental_key)
+    absolute_max_id = get_source_max_id(spark, url, user, password, table_name, incremental_key)
     if absolute_max_id == -1:
+        logger.info(f"No rows found in source for '{table_name}', skipping")
         return 0
 
     total_rows_table = 0
 
     # 2. Laço de repetição contínuo para processar de 100 em 100
-    last_id = get_last_processed_id(control_table, table_name)
+    last_id = get_last_processed_id(spark, control_table, table_name)
+    logger.info(
+        f"Starting incremental ingestion for '{table_name}' | last_id={last_id} | absolute_max_id={absolute_max_id}"
+    )
 
     while True:
         if last_id >= absolute_max_id:
@@ -121,7 +136,8 @@ def run_incremental_ingestion(
         df_source = spark.read.format("jdbc").options(**jdbc_options_batch).load()
 
         if df_source.isEmpty():
-            update_control_table(control_table, table_name, current_max_id)
+            logger.debug(f"Empty batch for '{table_name}' ids {last_id + 1}-{current_max_id}, skipping")
+            update_control_table(spark, control_table, table_name, current_max_id)
             continue
 
         # Metadados operacionais
@@ -133,14 +149,18 @@ def run_incremental_ingestion(
         )
 
         # Escrita incremental acumulativa (Modo Append)
-        batch_count = current_max_id - last_id  # Aproximação. Reduz número de acesso ao banco de dados oa invés de dar count() no df_with_metadata)
+        batch_count = (
+            current_max_id - last_id
+        )  # Aproximação. Reduz número de acesso ao banco de dados oa invés de dar count() no df_with_metadata)
         try:
             df_with_metadata.write.format("delta").mode("append").saveAsTable(target_catalog_table)
-            update_control_table(control_table, table_name, current_max_id)
+            update_control_table(spark, control_table, table_name, current_max_id)
             total_rows_table += batch_count
             last_id = current_max_id
+            logger.info(f"Batch done: '{table_name}' ids up to {last_id} | rows~{batch_count}")
         except Exception as e:
             logger.error(f"Batch failed for '{table_name}' ids {last_id + 1}-{current_max_id}: {e}")
             raise
 
+    logger.info(f"Ingestion complete for '{table_name}' | total_rows~{total_rows_table}")
     return total_rows_table
