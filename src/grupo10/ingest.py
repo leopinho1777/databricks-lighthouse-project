@@ -28,6 +28,22 @@ def ensure_control_table(spark: SparkSession, control_table: str) -> None:
     logger.info(f"Control table ready: {control_table}")
 
 
+def ensure_metadata_columns(spark: SparkSession, target_table: str) -> None:
+    """Adds operational metadata columns to an existing Delta table if they are missing."""
+    if not spark.catalog.tableExists(target_table):
+        return
+    existing_columns = {f.name for f in spark.read.table(target_table).schema.fields}
+    metadata_columns = {
+        "_ingested_at": "TIMESTAMP",
+        "_source_origin": "STRING",
+        "_batch_id": "STRING",
+    }
+    for col_name, col_type in metadata_columns.items():
+        if col_name not in existing_columns:
+            spark.sql(f"ALTER TABLE {target_table} ADD COLUMN {col_name} {col_type}")
+            logger.info(f"Added column '{col_name}' to '{target_table}'")
+
+
 def get_last_processed_id(spark: SparkSession, control_table: str, target_table_name: str) -> int:
     """Recupera o último ID processado para uma tabela informada."""
     if not spark.catalog.tableExists(control_table):
@@ -96,6 +112,9 @@ def run_incremental_ingestion(
 ) -> int:
     """Orquestra a ingestão particionada consumindo os blocos modulares externos."""
     target_catalog_table = f"{target_catalog_schema}.{table_name}"
+
+    # Garante que colunas de metadados existem na tabela destino (caso já existia sem elas)
+    ensure_metadata_columns(spark, target_catalog_table)
 
     # 1. Busca o ID máximo absoluto na origem
     absolute_max_id = get_source_max_id(spark, url, user, password, table_name, incremental_key)
