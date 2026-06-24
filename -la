@@ -1,0 +1,48 @@
+* [33m5f4b4c4[m[33m ([m[1;31morigin/feature/ingestion-through-reference-list[m[33m, [m[1;31morigin/feature/ingestion[m[33m, [m[1;31morigin/feature/incremental-batch[m[33m)[m add ingestion.yml and clear remnants of taxi example from original template
+* [33m3d6013b[m feature: add job parameter as reference for target_tables
+[31m|[m * [33m694f874[m[33m ([m[1;31morigin/feature/eva-idempotency-modularity[m[33m)[m docs: reflete notebook implementado e orquestração no modularidade.md
+[31m|[m * [33m5aef990[m refactor: notebook usa ingestion.py e alinha batch_id
+[31m|[m * [33m0373476[m feat: changes on text of ingestion.py
+[31m|[m * [33m335d2a9[m docs: make batch_id a run-level parameter in modularidade.md
+[31m|[m * [33m26836c2[m feat: add ingestion.py module with extrair_tabela and carregar_bronze
+[31m|[m *   [33m1eaced7[m feat: adiciona idempotência com _batch_id, _ingested_at e _source_origin
+[31m|[m [33m|[m[31m\[m  
+[31m|[m [33m|[m[31m/[m  
+[31m|[m[31m/[m[33m|[m   
+* [33m|[m [33m344cd0f[m feat: ingestion through list working - list referenc WIP
+* [33m|[m   [33mdd66ca8[m[33m ([m[1;31morigin/feature/logging[m[33m)[m feature: merged tabelas_config logic
+[35m|[m[36m\[m [33m\[m  
+* [36m|[m [33m|[m [33m775580b[m feature: log logic comments initiated
+* [36m|[m [33m|[m [33m0312e7b[m feature: audit.py and log delta table implemented
+* [36m|[m [33m|[m [33m76a2fbd[m docs: add logger.py notes and todos
+* [36m|[m [33m|[m [33mc8786f0[m feature:added get_logger functions into logger.py - untested
+* [36m|[m [33m|[m [33ma429be8[m[33m ([m[1;31morigin/ingestion/try-except_loop[m[33m)[m refactor: correcting tables_nomes content
+* [36m|[m [33m|[m [33m5e0ebcd[m try block error messages fixed
+* [36m|[m [33m|[m [33m44ae678[m initial try block implemented
+[36m|[m [36m|[m * [33ma3175d9[m docs: clarify idempotency and audit-column comments in ingestion notebook
+[36m|[m [36m|[m * [33m974ff3a[m docs: add modularity guide for the ingestion pipeline
+[36m|[m [36m|[m * [33mc3311a5[m adiciona idempotência com _batch_id, _ingested_at e _source_origin
+[36m|[m [36m|[m[36m/[m  
+[36m|[m[36m/[m[36m|[m   
+[36m|[m [36m|[m * [33m09b1429[m[33m ([m[1;31morigin/feature/eros-tasks[m[33m)[m Docs: Updated README with dynamic mask template, rbac groups, and complete catalog
+[36m|[m [36m|[m * [33m534d639[m feat: replaces hashing with databricks dynamic masking and applies rbac grants
+[36m|[m [36m|[m[36m/[m  
+[36m|[m * [33m7dec0b3[m refactor: isola mascaramento em arquivo externo e mapeia integrabilidade de todas as tabelas
+[36m|[m * [33m58b7ac9[m docs: adiciona README explicativo do processo de ingestão atualizado
+[36m|[m * [33mcb4c40a[m feat: implementa loop dinamico e mascaramento sha256 para dados sensiveis
+[36m|[m * [33m7116903[m feat: adiciona configuracao de tabelas na pasta src
+[36m|[m[36m/[m  
+* [33mf3c7cc8[m[33m ([m[1;31morigin/pinho/initial_ingestion[m[33m)[m changed name of the variable containing tables to be ingested
+* [33m7f3d38b[m removed TODOs from ingestion_notebook comments
+* [33m6156efa[m added catalog and schema creation do notebook
+* [33m217404f[m changed sqlserver_ingest notebook location
+* [33mbd938f1[m basic ingestion working
+* [33m2ea4b06[m basic initial ingestion using scopes - untested
+* [33me4192c3[m feat: initialize databricks bundle template off feature/ingestion
+[1;31m|[m * [33m189cefb[m[33m ([m[1;31morigin/feature/eva-ingestion[m[33m)[m Adicionando comentários nos notebooks de ingestão Bronze
+[1;31m|[m * [33mef8b735[m ingestão Bronze — dimensões e fatos via Spark JDBC
+[1;31m|[m[1;31m/[m  
+[1;31m|[m * [33m420823f[m[33m ([m[1;31morigin/feature/ingestion_eros[m[33m)[m chore: atualizado gitignore para ignorar arquivos de configuracao locais
+[1;31m|[m * [33m249cfd0[m feat: implementado pipeline de ingestao e configurado secrets para o workspace
+[1;31m|[m[1;31m/[m  
+* [33m56af4c4[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/feature/incremental_ingestion[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mfeature/incremental_ingestion[m[33m)[m README.md inicial
