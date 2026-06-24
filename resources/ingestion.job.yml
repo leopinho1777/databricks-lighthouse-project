@@ -22,6 +22,10 @@ resources:
           spec:
             environment_version: "5"
       max_concurrent_runs: 1
+      schedule:
+        quartz_cron_expression: "0 0 1 * * ?"
+        timezone_id: "America/Sao_Paulo"
+        pause_status: UNPAUSED
       performance_target: PERFORMANCE_OPTIMIZED
       queue:
         enabled: true
