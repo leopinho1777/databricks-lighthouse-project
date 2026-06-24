@@ -7,15 +7,14 @@ Repositório para entrega do projeto Lighthouse do Grupo 10 / TeslaVinci
 # ----------------------------------------------------------------------
 
 ### Detalhes dos Arquivos:
-* **`src/tabelas_config.json`**: Centraliza os metadados do projeto. Contem o mapeamento exato de todas as tabelas selecionadas do banco relacional com suas respectivas listas de colunas. Evita que o script Spark possua arrays estáticos e "hardcoded", facilitando a inclusão de novas tabelas.
+* **`src/tabelas_config.json`**: Centraliza os metadados do projeto. Conta o mapeamento exato de todas as tabelas selecionadas do banco relacional com suas respectivas listas de colunas. Evita que o script Spark possua arrays estáticos e "hardcoded", facilitando a inclusão de novas tabelas.
 * **`src/sqlserver_ingest.ipynb`**: Notebook estruturado em células conceituais que executa a leitura das credenciais, o loop de processamento por lote (*batch*) com particionamento controlado e a camada de criptografia.
-
+* **`src/governanca_config.json`**: Isola as regras de negócio de privacidade. Determina quais colunas devem ser protegidas eliminando manutenções manuais no notebook.
 ---
 
 ## Bibliotecas Utilizadas e Justificativa
 
 * **`pyspark.sql (SparkSession)`**: Motor de computação distribuída em memória utilizado para processar grandes volumes de dados de forma paralela através do cluster.
-* **`pyspark.sql.functions (F)`**: Utilizada especificamente pela função `F.sha2()` para aplicar algoritmos criptográficos diretamente nas colunas do DataFrame, e `F.col()` para manipulação das referências de colunas.
 * **`json`**: Biblioteca nativa do Python para carregar e interpretar o arquivo de configuração de metadados (`tabelas_config.json`).
 * **`databricks.sdk.runtime (dbutils)`**: Utilitário nativo do Databricks usado para interagir com o cofre de chaves de forma segura através do `dbutils.secrets.get()`, impedindo a exposição de senhas e dados confidenciais de conexão em texto limpo no código.
 
@@ -23,21 +22,28 @@ Repositório para entrega do projeto Lighthouse do Grupo 10 / TeslaVinci
 
 ## Etapas Detalhadas do Processo
 
-O script `sqlserver_ingest.ipynb` executa rigidamente quatro etapas sequenciais:
+O script `sqlserver_ingest.ipynb` executa cinco etapas sequenciais automatizadas:
 
 ### Etapa 1: Inicialização da Infraestrutura (SQL)
-A primeira célula garante o isolamento do ambiente criando o catálogo principal e o esquema lógico dentro do **Unity Catalog**:
+A primeira célula garante o isolamento do ambiente criando o catálogo principal e o esquema lógico dentro do Unity Catalog:
 * `CREATE CATALOG IF NOT EXISTS lh_nautical;`
 * `CREATE SCHEMA IF NOT EXISTS lh_nautical.bronze;`
 
 ### Etapa 2: Autenticação Segura e Conexão JDBC
-O Spark estabelece uma conexão via protocolo JDBC com o banco de dados SQL Server corporativo. As credenciais são extraídas em tempo de execução do escopo de segredos:
-* **Segurança:** Uso de criptografia forçada na sessão JDBC (`"encrypt": "true"`, `"trustServerCertificate": "true"`).
-* **Performance:** Configuração de `"loginTimeout": "30"` para evitar travamentos de rede e `"fetchsize": "1000"` para otimizar o tamanho dos pacotes de linhas transferidos para o driver do Spark por vez.
+O Spark estabelece uma conexão criptografada via protocolo JDBC com o banco de dados SQL Server corporativo utilizando os parâmetros de segurança `"encrypt": "true"` e `"trustServerCertificate": "true"`. A performance é otimizada por lote através da diretriz `"fetchsize": "1000"`.
 
-### Etapa 3: Descoberta de Dados e Governança Ativa (LGPD)
-O loop lê as chaves do arquivo `tabelas_config.json` e, para cada tabela interceptada, verifica a existência de campos mapeados na **Política de Governança PII (Personally Identifiable Information)**.
-Se uma coluna sensível for encontrada, o Spark aplica uma transformação aplicando criptografia de sentido único baseada em **SHA-256 (Secure Hash Algorithm 256-bit)**. O dado original é ofuscado e transformado em uma string alfanumérica única e irreversível de 64 caracteres.
+### Etapa 3: Criação da UDF de Mascaramento Dinâmico
+O script injeta uma função de controle nativa no Unity Catalog (`lh_nautical.bronze.regra_mascaramento`). Essa função inspeciona em tempo real o usuário que está disparando a consulta. Se ele não fizer parte explicitamente de `admins` ou `engenharia_dados`, o motor substitui o valor original pela máscara: **`████████ (RESTRITO LGPD)`**.
+
+### Etapa 4: Extração Limpa e Vinculação de Máscaras
+O loop realiza a extração integral de cada uma das 24 tabelas e as salva no formato Delta Lake. Na sequência, para cada tabela que possui mapeamento no arquivo `governanca_config.json`, o script executa um comando de alteração estrutural:
+```sql
+ALTER TABLE lh_nautical.bronze.<tabela> ALTER COLUMN <coluna> SET MASK lh_nautical.bronze.regra_mascaramento;
+
+### Etapa 5: Aplicação de Privilégios e Segurança RBAC
+Na quinta etapa, o script automatiza as políticas de concessão de acessos diretamente no Schema Bronze:
+Concede SELECT (Apenas leitura) para o grupo de avaliadores da LH Nautical (stakeholders).
+Concede SELECT, MODIFY (Leitura, inserção, alteração e deleção) para o time de desenvolvimento (engenharia_dados).
 
 ## Catálogo de Tabelas e Variáveis (Camada Bronze)
 
@@ -96,7 +102,16 @@ Abaixo está listado o dicionário completo das 24 tabelas ingeridas integralmen
 
 ## Política de Mascaramento Externa e LGPD (`governanca_config.json`)
 
-Para conformidade com as diretrizes de governança de dados e LGPD, variáveis contendo dados pessoais identificáveis (PII) ou metadados críticos sofrem criptografia de sentido único via hash **SHA-256** em tempo de execução.
+# Matriz de Acesso e Grupos Role-Based Access Control (RBAC) 
+
+O ecossistema está segmentado em 4 níveis de controle de acesso baseados em papéis para garantir a segurança da infraestrutura e a privacidade das informações:
+
+| Nome do Grupo | Membros e Papel | Permissão no Catálogo | Visão de Dados Sensíveis |
+| :--- | :--- | :--- | :--- |
+| **`admins`** | Dono do Workspace | Controle Total (Owner) | **Texto Limpo** (Acesso Total) |
+| **`engenharia_dados`** | Engenheiros de Dados do Time | `SELECT`, `MODIFY` | **Texto Limpo** (Para Transformações) |
+| **`time_negocios`** | Analistas de Negócio / BI | `SELECT` (Em camadas superiores) | 🎭 **Mascarado** (LGPD Ativa) |
+| **`stakeholders`** | Time de Avaliadores da LH Nautical | `SELECT` (Apenas Leitura) | 🎭 **Mascarado** (LGPD Ativa) |
 
 Campos afetados mapeados no arquivo de configuração externa:
 * **customers**: `legal_name`, `trade_name`, `tax_id`, `email`
