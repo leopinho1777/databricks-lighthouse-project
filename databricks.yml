@@ -3,7 +3,7 @@
 bundle:
   name: grupo10
   uuid: 91df96da-8a72-438c-9944-e80f4e6ad10b
-  include:
+include:
     - resources/*.yml
 
 artifacts:
@@ -24,6 +24,15 @@ targets:
     default: true
     workspace:
       host: https://dbc-7d19c6f6-62b8.cloud.databricks.com
+    variables:
+      catalog: workspace
+      schema: ${workspace.current_user.short_name}
+
+  dev_eva:
+    mode: development
+    default: false
+    workspace:
+      host: https://dbc-fce119b6-bd5a.cloud.databricks.com
     variables:
       catalog: workspace
       schema: ${workspace.current_user.short_name}
