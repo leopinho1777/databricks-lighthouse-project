@@ -29,6 +29,6 @@ def get_logger(name: str, level: int = logging.INFO) -> logging.Logger:
 
     logger.setLevel(level)
     #TODO precisa mesmo evitar a propagação na estrutura atual do nosso projeto? Como o databricks iria tratar este log caso a propadação não estivesse 'False'
-    logger.propagate = False
+    logger.propagate = True
 
     return logger

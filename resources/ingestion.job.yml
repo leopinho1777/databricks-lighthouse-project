@@ -1,0 +1,29 @@
+resources:
+  jobs:
+    ingestion:
+      name: Ingestion
+      tasks:
+        - task_key: sql_server_ingest
+          disabled: false
+          email_notifications: {}
+          environment_key: Default
+          notebook_task:
+            base_parameters:
+              target_tables: '["addresses","customers","returns","stock_levels","stock_movements","products","locations","suppliers","return_items","order_items","orders","product_variants","brands","categories","employees","purchase_orders","fiscal_invoices","payments","product_suppliers","goods_receipt_items","goods_receipts","purchase_order_items","variant_attribute_values","attributes"]'
+              target_tables_test_fail: '["addresses","false_table"]'
+              target_tables_test_success: '["addresses","customers"]'
+            notebook_path: ../src/sqlserver_ingest.ipynb
+            source: WORKSPACE
+          run_if: ALL_SUCCESS
+          timeout_seconds: 0
+          webhook_notifications: {}
+      environments:
+        - environment_key: Default
+          spec:
+            environment_version: "5"
+      max_concurrent_runs: 1
+      performance_target: PERFORMANCE_OPTIMIZED
+      queue:
+        enabled: true
+      timeout_seconds: 0
+      webhook_notifications: {}
