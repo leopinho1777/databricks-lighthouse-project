@@ -7,15 +7,16 @@ resources:
       catalog: ${var.catalog}
       schema: ${var.schema}
       serverless: true
-      root_path: "../src/grupo10_etl"
+      
+      # Definimos a raiz como a pasta 'src'
+      root_path: "../src"
 
+      # O DLT só precisa saber qual é o ponto de entrada do código
       libraries:
-        - glob:
-            include: ../src/grupo10_etl/transformations/**
-
+        - notebook:
+            path: ../src/sqlserver_ingest.ipynb
       environment:
         dependencies:
-          # We include every dependency defined by pyproject.toml by defining an editable environment
-          # that points to the folder where pyproject.toml is deployed.
+
           - --editable ${workspace.file_path}
-          - com.microsoft.sqlserver:mssql-jdbc:12.6.1.jre11
+          
