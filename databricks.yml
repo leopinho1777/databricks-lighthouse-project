@@ -43,12 +43,12 @@ targets:
 
   dev:
     mode: development
-    default: false
+    default: true
     workspace:
       host: https://dbc-520ccaae-996e.cloud.databricks.com/
     variables:
       catalog: workspace
-      schema: ${workspace.current_user.short_name}
+      schema: ${workspace.current_user.short_name}  # each person gets their own schema
 
   prod:
     mode: production
