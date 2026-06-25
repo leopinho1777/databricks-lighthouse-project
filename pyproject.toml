@@ -9,6 +9,8 @@ dependencies = [
     #
     # LIMITATION: for pipelines, dependencies are cached during development;
     # add dependencies to the 'environment' section of your pipeline.yml file instead
+    "jupyterlab>=4.6.0",
+    "jupytext>=1.19.4",
 ]
 
 [dependency-groups]
