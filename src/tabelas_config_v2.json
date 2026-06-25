@@ -1,0 +1,28 @@
+{
+    "tables": [
+        {"name": "addresses", "primary_key": "id"},
+        {"name": "customers", "primary_key": "id"},
+        {"name": "returns", "primary_key": "id"},
+        {"name": "stock_levels", "primary_key": ["product_variant_id", "location_id"]},
+        {"name": "stock_movements", "primary_key": "id"},
+        {"name": "products", "primary_key": "id"},
+        {"name": "locations", "primary_key": "id"},
+        {"name": "suppliers", "primary_key": "id"},
+        {"name": "return_items", "primary_key": "id"},
+        {"name": "order_items", "primary_key": "id"},
+        {"name": "orders", "primary_key": "id"},
+        {"name": "product_variants", "primary_key": "id"},
+        {"name": "brands", "primary_key": "id"},
+        {"name": "categories", "primary_key": "id"},
+        {"name": "employees", "primary_key": "id"},
+        {"name": "purchase_orders", "primary_key": "id"},
+        {"name": "fiscal_invoices", "primary_key": "id"},
+        {"name": "payments", "primary_key": "id"},
+        {"name": "product_suppliers", "primary_key": ["product_variant_id", "supplier_id"]},
+        {"name": "goods_receipt_items", "primary_key": "id"},
+        {"name": "goods_receipts", "primary_key": "id"},
+        {"name": "purchase_order_items", "primary_key": "id"},
+        {"name": "variant_attribute_values", "primary_key": ["product_variant_id", "attribute_id"]},
+        {"name": "attributes", "primary_key": "id"}
+    ]
+}
