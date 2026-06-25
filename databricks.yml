@@ -23,32 +23,13 @@ variables:
     description: The schema to use
 
 targets:
-  dev_pessoal:
-    mode: development
-    default: true
-    workspace:
-      host: https://dbc-520ccaae-996e.cloud.databricks.com/
-    variables:
-      catalog: workspace
-      schema: ${workspace.current_user.short_name}
-
-  dev_eva:
-    mode: development
-    default: false
-    workspace:
-      host: https://dbc-520ccaae-996e.cloud.databricks.com/
-    variables:
-      catalog: workspace
-      schema: ${workspace.current_user.short_name}
-
   dev:
     mode: development
     default: true
-    workspace:
-      host: https://dbc-520ccaae-996e.cloud.databricks.com/
     variables:
       catalog: workspace
       schema: ${workspace.current_user.short_name}  # each person gets their own schema
+      #'host' precisar ser configurado num databricks.local.yml para sobrescrever o databricks.yml que deve ser compartilhado entre todos
 
   prod:
     mode: production
