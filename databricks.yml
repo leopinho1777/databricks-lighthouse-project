@@ -11,6 +11,10 @@ artifacts:
     type: whl
     build: uv build --wheel
 
+sync:
+  include:
+  - "src/**"
+
 # Variable declarations. These variables are assigned in the dev/prod targets below.
 variables:
   catalog:
@@ -23,7 +27,7 @@ targets:
     mode: development
     default: true
     workspace:
-      host: https://dbc-7d19c6f6-62b8.cloud.databricks.com
+      host: https://dbc-520ccaae-996e.cloud.databricks.com/
     variables:
       catalog: workspace
       schema: ${workspace.current_user.short_name}
@@ -32,7 +36,7 @@ targets:
     mode: development
     default: false
     workspace:
-      host: https://dbc-fce119b6-bd5a.cloud.databricks.com
+      host: https://dbc-520ccaae-996e.cloud.databricks.com/
     variables:
       catalog: workspace
       schema: ${workspace.current_user.short_name}
@@ -41,7 +45,7 @@ targets:
     mode: development
     default: false
     workspace:
-      host: https://dbc-fc67e327-d40e.cloud.databricks.co
+      host: https://dbc-520ccaae-996e.cloud.databricks.com/
     variables:
       catalog: workspace
       schema: ${workspace.current_user.short_name}
