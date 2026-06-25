@@ -23,10 +23,20 @@ resources:
                 notebook_path: ../src/sqlserver_ingest.ipynb
                 source: WORKSPACE
                 base_parameters:
-                  table_name: "{{input}}"   # each table name injected here
+                  table_config: "{{input}}"   # full table config object: {name, primary_key}
               environment_key: Default
 
       environments:
         - environment_key: Default
           spec:
             environment_version: "5"
+      max_concurrent_runs: 1
+      schedule:
+        quartz_cron_expression: "0 0 1 * * ?"
+        timezone_id: "America/Sao_Paulo"
+        pause_status: UNPAUSED
+      performance_target: PERFORMANCE_OPTIMIZED
+      queue:
+        enabled: true
+      timeout_seconds: 0
+      webhook_notifications: {}

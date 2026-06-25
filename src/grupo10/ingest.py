@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
-from pyspark.sql import functions as F
+from typing import Union
+from pyspark.sql import DataFrame, functions as F
 from delta.tables import DeltaTable
 import logging
 from pyspark.sql import SparkSession
@@ -8,7 +9,7 @@ from pyspark.sql import SparkSession
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_LINES_PER_BATCH = 100
+DEFAULT_LINES_PER_BATCH = 500
 DEFAULT_TARGET_CATALOG_SCHEMA = "lh_nautical.bronze"
 DEFAULT_INCREMENTAL_KEY = "id"
 CONTROL_TABLE_DDL = """
@@ -99,6 +100,25 @@ def update_control_table(spark: SparkSession, control_table: str, target_table_n
     logger.debug(f"Control table updated: '{target_table_name}' → last_processed_id={new_max_id}")
 
 
+def _merge_into_delta(
+    spark: SparkSession,
+    df: DataFrame,
+    target_table: str,
+    pk_cols: list,
+) -> None:
+    """Upsert df into a Delta table keyed on pk_cols. Creates the table on first run."""
+    if not spark.catalog.tableExists(target_table):
+        df.write.format("delta").mode("overwrite").saveAsTable(target_table)
+        logger.debug(f"Created new Delta table '{target_table}' (first write)")
+        return
+
+    merge_condition = " AND ".join([f"t.{col} = s.{col}" for col in pk_cols])
+    DeltaTable.forName(spark, target_table).alias("t").merge(
+        df.alias("s"), merge_condition
+    ).whenMatchedUpdateAll().whenNotMatchedInsertAll().execute()
+    logger.debug(f"MERGE into '{target_table}' on [{', '.join(pk_cols)}]")
+
+
 def run_incremental_ingestion(
     spark: SparkSession,
     table_name: str,
@@ -106,25 +126,59 @@ def run_incremental_ingestion(
     user: str,
     password: str,
     control_table: str,
+    primary_key: Union[str, list] = DEFAULT_INCREMENTAL_KEY,
     lines_per_batch: int = DEFAULT_LINES_PER_BATCH,
-    incremental_key: str = DEFAULT_INCREMENTAL_KEY,
     target_catalog_schema: str = DEFAULT_TARGET_CATALOG_SCHEMA,
 ) -> int:
-    """Orquestra a ingestão particionada consumindo os blocos modulares externos."""
-    target_catalog_table = f"{target_catalog_schema}.{table_name}"
+    """Orquestra a ingestão particionada consumindo os blocos modulares externos.
 
-    # Garante que colunas de metadados existem na tabela destino (caso já existia sem elas)
+    Tables with a single primary key (e.g. "id") use incremental watermark pagination.
+    Tables with a composite primary key use a full reload + MERGE strategy.
+    All writes are idempotent MERGE operations.
+    """
+    pk_cols = [primary_key] if isinstance(primary_key, str) else list(primary_key)
+    use_incremental = len(pk_cols) == 1  # single key → incremental; composite → full reload
+    incremental_key = pk_cols[0] if use_incremental else None
+
+    target_catalog_table = f"{target_catalog_schema}.{table_name}"
     ensure_metadata_columns(spark, target_catalog_table)
 
-    # 1. Busca o ID máximo absoluto na origem
+    jdbc_base_opts = {
+        "url": url,
+        "user": user,
+        "password": password,
+        "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
+        "encrypt": "true",
+        "trustServerCertificate": "true",
+        "loginTimeout": "30",
+    }
+
+    # --- Full reload (composite primary key) ---
+    if not use_incremental:
+        logger.info(f"Full reload for '{table_name}' | composite pk={pk_cols}")
+        df_source = spark.read.format("jdbc").options(**{**jdbc_base_opts, "dbtable": table_name}).load()
+        if df_source.isEmpty():
+            logger.info(f"No rows found in source for '{table_name}', skipping")
+            return 0
+
+        batch_id = str(uuid.uuid4())
+        df_with_metadata = (
+            df_source.withColumn("_ingested_at", F.current_timestamp())
+            .withColumn("_source_origin", F.lit(table_name))
+            .withColumn("_batch_id", F.lit(batch_id))
+        )
+        _merge_into_delta(spark, df_with_metadata, target_catalog_table, pk_cols)
+        row_count = df_source.count()
+        logger.info(f"Full reload complete for '{table_name}' | rows={row_count}")
+        return row_count
+
+    # --- Incremental pagination (single primary key) ---
     absolute_max_id = get_source_max_id(spark, url, user, password, table_name, incremental_key)
     if absolute_max_id == -1:
         logger.info(f"No rows found in source for '{table_name}', skipping")
         return 0
 
     total_rows_table = 0
-
-    # 2. Laço de repetição contínuo para processar de 100 em 100
     last_id = get_last_processed_id(spark, control_table, table_name)
     logger.info(
         f"Starting incremental ingestion for '{table_name}' | last_id={last_id} | absolute_max_id={absolute_max_id}"
@@ -135,17 +189,14 @@ def run_incremental_ingestion(
             break
 
         current_max_id = min(last_id + lines_per_batch, absolute_max_id)
-        query_base = f"(SELECT * FROM {table_name} WHERE {incremental_key} > {last_id} AND {incremental_key} <= {current_max_id}) as src"
+        query_base = (
+            f"(SELECT * FROM {table_name} "
+            f"WHERE {incremental_key} > {last_id} AND {incremental_key} <= {current_max_id}) as src"
+        )
 
         jdbc_options_batch = {
-            "url": url,
+            **jdbc_base_opts,
             "dbtable": query_base,
-            "user": user,
-            "password": password,
-            "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
-            "encrypt": "true",
-            "trustServerCertificate": "true",
-            "loginTimeout": "30",
             "partitionColumn": incremental_key,
             "lowerBound": str(last_id + 1),
             "upperBound": str(current_max_id),
@@ -157,9 +208,9 @@ def run_incremental_ingestion(
         if df_source.isEmpty():
             logger.debug(f"Empty batch for '{table_name}' ids {last_id + 1}-{current_max_id}, skipping")
             update_control_table(spark, control_table, table_name, current_max_id)
+            last_id = current_max_id
             continue
 
-        # Metadados operacionais
         batch_id = str(uuid.uuid4())
         df_with_metadata = (
             df_source.withColumn("_ingested_at", F.current_timestamp())
@@ -167,12 +218,9 @@ def run_incremental_ingestion(
             .withColumn("_batch_id", F.lit(batch_id))
         )
 
-        # Escrita incremental acumulativa (Modo Append)
-        batch_count = (
-            current_max_id - last_id
-        )  # Aproximação. Reduz número de acesso ao banco de dados oa invés de dar count() no df_with_metadata)
+        batch_count = current_max_id - last_id
         try:
-            df_with_metadata.write.format("delta").mode("append").saveAsTable(target_catalog_table)
+            _merge_into_delta(spark, df_with_metadata, target_catalog_table, pk_cols)
             update_control_table(spark, control_table, table_name, current_max_id)
             total_rows_table += batch_count
             last_id = current_max_id
