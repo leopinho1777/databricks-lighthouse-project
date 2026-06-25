@@ -1,33 +1,32 @@
 resources:
   jobs:
     ingestion:
-      name: Ingestion
+      name: SQL Server Ingestion
       tasks:
-        - task_key: sql_server_ingest
-          disabled: false
-          email_notifications: {}
-          environment_key: Default
+        # Task 1: setup — creates catalog/schema, audit/control tables, publishes table list
+        - task_key: setup
           notebook_task:
-            base_parameters:
-              target_tables: '["addresses","customers","returns","stock_levels","stock_movements","products","locations","suppliers","return_items","order_items","orders","product_variants","brands","categories","employees","purchase_orders","fiscal_invoices","payments","product_suppliers","goods_receipt_items","goods_receipts","purchase_order_items","variant_attribute_values","attributes"]'
-              target_tables_test_fail: '["addresses","false_table"]'
-              target_tables_test_success: '["addresses","customers"]'
-            notebook_path: ../src/sqlserver_ingest.ipynb
+            notebook_path: ../src/sqlserver_ingest_setup.ipynb
             source: WORKSPACE
-          run_if: ALL_SUCCESS
-          timeout_seconds: 0
-          webhook_notifications: {}
+          environment_key: Default
+
+        # Task 2: for each table published by setup, run the ingestion notebook
+        - task_key: ingest_tables
+          depends_on:
+            - task_key: setup           # waits for setup to finish
+          for_each_task:
+            inputs: "{{tasks.setup.values.tables}}"   # consumes the taskValue set in setup
+            concurrency: 5
+            task:
+              task_key: ingest_single_table
+              notebook_task:
+                notebook_path: ../src/sqlserver_ingest.ipynb
+                source: WORKSPACE
+                base_parameters:
+                  table_name: "{{input}}"   # each table name injected here
+              environment_key: Default
+
       environments:
         - environment_key: Default
           spec:
             environment_version: "5"
-      max_concurrent_runs: 1
-      schedule:
-        quartz_cron_expression: "0 0 1 * * ?"
-        timezone_id: "America/Sao_Paulo"
-        pause_status: UNPAUSED
-      performance_target: PERFORMANCE_OPTIMIZED
-      queue:
-        enabled: true
-      timeout_seconds: 0
-      webhook_notifications: {}

@@ -38,11 +38,11 @@ logger.info(f"Control table ready: {CONTROL_TABLE}")
 # Célula 3 (sem alteração)
 from databricks.sdk.runtime import dbutils
 
-db_user = dbutils.secrets.get(scope="lh_nautical", key="lh_nautical_sqlserver_user")
-db_password = dbutils.secrets.get(scope="lh_nautical", key="lh_nautical_sqlserver_password")
-db_host = dbutils.secrets.get(scope="lh_nautical", key="lh_nautical_sqlserver_host")
-db_port = dbutils.secrets.get(scope="lh_nautical", key="lh_nautical_sqlserver_port")
-db_database = dbutils.secrets.get(scope="lh_nautical", key="lh_nautical_sqlserver_database")
+db_user = dbutils.secrets.get(scope="sqlserver", key="username")
+db_password = dbutils.secrets.get(scope="sqlserver", key="password")
+db_host = dbutils.secrets.get(scope="sqlserver", key="host")
+db_port = dbutils.secrets.get(scope="sqlserver", key="port")
+db_database = dbutils.secrets.get(scope="sqlserver", key="db")
 
 jdbc_url = f"jdbc:sqlserver://{db_host}:{db_port};databaseName={db_database}"
 
