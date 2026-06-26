@@ -207,7 +207,6 @@ def run_incremental_ingestion(
 
         if df_source.isEmpty():
             logger.debug(f"Empty batch for '{table_name}' ids {last_id + 1}-{current_max_id}, skipping")
-            update_control_table(spark, control_table, table_name, current_max_id)
             last_id = current_max_id
             continue
 
@@ -220,8 +219,7 @@ def run_incremental_ingestion(
 
         batch_count = current_max_id - last_id
         try:
-            _merge_into_delta(spark, df_with_metadata, target_catalog_table, pk_cols)
-            update_control_table(spark, control_table, table_name, current_max_id)
+            df_with_metadata.write.format("delta").mode("append").saveAsTable(target_catalog_table)
             total_rows_table += batch_count
             last_id = current_max_id
             logger.info(f"Batch done: '{table_name}' ids up to {last_id} | rows~{batch_count}")
@@ -229,5 +227,6 @@ def run_incremental_ingestion(
             logger.error(f"Batch failed for '{table_name}' ids {last_id + 1}-{current_max_id}: {e}")
             raise
 
+    update_control_table(spark, control_table, table_name, last_id)
     logger.info(f"Ingestion complete for '{table_name}' | total_rows~{total_rows_table}")
     return total_rows_table
