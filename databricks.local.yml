@@ -1,0 +1,6 @@
+# Local overrides — do NOT commit this file to git.
+# Each team member creates their own copy with their workspace host.
+targets:
+  dev:
+    workspace:
+      host: https://dbc-520ccaae-996e.cloud.databricks.com/
