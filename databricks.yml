@@ -3,8 +3,10 @@
 bundle:
   name: grupo10
   uuid: 91df96da-8a72-438c-9944-e80f4e6ad10b
+
 include:
     - resources/*.yml
+    - databricks.local.yml
 
 artifacts:
   python_artifact:
