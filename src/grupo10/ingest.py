@@ -6,9 +6,10 @@ from delta.tables import DeltaTable
 import logging
 from pyspark.sql import SparkSession
 
-
+# Instancia o logger referenciando o nome do módulo
 logger = logging.getLogger(__name__)
 
+# Constantes do módulo
 DEFAULT_LINES_PER_BATCH = 500
 DEFAULT_TARGET_CATALOG_SCHEMA = "lh_nautical.bronze"
 DEFAULT_INCREMENTAL_KEY = "id"
@@ -23,12 +24,14 @@ COMMENT 'Incremental ingestion control state'
 """
 
 
+# Garante que as tabelas que controle existam
 def ensure_control_table(spark: SparkSession, control_table: str) -> None:
     """Creates the control Delta table if it does not already exist."""
     spark.sql(CONTROL_TABLE_DDL.format(control_table=control_table))
     logger.info(f"Control table ready: {control_table}")
 
 
+# Garante que idempotência da colunas das tabelas
 def ensure_metadata_columns(spark: SparkSession, target_table: str) -> None:
     """Adds operational metadata columns to an existing Delta table if they are missing."""
     if not spark.catalog.tableExists(target_table):
@@ -45,8 +48,9 @@ def ensure_metadata_columns(spark: SparkSession, target_table: str) -> None:
             logger.info(f"Added column '{col_name}' to '{target_table}'")
 
 
+# Obtém o último id ingerido da tabela previamente
 def get_last_processed_id(spark: SparkSession, control_table: str, target_table_name: str) -> int:
-    """Recupera o último ID processado para uma tabela informada."""
+    """Retrieves the last processed ID for a given table."""
     if not spark.catalog.tableExists(control_table):
         logger.debug(f"Control table '{control_table}' does not exist yet, starting from -1")
         return -1
@@ -62,6 +66,7 @@ def get_last_processed_id(spark: SparkSession, control_table: str, target_table_
     return last_id
 
 
+# identifica qual o id máximo atual da tabela alvo
 def get_source_max_id(
     spark: SparkSession,
     url: str,
@@ -70,7 +75,7 @@ def get_source_max_id(
     source_table: str,
     incremental_key: str = DEFAULT_INCREMENTAL_KEY,
 ) -> int:
-    """Consulta o ID máximo absoluto atual na origem via query JDBC leve."""
+    """Queries the current absolute maximum ID from the source via a JDBC query."""
     jdbc_options_max = {
         "url": url,
         "dbtable": f"(SELECT MAX({incremental_key}) as max_id FROM {source_table}) as src",
@@ -88,8 +93,9 @@ def get_source_max_id(
     return max_id
 
 
+# Atualiza a tabela de controle
 def update_control_table(spark: SparkSession, control_table: str, target_table_name: str, new_max_id: int):
-    """Atualiza a tabela de controle com o novo ID processado via Merge."""
+    """Updates the control table with the new processed ID via Merge."""
     update_data = [(target_table_name, new_max_id, datetime.now())]
     df_update = spark.createDataFrame(update_data, ["source_table", "last_processed_id", "updated_at"])
 
@@ -100,6 +106,7 @@ def update_control_table(spark: SparkSession, control_table: str, target_table_n
     logger.debug(f"Control table updated: '{target_table_name}' → last_processed_id={new_max_id}")
 
 
+# Função interna para atualizar/inserir (upsert) na tabela delta
 def _merge_into_delta(
     spark: SparkSession,
     df: DataFrame,
@@ -130,7 +137,7 @@ def run_incremental_ingestion(
     lines_per_batch: int = DEFAULT_LINES_PER_BATCH,
     target_catalog_schema: str = DEFAULT_TARGET_CATALOG_SCHEMA,
 ) -> int:
-    """Orquestra a ingestão particionada consumindo os blocos modulares externos.
+    """Orchestrates partitioned ingestion consuming external modular blocks.
 
     Tables with a single primary key (e.g. "id") use incremental watermark pagination.
     Tables with a composite primary key use a full reload + MERGE strategy.
