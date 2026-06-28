@@ -155,12 +155,12 @@ def run_incremental_ingestion(
         "user": user,
         "password": password,
         "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
-        "encrypt": "true",
+        "encrypt": "true", #True é o padrão atual do JDBC, mas declarar é uma boa prática
         "trustServerCertificate": "true",
         "loginTimeout": "30",
     }
 
-    # --- Full reload (composite primary key) ---
+    #Caso tenha mais de uma chave, carrega tabela inteira
     if not use_incremental:
         logger.info(f"Full reload for '{table_name}' | composite pk={pk_cols}")
         df_source = spark.read.format("jdbc").options(**{**jdbc_base_opts, "dbtable": table_name}).load()
@@ -179,7 +179,7 @@ def run_incremental_ingestion(
         logger.info(f"Full reload complete for '{table_name}' | rows={row_count}")
         return row_count
 
-    # --- Incremental pagination (single primary key) ---
+    #Caso tenha somente chame primária, carrega incrementalmente
     absolute_max_id = get_source_max_id(spark, url, user, password, table_name, incremental_key)
     if absolute_max_id == -1:
         logger.info(f"No rows found in source for '{table_name}', skipping")
