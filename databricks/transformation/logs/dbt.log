@@ -1,0 +1,36 @@
+==================== 2026-07-13T22:21:33.030026Z | 019f5d92-3de1-7891-be86-9e8ef9b58a37 ====================
+22:21:33.030330 [info ]: Installing dbt project and profile setup
+22:21:33.035642 [info ]: Info Created .vscode/extensions.json with dbt extension recommendation
+22:21:33.036142 [info ]: Success Project created successfully!
+22:21:33.036170 [info ]: Info Project name: jaffle_shop
+22:21:33.036184 [info ]: Info Project directory: jaffle_shop
+22:21:33.036195 [info ]: Info Setting up your profile...
+22:21:33.037851 [info ]: Loading ~/.dbt/profiles.yml
+22:21:33.040481 [info ]: Info Creating new profile...
+22:21:37.565995 [info ]: No dbt_cloud.yml found - proceeding without cloud pre-population
+22:24:57.155254 [info ]: Success Profile written to /home/gabriel/.dbt/profiles.yml
+22:24:57.156470 [info ]: Validating profile inputs, adapters, and connection
+
+22:24:57.156695 [info ]: dbt-fusion 2.0.0-preview.199
+22:24:57.158668 [info ]: Started loading project
+22:24:57.174325 [info ]: Loading ~/.dbt/profiles.yml
+22:24:57.182169 [info ]: Finished loading project [  0.02s]
+22:24:57.184006 [info ]: Started debugging
+22:24:57.184447 [info ]: Debugging profile: dev
+22:24:57.184475 [info ]: Debugging dbt version: 2.0.0-preview.199
+22:24:57.184493 [info ]: Debugging platform: linux x86_64 (unix)
+22:24:57.184810 [info ]: Debugging adapter type: databricks (remote)
+22:24:57.194816 [info ]: Debugging dependencies:
+  git: OK
+22:24:57.197254 [info ]: Debugging connection:
+  "schema": "default",
+  "host": "dbc-7d19c6f6-62b8.cloud.databricks.com",
+  "http_path": "/sql/1.0/warehouses/7be2fb64642304e0"
+22:25:20.912555 [debug]: Query executed on node unknown:
+select 1 as id
+22:25:20.914753 [info ]: Debugging connection test: OK
+22:25:20.914820 [info ]: Debugged All checks passed!
+22:25:20.914990 [info ]: Finished debugging [ 23.73s]
+22:25:21.709263 [info ]: 
+==================== Execution Summary =====================
+Finished 'init' successfully for target 'dev' [3m 49s]
