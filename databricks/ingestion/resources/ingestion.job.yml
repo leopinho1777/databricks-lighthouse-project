@@ -28,7 +28,7 @@ resources:
                 base_parameters:
                   #input contendo o nome e a(s) chave(s) da tabela
                   table_config: "{{input}}"
-                  governance_config_path: "/Workspace/Users/<usuario>/grupo10/src/governance_config.json"
+                  governance_config_path: "governance_config.json"
         #Task apply_rbca - Fornece acesso de acordo com o role (role- based access control)      
 
       environments:
