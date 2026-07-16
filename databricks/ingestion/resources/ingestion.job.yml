@@ -4,17 +4,9 @@ resources:
     ingestion:
       name: SQL Server Ingestion
       tasks:
-        #Task governance_setup - Cria as funções de mascaramento e carrega a política de governançaa
-        - task_key: governance_setup
-          notebook_task:
-            notebook_path: ../src/governance_setup.ipynb
-            source: WORKSPACE
-          environment_key: Default
 
         #Task setup - cria catalog, schema, tabelas de audit e control e disponibiliza lista de tabelas para ingestão
         - task_key: setup
-          depends_on:
-            - task_key: governance_setup
           notebook_task:
             notebook_path: ../src/sqlserver_ingest_setup.ipynb
             source: WORKSPACE
@@ -36,27 +28,14 @@ resources:
                 base_parameters:
                   #input contendo o nome e a(s) chave(s) da tabela
                   table_config: "{{input}}"
-              environment_key: Default
+                  governance_config_path: "governance_config.json"
         #Task apply_rbca - Fornece acesso de acordo com o role (role- based access control)      
-        - task_key: apply_rbac
-          depends_on:
-            - task_key: ingest_tables
-          run_if: ALL_SUCCESS
-          notebook_task:
-            notebook_path: ../src/apply_rbca.ipynb
-            source: WORKSPACE
-          environment_key: Default
 
       environments:
         - environment_key: Default
           spec:
             environment_version: "5"
       max_concurrent_runs: 1
-      schedule:
-        #TODO review cron expression to check every day at 3am
-        quartz_cron_expression: "0 0 1 * * ?"
-        timezone_id: "America/Sao_Paulo"
-        pause_status: UNPAUSED
       performance_target: PERFORMANCE_OPTIMIZED
       queue:
         enabled: true
