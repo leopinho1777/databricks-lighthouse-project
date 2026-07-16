@@ -1,0 +1,25 @@
+version: 2
+
+models:
+  - name: int_supplier_delivery_delay
+    description: >
+      One record per goods receipt, holding the supplier delivery delay:
+      the difference in days between received_at and expected_delivery_at.
+    columns:
+      - name: goods_receipt_id
+        description: Goods receipt key (grain of the table).
+        data_tests:
+          - not_null
+          - unique
+      - name: purchase_order_id
+        description: Related purchase order.
+        data_tests:
+          - not_null
+      - name: delivery_delay_days
+        description: Delay in days (positive = late, negative = early, 0 = on time).
+      - name: delivery_status
+        description: Supplier delivery delay classification.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['late', 'early', 'on_time', 'unknown']
