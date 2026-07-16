@@ -3,22 +3,22 @@ version: 2
 models:
   - name: int_supplier_delivery_delay
     description: >
-      Um registro por recebimento (goods_receipt), com o atraso de entrega do
-      fornecedor: diferença em dias entre received_at e expected_delivery_at.
+      One record per goods receipt, holding the supplier delivery delay:
+      the difference in days between received_at and expected_delivery_at.
     columns:
       - name: goods_receipt_id
-        description: Chave do recebimento (grão da tabela).
+        description: Goods receipt key (grain of the table).
         data_tests:
           - not_null
           - unique
       - name: purchase_order_id
-        description: Pedido de compra correspondente.
+        description: Related purchase order.
         data_tests:
           - not_null
       - name: delivery_delay_days
-        description: Dias de atraso (positivo = atrasado, negativo = adiantado, 0 = no prazo).
+        description: Delay in days (positive = late, negative = early, 0 = on time).
       - name: delivery_status
-        description: Classificação do atraso do fornecedor.
+        description: Supplier delivery delay classification.
         data_tests:
           - accepted_values:
               arguments:

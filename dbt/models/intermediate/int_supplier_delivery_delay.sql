@@ -29,7 +29,7 @@ joined as (
         po.expected_delivery_at,
         gr.received_at,
 
-        -- Aqui a macro customizada entra em acao
+        -- Custom macro: whole-day difference between expected and received
         {{ days_between('po.expected_delivery_at', 'gr.received_at') }} as delivery_delay_days
 
     from goods_receipts as gr
