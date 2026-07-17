@@ -11,5 +11,3 @@ scratch/**
 PINHO_README.md
 databricks.local.yml
 venv/
-
-.env
