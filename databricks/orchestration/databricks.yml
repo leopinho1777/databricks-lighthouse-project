@@ -4,6 +4,7 @@ bundle:
 
 include:
   - resources/*.yml
+  - ../../databricks.local.yml
 
 # Variable declarations. These variables are assigned in the dev/prod targets below.
 variables:
@@ -11,26 +12,24 @@ variables:
     description: The catalog to use
   schema:
     description: The schema to use
+  dev_schema:
+    description: "Per-user dev schema (ex: pinho_analytics)"
 
 targets:
   dev:
-
     mode: development
     default: true
-    workspace:
-      host: https://dbc-fc67e327-d40e.cloud.databricks.com
     variables:
-      catalog: workspace
-      schema: ${workspace.current_user.short_name}
+      catalog: develop
+      schema: ${var.dev_schema}
   prod:
     mode: production
     workspace:
       host: https://dbc-fc67e327-d40e.cloud.databricks.com
-      # We explicitly deploy to /Workspace/Users/gabrielhs336@gmail.com to make sure we only have a single copy.
-      root_path: /Workspace/Users/gabrielhs336@gmail.com/.bundle/${bundle.name}/${bundle.target}
+      root_path: /Workspace/Users/teslavinci2026@gmail.com/.bundle/${bundle.name}/${bundle.target}
     variables:
       catalog: lh_nautical
       schema: prod
     permissions:
-      - user_name: gabrielhs336@gmail.com
+      - user_name: teslavinci2026@gmail.com
         level: CAN_MANAGE
