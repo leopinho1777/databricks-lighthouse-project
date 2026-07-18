@@ -1,0 +1,319 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: Customer master data standardized from bronze.
+    columns:
+      - name: id
+        description: Customer key.
+        data_tests:
+          - not_null
+          - unique
+      - name: tax_id
+        description: Customer tax identifier.
+        data_tests:
+          - not_null
+      - name: created_at
+        description: Record creation timestamp.
+        data_tests:
+          - not_null
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null
+
+  - name: stg_employees
+    description: Employee master data standardized from bronze.
+    columns:
+      - name: employee_id
+        description: Employee key.
+        data_tests:
+          - not_null
+          - unique
+      - name: primary_location_id
+        description: Primary location for the employee.
+        data_tests:
+          - not_null
+      - name: hire_date
+        description: Hiring date.
+        data_tests:
+          - not_null
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null
+
+  - name: stg_fiscal_invoices
+    description: Fiscal invoice records standardized from bronze.
+    columns:
+      - name: fiscal_invoice_id
+        description: Fiscal invoice key.
+        data_tests:
+          - not_null
+          - unique
+      - name: order_id
+        description: Related order key.
+        data_tests:
+          - not_null
+      - name: total_amount
+        description: Total fiscal invoice amount.
+        data_tests:
+          - not_null
+      - name: issued_at
+        description: Invoice issue timestamp.
+        data_tests:
+          - not_null
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null
+
+  - name: stg_goods_receipts
+    description: Goods receipt transactions standardized from bronze.
+    columns:
+      - name: goods_receipt_id
+        description: Goods receipt key.
+        data_tests:
+          - not_null
+          - unique
+      - name: purchase_order_id
+        description: Related purchase order key.
+        data_tests:
+          - not_null
+      - name: received_by_employee_id
+        description: Employee who received goods.
+        data_tests:
+          - not_null
+      - name: received_at
+        description: Receipt timestamp.
+        data_tests:
+          - not_null
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null
+
+  - name: stg_order_items
+    description: Order line items standardized from bronze.
+    columns:
+      - name: order_item_id
+        description: Order item key.
+        data_tests:
+          - not_null
+          - unique
+      - name: order_id
+        description: Related order key.
+        data_tests:
+          - not_null
+      - name: product_variant_id
+        description: Related product variant key.
+        data_tests:
+          - not_null
+      - name: quantity
+        description: Ordered quantity.
+        data_tests:
+          - not_null
+      - name: line_total
+        description: Line total amount.
+        data_tests:
+          - not_null
+      - name: ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null
+
+  - name: stg_orders
+    description: Sales order headers standardized from bronze.
+    columns:
+      - name: order_id
+        description: Order key.
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: Related customer key.
+        data_tests:
+          - not_null
+      - name: salesperson_id
+        description: Related salesperson key.
+        data_tests:
+          - not_null
+      - name: location_id
+        description: Related location key.
+        data_tests:
+          - not_null
+      - name: placed_at
+        description: Order placement timestamp.
+        data_tests:
+          - not_null
+      - name: total
+        description: Order total amount.
+        data_tests:
+          - not_null
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null
+
+  - name: stg_payments
+    description: Payment transactions standardized from bronze.
+    columns:
+      - name: payment_id
+        description: Payment key.
+        data_tests:
+          - not_null
+          - unique
+      - name: order_id
+        description: Related order key.
+        data_tests:
+          - not_null
+      - name: amount
+        description: Payment amount.
+        data_tests:
+          - not_null
+      - name: paid_at
+        description: Payment timestamp.
+        data_tests:
+          - not_null
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null
+
+  - name: stg_purchase_orders
+    description: Purchase order headers standardized from bronze.
+    columns:
+      - name: purchase_order_id
+        description: Purchase order key.
+        data_tests:
+          - not_null
+          - unique
+      - name: supplier_id
+        description: Related supplier key.
+        data_tests:
+          - not_null
+      - name: buyer_id
+        description: Related buyer key.
+        data_tests:
+          - not_null
+      - name: destination_location_id
+        description: Destination location key.
+        data_tests:
+          - not_null
+      - name: placed_at
+        description: Purchase order placement timestamp.
+        data_tests:
+          - not_null
+      - name: expected_delivery_at
+        description: Expected delivery timestamp.
+        data_tests:
+          - not_null
+      - name: total
+        description: Purchase order total amount.
+        data_tests:
+          - not_null
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null
+
+  - name: stg_stock_movements
+    description: Stock movement transactions standardized from bronze.
+    columns:
+      - name: stock_movement_id
+        description: Stock movement key.
+        data_tests:
+          - not_null
+          - unique
+      - name: product_variant_id
+        description: Related product variant key.
+        data_tests:
+          - not_null
+      - name: location_id
+        description: Related location key.
+        data_tests:
+          - not_null
+      - name: occurred_at
+        description: Stock movement timestamp.
+        data_tests:
+          - not_null
+      - name: quantity
+        description: Quantity moved.
+        data_tests:
+          - not_null
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null
