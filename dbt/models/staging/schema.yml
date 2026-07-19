@@ -307,10 +307,6 @@ models:
         description: Purchase order placement timestamp.
         data_tests:
           - not_null
-      - name: expected_delivery_at
-        description: Expected delivery timestamp.
-        data_tests:
-          - not_null
       - name: total
         description: Purchase order total amount.
         data_tests:

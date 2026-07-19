@@ -20,7 +20,6 @@ cleaned_required as (
             'buyer_id',
             'destination_location_id',
             'placed_at',
-            'expected_delivery_at',
             'total',
             '_ingested_at',
             '_source_origin',
