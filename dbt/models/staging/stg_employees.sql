@@ -31,7 +31,7 @@ renamed as (
     select
         -- Keys
         id as employee_id,
-        primary_location_id,
+        primary_location_id as location_id,
 
         -- Attributes
         full_name,
