@@ -260,10 +260,6 @@ models:
         description: Payment amount.
         data_tests:
           - not_null
-      - name: paid_at
-        description: Payment timestamp.
-        data_tests:
-          - not_null
       - name: _ingested_at
         description: Ingestion timestamp.
         data_tests:

@@ -18,7 +18,6 @@ cleaned_required as (
             'id',
             'order_id',
             'amount',
-            'paid_at',
             '_ingested_at',
             '_source_origin',
             '_batch_id'
