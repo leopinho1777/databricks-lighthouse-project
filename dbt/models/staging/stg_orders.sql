@@ -17,7 +17,6 @@ cleaned_required as (
         [
             'id',
             'customer_id',
-            'salesperson_id',
             'location_id',
             'placed_at',
             'total',
