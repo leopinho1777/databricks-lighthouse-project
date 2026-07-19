@@ -4,7 +4,7 @@ models:
   - name: stg_customers
     description: Customer master data standardized from bronze.
     columns:
-      - name: id
+      - name: customer_id
         description: Customer key.
         data_tests:
           - not_null
@@ -38,7 +38,7 @@ models:
         data_tests:
           - not_null
           - unique
-      - name: primary_location_id
+      - name: location_id
         description: Primary location for the employee.
         data_tests:
           - not_null
@@ -201,7 +201,7 @@ models:
           - relationships:
               arguments:
                 to: ref('stg_customers')
-                field: id
+                field: customer_id
               config:
                 severity: warn
       - name: salesperson_id
