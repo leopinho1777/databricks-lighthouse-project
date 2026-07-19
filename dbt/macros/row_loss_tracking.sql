@@ -84,6 +84,55 @@ select
     {% endif %}
 {% endmacro %}
 
+{% macro ensure_row_loss_audit_table() %}
+    {% set sql %}
+        create table if not exists {{ target.database }}.{{ target.schema }}._staging_row_loss_audit (
+            model_name string,
+            source_rows bigint,
+            deduplicated_rows bigint,
+            cleaned_required_rows bigint,
+            dropped_by_dedupe bigint,
+            dropped_by_required bigint,
+            dropped_total bigint,
+            dedupe_loss_pct double,
+            required_loss_pct double,
+            total_loss_pct double,
+            run_started_at timestamp,
+            recorded_at timestamp
+        ) using delta
+    {% endset %}
+
+    {% do run_query(sql) %}
+{% endmacro %}
+
+{% macro persist_row_loss_for_model(model_name, source_table_name, partition_by, required_columns) %}
+    {% set metrics_sql %}
+        {{ _row_loss_counts_query(source_table_name, partition_by, required_columns) }}
+    {% endset %}
+
+    {% set insert_sql %}
+        insert into {{ target.database }}.{{ target.schema }}._staging_row_loss_audit
+        select
+            '{{ model_name }}' as model_name,
+            source_rows,
+            deduplicated_rows,
+            cleaned_required_rows,
+            dropped_by_dedupe,
+            dropped_by_required,
+            dropped_total,
+            dedupe_loss_pct,
+            required_loss_pct,
+            total_loss_pct,
+            cast('{{ run_started_at }}' as timestamp) as run_started_at,
+            current_timestamp() as recorded_at
+        from (
+            {{ metrics_sql }}
+        ) m
+    {% endset %}
+
+    {% do run_query(insert_sql) %}
+{% endmacro %}
+
 {% macro report_row_loss_for_all_staging() %}
     {{ log('Row-loss report start', info=True) }}
 
@@ -151,4 +200,74 @@ select
     ) }}
 
     {{ log('Row-loss report end', info=True) }}
+{% endmacro %}
+
+{% macro persist_row_loss_for_all_staging() %}
+    {{ ensure_row_loss_audit_table() }}
+    {{ log('Row-loss persistence start', info=True) }}
+
+    {{ persist_row_loss_for_model(
+        'stg_customers',
+        'customers',
+        'id',
+        ['id', 'tax_id', 'created_at', '_ingested_at', '_source_origin', '_batch_id']
+    ) }}
+
+    {{ persist_row_loss_for_model(
+        'stg_employees',
+        'employees',
+        'id',
+        ['id', 'primary_location_id', 'hire_date', '_ingested_at', '_source_origin', '_batch_id']
+    ) }}
+
+    {{ persist_row_loss_for_model(
+        'stg_fiscal_invoices',
+        'fiscal_invoices',
+        'id',
+        ['id', 'order_id', 'total_amount', 'issued_at', '_ingested_at', '_source_origin', '_batch_id']
+    ) }}
+
+    {{ persist_row_loss_for_model(
+        'stg_goods_receipts',
+        'goods_receipts',
+        'id',
+        ['id', 'purchase_order_id', 'received_by_employee_id', 'received_at', '_ingested_at', '_source_origin', '_batch_id']
+    ) }}
+
+    {{ persist_row_loss_for_model(
+        'stg_order_items',
+        'order_items',
+        'id',
+        ['id', 'order_id', 'product_variant_id', 'quantity', 'line_total', '_ingested_at', '_source_origin', '_batch_id']
+    ) }}
+
+    {{ persist_row_loss_for_model(
+        'stg_orders',
+        'orders',
+        'id',
+        ['id', 'customer_id', 'location_id', 'placed_at', 'total', '_ingested_at', '_source_origin', '_batch_id']
+    ) }}
+
+    {{ persist_row_loss_for_model(
+        'stg_payments',
+        'payments',
+        'id',
+        ['id', 'order_id', 'amount', 'paid_at', '_ingested_at', '_source_origin', '_batch_id']
+    ) }}
+
+    {{ persist_row_loss_for_model(
+        'stg_purchase_orders',
+        'purchase_orders',
+        'id',
+        ['id', 'supplier_id', 'buyer_id', 'destination_location_id', 'placed_at', 'expected_delivery_at', 'total', '_ingested_at', '_source_origin', '_batch_id']
+    ) }}
+
+    {{ persist_row_loss_for_model(
+        'stg_stock_movements',
+        'stock_movements',
+        'id',
+        ['id', 'product_variant_id', 'location_id', 'occurred_at', 'quantity', '_ingested_at', '_source_origin', '_batch_id']
+    ) }}
+
+    {{ log('Row-loss persistence end', info=True) }}
 {% endmacro %}
