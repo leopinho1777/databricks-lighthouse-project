@@ -46,9 +46,9 @@ renamed as (
         cast(ipi_rate as decimal(5, 2)) as ipi_rate,
         
         -- Metadados de Auditoria
-        cast(_ingested_at as timestamp) as ingested_at,
-        cast(_source_origin as string) as source_origin,
-        cast(_batch_id as string) as batch_id
+        cast(_ingested_at as timestamp) as _ingested_at,
+        cast(_source_origin as string) as _source_origin,
+        cast(_batch_id as string) as _batch_id
 
     from cleaned_required
 
