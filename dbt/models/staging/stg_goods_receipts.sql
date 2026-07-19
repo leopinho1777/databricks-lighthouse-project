@@ -4,6 +4,29 @@ with source as (
 
 ),
 
+deduplicated as (
+
+    {{ dedupe_latest('source', 'id') }}
+
+),
+
+cleaned_required as (
+
+    {{ keep_required_rows(
+        'deduplicated',
+        [
+            'id',
+            'purchase_order_id',
+            'received_by_employee_id',
+            'received_at',
+            '_ingested_at',
+            '_source_origin',
+            '_batch_id'
+        ]
+    ) }}
+
+),
+
 renamed as (
 
     select
@@ -24,13 +47,7 @@ renamed as (
         _source_origin,
         _batch_id
 
-    from source
-
-    -- Elimina a duplicação sistemática de 2x capturando o lote mais recente
-    qualify row_number() over (
-        partition by id 
-        order by _ingested_at desc nulls last
-    ) = 1
+    from cleaned_required
 
 )
 

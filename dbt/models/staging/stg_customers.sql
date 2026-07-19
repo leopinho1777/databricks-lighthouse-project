@@ -4,6 +4,28 @@ with source as (
 
 ),
 
+deduplicated as (
+
+    {{ dedupe_latest('source', 'id') }}
+
+),
+
+cleaned_required as (
+
+    {{ keep_required_rows(
+        'deduplicated',
+        [
+            'id',
+            'tax_id',
+            'created_at',
+            '_ingested_at',
+            '_source_origin',
+            '_batch_id'
+        ]
+    ) }}
+
+),
+
 renamed as (
 
     select
@@ -22,7 +44,7 @@ renamed as (
         _source_origin,
         _batch_id
 
-    from source
+    from cleaned_required
 
 )
 

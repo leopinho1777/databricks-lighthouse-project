@@ -6,14 +6,25 @@ with source as (
 
 deduplicated as (
 
-    select 
-        *
-    from source
-    -- Tratando a duplicação sistemática de 2x da camada Bronze
-    qualify row_number() over (
-        partition by id 
-        order by _ingested_at desc nulls last
-    ) = 1
+    {{ dedupe_latest('source', 'id') }}
+
+),
+
+cleaned_required as (
+
+    {{ keep_required_rows(
+        'deduplicated',
+        [
+            'id',
+            'order_id',
+            'product_variant_id',
+            'quantity',
+            'line_total',
+            '_ingested_at',
+            '_source_origin',
+            '_batch_id'
+        ]
+    ) }}
 
 ),
 
@@ -39,7 +50,7 @@ renamed as (
         cast(_source_origin as string) as source_origin,
         cast(_batch_id as string) as batch_id
 
-    from deduplicated
+    from cleaned_required
 
 )
 

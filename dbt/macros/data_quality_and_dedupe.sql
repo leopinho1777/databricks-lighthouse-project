@@ -1,5 +1,4 @@
 -- Keep latest valid ingestion
-
 {% macro dedupe_latest(
     relation_name, 
     partition_by, 
@@ -12,6 +11,7 @@ qualify row_number() over (
 ) = 1
 {% endmacro %}
 
+-- Removes rows missing mandatory columns
 {% macro keep_required_rows(relation_name, required_columns) %}
 select *
 from {{ relation_name }}
