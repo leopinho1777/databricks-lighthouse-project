@@ -356,3 +356,31 @@ models:
         description: Ingestion batch identifier.
         data_tests:
           - not_null
+  - name: stg_returns
+    description: Returns master data standardized from bronze.
+    columns:
+      - name: return_id
+        description: Return primary key.
+        data_tests:
+          - not_null
+          - unique
+      - name: order_id
+        description: Order identifier associated with the return.
+        data_tests:
+          - not_null
+      - name: created_at
+        description: Record creation timestamp.
+        data_tests:
+          - not_null
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null
