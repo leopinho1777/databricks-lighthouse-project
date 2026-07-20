@@ -8,6 +8,8 @@ scratch/**
 !scratch/README.md
 **/explorations/**
 **/!explorations/README.md
-PINHO_README.md
 databricks.local.yml
 venv/
+.agents/
+.env
+skills-lock.json

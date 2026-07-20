@@ -4,12 +4,34 @@ with source as (
 
 ),
 
+deduplicated as (
+
+    {{ dedupe_latest('source', 'id') }}
+
+),
+
+cleaned_required as (
+
+    {{ keep_required_rows(
+        'deduplicated',
+        [
+            'id',
+            'primary_location_id',
+            'hire_date',
+            '_ingested_at',
+            '_source_origin',
+            '_batch_id'
+        ]
+    ) }}
+
+),
+
 renamed as (
 
     select
         -- Keys
         id as employee_id,
-        primary_location_id,
+        primary_location_id as location_id,
 
         -- Attributes
         full_name,
@@ -31,13 +53,7 @@ renamed as (
         _source_origin,
         _batch_id
 
-    from source
-
-    -- Remove as duplicatas de 2x escolhendo o lote mais recente de ingestão
-    qualify row_number() over (
-        partition by id 
-        order by _ingested_at desc nulls last
-    ) = 1
+    from cleaned_required
 
 )
 

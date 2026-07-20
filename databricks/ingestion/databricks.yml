@@ -6,7 +6,7 @@ bundle:
 
 include:
   - resources/ingestion.job.yml
-  - databricks.local.yml
+  - ../../databricks.local.yml
 
 artifacts:
   python_artifact:
@@ -24,24 +24,25 @@ variables:
     description: The catalog to use
   schema:
     description: The schema to use
+  dev_schema:
+    description: "Per-user dev schema (ex: pinho_analytics)"
 
 targets:
   dev:
     mode: development
     default: true
     variables:
-      catalog: workspace
-      schema: ${workspace.current_user.short_name}  # each person gets their own schema
-      #'host' precisar ser configurado num databricks.local.yml para sobrescrever o databricks.yml que deve ser compartilhado entre todos
+      catalog: develop
+      schema: ${var.dev_schema}
 
   prod:
     mode: production
     workspace:
-      host: https://dbc-520ccaae-996e.cloud.databricks.com
-      root_path: /Workspace/Users/leonardo.zoot@gmail.com/.bundle/${bundle.name}/${bundle.target}
+      host: https://dbc-fc67e327-d40e.cloud.databricks.com/
+      root_path: /Workspace/Users/teslavinci2026@gmail.com/.bundle/${bundle.name}/${bundle.target}
     variables:
-      catalog: workspace
+      catalog: lh_nautical
       schema: prod
     permissions:
-      - user_name: leonardo.zoot@gmail.com
+      - user_name: teslavinci2026@gmail.com
         level: CAN_MANAGE
