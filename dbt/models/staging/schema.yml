@@ -484,3 +484,39 @@ models:
         description: Ingestion batch identifier.
         data_tests:
           - not_null
+  - name: stg_addresses
+    description: Customer address information standardized from bronze.
+    columns:
+      - name: address_id
+        description: Address primary key.
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: Customer identifier associated with the address.
+        data_tests:
+          - not_null
+      - name: address_type
+        description: Type of the address (e.g., home, work, billing, shipping).
+      - name: postal_code
+        description: Postal code or ZIP code.
+      - name: city
+        description: City name.
+      - name: state
+        description: State or province.
+      - name: country
+        description: Country name.
+      - name: is_primary
+        description: Boolean flag indicating if this is the primary address for the customer.
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null
