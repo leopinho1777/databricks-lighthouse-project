@@ -558,3 +558,31 @@ models:
         description: Ingestion batch identifier.
         data_tests:
           - not_null
+  - name: stg_suppliers
+    description: Suppliers and vendor information standardized from bronze.
+    columns:
+      - name: supplier_id
+        description: Supplier primary key.
+        data_tests:
+          - not_null
+          - unique
+      - name: legal_name
+        description: Official legal name of the supplier.
+        data_tests:
+          - not_null
+      - name: tax_id
+        description: Tax identification number (e.g., CNPJ, EIN, VAT).
+      - name: is_active
+        description: Boolean flag indicating if the supplier is active.
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null
