@@ -520,3 +520,41 @@ models:
         description: Ingestion batch identifier.
         data_tests:
           - not_null
+  - name: stg_locations
+    description: Physical locations (e.g., stores, warehouses, distribution centers) standardized from bronze.
+    columns:
+      - name: location_id
+        description: Location primary key.
+        data_tests:
+          - not_null
+          - unique
+      - name: name
+        description: Name of the location.
+        data_tests:
+          - not_null
+      - name: location_type
+        description: Type of the facility (e.g., warehouse, store).
+        data_tests:
+          - not_null
+      - name: postal_code
+        description: Postal code or ZIP code of the location.
+      - name: city
+        description: City where the location is based.
+      - name: state
+        description: State or province.
+      - name: country
+        description: Country name.
+      - name: is_active
+        description: Boolean flag indicating if the location is currently operating.
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null
