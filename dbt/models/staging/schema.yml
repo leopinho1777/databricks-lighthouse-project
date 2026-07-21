@@ -416,3 +416,35 @@ models:
         description: Ingestion batch identifier.
         data_tests:
           - not_null
+  - name: stg_stock_levels
+    description: Current stock levels by product and location standardized from bronze.
+    columns:
+      - name: stock_level_id
+        description: Stock level surrogate primary key (product_variant_id + location_id).
+        data_tests:
+          - not_null
+          - unique
+      - name: product_variant_id
+        description: Product variant identifier.
+        data_tests:
+          - not_null
+      - name: location_id
+        description: Location identifier.
+        data_tests:
+          - not_null
+      - name: quantity_on_hand
+        description: Current physical quantity in stock.
+        data_tests:
+          - not_null
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null
