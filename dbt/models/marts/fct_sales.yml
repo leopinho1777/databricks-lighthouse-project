@@ -1,0 +1,34 @@
+version: 2
+
+models:
+  - name: fct_sales
+    description: >
+      Sales fact at order-item grain. One record per order item, with foreign
+      keys to the dimensions and additive measures (quantity, prices, taxes).
+    columns:
+      - name: sales_sk
+        description: Surrogate key of the sales fact (hash of order_item_id).
+        data_tests:
+          - not_null
+          - unique
+      - name: order_item_id
+        description: Natural / degenerate key — order item identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: order_id
+        description: Parent order identifier (degenerate dimension).
+        data_tests:
+          - not_null
+      - name: customer_id
+        description: Foreign key to the customer dimension.
+        data_tests:
+          - not_null
+      - name: quantity
+        description: Ordered quantity (additive measure).
+        data_tests:
+          - not_null
+      - name: line_total
+        description: Line total amount (additive measure).
+        data_tests:
+          - not_null
