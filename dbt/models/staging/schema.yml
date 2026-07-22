@@ -586,3 +586,37 @@ models:
         description: Ingestion batch identifier.
         data_tests:
           - not_null
+  - name: stg_products
+    description: Products catalog standardized from bronze layer.
+    columns:
+      - name: product_id
+        description: Product primary key.
+        data_tests:
+          - not_null
+          - unique
+      - name: category_id
+        description: Foreign key to product category.
+        data_tests:
+          - not_null
+      - name: brand_id
+        description: Foreign key to product brand.
+        data_tests:
+          - not_null
+      - name: product_name
+        description: Official name of the product.
+        data_tests:
+          - not_null
+      - name: is_active
+        description: Boolean flag indicating if the product is active in catalog.
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null
