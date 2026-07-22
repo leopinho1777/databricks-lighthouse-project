@@ -620,3 +620,42 @@ models:
         description: Ingestion batch identifier.
         data_tests:
           - not_null
+  - name: stg_product_variants
+    description: Product variants (SKUs, pricing, weight and tax rates) standardized from bronze.
+    columns:
+      - name: product_variant_id
+        description: Variant primary key.
+        data_tests:
+          - not_null
+          - unique
+      - name: product_id
+        description: Foreign key to parent product.
+        data_tests:
+          - not_null
+      - name: sku
+        description: Stock Keeping Unit identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: sale_price
+        description: Current selling price.
+        data_tests:
+          - not_null
+      - name: cost_price
+        description: Unit cost price.
+        data_tests:
+          - not_null
+      - name: is_active
+        description: Boolean flag indicating if the SKU is active.
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null
