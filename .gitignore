@@ -13,3 +13,4 @@ venv/
 .agents/
 .env
 skills-lock.json
+logs/
