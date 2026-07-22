@@ -356,3 +356,306 @@ models:
         description: Ingestion batch identifier.
         data_tests:
           - not_null
+  - name: stg_returns
+    description: Returns master data standardized from bronze.
+    columns:
+      - name: return_id
+        description: Return primary key.
+        data_tests:
+          - not_null
+          - unique
+      - name: order_id
+        description: Order identifier associated with the return.
+        data_tests:
+          - not_null
+      - name: created_at
+        description: Record creation timestamp.
+        data_tests:
+          - not_null
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null
+  - name: stg_return_items
+    description: Return items line-level details standardized from bronze.
+    columns:
+      - name: return_item_id
+        description: Return item primary key.
+        data_tests:
+          - not_null
+          - unique
+      - name: return_id
+        description: Return parent identifier.
+        data_tests:
+          - not_null
+      - name: order_item_id
+        description: Order item identifier associated with the return.
+        data_tests:
+          - not_null
+      - name: quantity
+        description: Quantity of items returned.
+        data_tests:
+          - not_null
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null
+  - name: stg_stock_levels
+    description: Current stock levels by product and location standardized from bronze.
+    columns:
+      - name: stock_level_id
+        description: Stock level surrogate primary key (product_variant_id + location_id).
+        data_tests:
+          - not_null
+          - unique
+      - name: product_variant_id
+        description: Product variant identifier.
+        data_tests:
+          - not_null
+      - name: location_id
+        description: Location identifier.
+        data_tests:
+          - not_null
+      - name: quantity_on_hand
+        description: Current physical quantity in stock.
+        data_tests:
+          - not_null
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null
+  - name: stg_purchase_order_items
+    description: Purchase order items line-level details standardized from bronze.
+    columns:
+      - name: purchase_order_item_id
+        description: Purchase order item primary key.
+        data_tests:
+          - not_null
+          - unique
+      - name: purchase_order_id
+        description: Purchase order parent identifier.
+        data_tests:
+          - not_null
+      - name: product_variant_id
+        description: Product variant identifier.
+        data_tests:
+          - not_null
+      - name: quantity_ordered
+        description: Quantity of product ordered.
+        data_tests:
+          - not_null
+      - name: unit_cost
+        description: Unit cost of the product.
+        data_tests:
+          - not_null
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null
+  - name: stg_addresses
+    description: Customer address information standardized from bronze.
+    columns:
+      - name: address_id
+        description: Address primary key.
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: Customer identifier associated with the address.
+        data_tests:
+          - not_null
+      - name: address_type
+        description: Type of the address (e.g., home, work, billing, shipping).
+      - name: postal_code
+        description: Postal code or ZIP code.
+      - name: city
+        description: City name.
+      - name: state
+        description: State or province.
+      - name: country
+        description: Country name.
+      - name: is_primary
+        description: Boolean flag indicating if this is the primary address for the customer.
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null
+  - name: stg_locations
+    description: Physical locations (e.g., stores, warehouses, distribution centers) standardized from bronze.
+    columns:
+      - name: location_id
+        description: Location primary key.
+        data_tests:
+          - not_null
+          - unique
+      - name: name
+        description: Name of the location.
+        data_tests:
+          - not_null
+      - name: location_type
+        description: Type of the facility (e.g., warehouse, store).
+        data_tests:
+          - not_null
+      - name: postal_code
+        description: Postal code or ZIP code of the location.
+      - name: city
+        description: City where the location is based.
+      - name: state
+        description: State or province.
+      - name: country
+        description: Country name.
+      - name: is_active
+        description: Boolean flag indicating if the location is currently operating.
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null
+  - name: stg_suppliers
+    description: Suppliers and vendor information standardized from bronze.
+    columns:
+      - name: supplier_id
+        description: Supplier primary key.
+        data_tests:
+          - not_null
+          - unique
+      - name: legal_name
+        description: Official legal name of the supplier.
+        data_tests:
+          - not_null
+      - name: tax_id
+        description: Tax identification number (e.g., CNPJ, EIN, VAT).
+      - name: is_active
+        description: Boolean flag indicating if the supplier is active.
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null
+  - name: stg_products
+    description: Products catalog standardized from bronze layer.
+    columns:
+      - name: product_id
+        description: Product primary key.
+        data_tests:
+          - not_null
+          - unique
+      - name: category_id
+        description: Foreign key to product category.
+        data_tests:
+          - not_null
+      - name: brand_id
+        description: Foreign key to product brand.
+        data_tests:
+          - not_null
+      - name: product_name
+        description: Official name of the product.
+        data_tests:
+          - not_null
+      - name: is_active
+        description: Boolean flag indicating if the product is active in catalog.
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null
+  - name: stg_product_variants
+    description: Product variants (SKUs, pricing, weight and tax rates) standardized from bronze.
+    columns:
+      - name: product_variant_id
+        description: Variant primary key.
+        data_tests:
+          - not_null
+          - unique
+      - name: product_id
+        description: Foreign key to parent product.
+        data_tests:
+          - not_null
+      - name: sku
+        description: Stock Keeping Unit identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: sale_price
+        description: Current selling price.
+        data_tests:
+          - not_null
+      - name: cost_price
+        description: Unit cost price.
+        data_tests:
+          - not_null
+      - name: is_active
+        description: Boolean flag indicating if the SKU is active.
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null
