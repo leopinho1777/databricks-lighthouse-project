@@ -659,3 +659,31 @@ models:
         description: Ingestion batch identifier.
         data_tests:
           - not_null
+  - name: stg_brands
+    description: Product brands standardized from bronze.
+    columns:
+      - name: brand_id
+        description: Brand primary key.
+        data_tests:
+          - not_null
+          - unique
+      - name: brand_name
+        description: Official name of the brand.
+        data_tests:
+          - not_null
+      - name: country_code
+        description: Origin country of the brand.
+      - name: is_active
+        description: Boolean flag indicating if the brand is active.
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null
