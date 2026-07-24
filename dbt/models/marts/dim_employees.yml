@@ -1,0 +1,22 @@
+version: 2
+
+models:
+  - name: dim_employees
+    description: >
+      Employee dimension — one record per employee, with role and home location.
+      Conformed dimension used by fct_sales (salesperson) and future purchase facts (buyer).
+    columns:
+      - name: employee_sk
+        description: Surrogate key of the employee dimension.
+        data_tests:
+          - not_null
+          - unique
+      - name: employee_id
+        description: Natural key — employee identifier from source.
+        data_tests:
+          - not_null
+          - unique
+      - name: location_id
+        description: Employee's home/primary location (FK to dim_locations).
+      - name: employee_role
+        description: Job role / position.
