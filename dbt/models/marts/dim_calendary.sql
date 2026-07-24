@@ -11,20 +11,26 @@
 {% endif %}
 
 with spine as (
+
     {{ dbt_utils.date_spine(
         datepart="day",
         start_date="cast('2020-01-01' as date)",
         end_date="cast('" ~ max_date ~ "' as date)"
     ) }}
+
 ),
+
 final as (
+
     select
-        date_day as date_id,
-        date_day,
+        cast(date_format(date_day, 'yyyyMMdd') as int) as date_id,
+        cast(date_day as date) as date_day,
         extract(year from date_day) as year,
         extract(month from date_day) as month,
         extract(quarter from date_day) as quarter,
         extract(dayofweek from date_day) as day_of_week
     from spine
+
 )
+
 select * from final

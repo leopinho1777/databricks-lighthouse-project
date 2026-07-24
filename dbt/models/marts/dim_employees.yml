@@ -12,13 +12,13 @@ models:
           - unique
       - name: full_name
         description: Employee full name.
-      - name: role
+      - name: employee_role
         description: Employee role/position.
-      - name: primary_location_id
+      - name: location_id
         description: Foreign key to the location the employee is primarily assigned to.
       - name: hire_date
         description: Date the employee was hired.
       - name: termination_date
         description: Date the employee was terminated, if applicable.
-      - name: is_active
+      - name: is_active_employee
         description: Whether the employee is currently active.

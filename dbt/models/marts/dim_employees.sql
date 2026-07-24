@@ -1,13 +1,13 @@
 with employees as (
 
     select
-        id as employee_id,
+        employee_id,
         full_name,
-        role,
-        primary_location_id,
+        employee_role,
+        location_id,
         hire_date,
         termination_date,
-        is_active
+        is_active_employee
     from {{ ref('stg_employees') }}
 
 )
