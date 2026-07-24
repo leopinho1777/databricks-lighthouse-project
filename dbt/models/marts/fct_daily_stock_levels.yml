@@ -1,0 +1,53 @@
+version: 2
+
+models:
+  - name: fct_daily_stock_levels
+    description: Sparse daily stock fact built from stock level snapshots. One row per stock change day and product-location pair.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - stock_level_day
+              - product_variant_id
+              - location_id
+    columns:
+      - name: stock_level_day
+        description: Day where the snapshot change became valid.
+        data_tests:
+          - not_null
+      - name: product_variant_id
+        description: Product variant identifier.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_product_variants')
+                field: product_variant_id
+      - name: location_id
+        description: Location identifier.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_locations')
+                field: location_id
+      - name: stock_level_id
+        description: Surrogate stock level key from staging.
+        data_tests:
+          - not_null
+      - name: raw_quantity_on_hand
+        description: Raw quantity captured from snapshot history.
+        data_tests:
+          - not_null
+      - name: physical_quantity_on_hand
+        description: Non-negative quantity used for operational stock analytics.
+        data_tests:
+          - not_null
+      - name: is_negative_raw_quantity
+        description: Flag indicating the source quantity was negative.
+        data_tests:
+          - not_null
+      - name: snapshot_valid_from
+        description: Snapshot validity window start timestamp.
+        data_tests:
+          - not_null

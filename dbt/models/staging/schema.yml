@@ -418,6 +418,12 @@ models:
           - not_null
   - name: stg_stock_levels
     description: Current stock levels by product and location standardized from bronze.
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "quantity_on_hand >= 0"
+          config:
+            severity: warn
     columns:
       - name: stock_level_id
         description: Stock level surrogate primary key (product_variant_id + location_id).
