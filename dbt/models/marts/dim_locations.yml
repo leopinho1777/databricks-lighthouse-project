@@ -3,12 +3,36 @@ version: 2
 models:
   - name: dim_locations
     description: >
-      Location dimension. One record per warehouse or store location.
+      Location dimension. Contains historical records for each warehouse or store location (SCD Type 2).
     columns:
+      - name: location_sk
+        description: Surrogate key generated from location_id and updated_at.
+        data_tests:
+          - not_null
+          - unique
+
       - name: location_id
         description: Location natural key.
         data_tests:
           - not_null
-          - unique
+
+      - name: location_name
+        description: Name of the location.
+
       - name: location_type
-        description: Type of location (warehouse or store).
+        description: Type of location (e.g., warehouse or store).
+
+      - name: city_name
+        description: City where the location is situated.
+
+      - name: state_code
+        description: State or province code.
+
+      - name: country_name
+        description: Country name.
+
+      - name: is_active
+        description: Flag indicating if the location is currently active.
+
+      - name: updated_at
+        description: Timestamp when the location record was last updated.
