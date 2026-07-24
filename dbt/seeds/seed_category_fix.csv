@@ -1,0 +1,21 @@
+product_type,correct_category,is_categorized
+Motor de Popa,Motores,true
+GPS Plotter,Eletrônica Náutica,true
+GPS Pltoter,Eletrônica Náutica,true
+Cabo Náutico,Cabos,true
+Caboo Náutico,Cabos,true
+Hélice de Alumínio,Hélices,true
+Vela Mestra,Velas,true
+Tinta Antifouling,Pintura Marítima,true
+Âncora Bruce,Âncoras,true
+Sonar Transducer,Eletrônica Náutica,true
+Bússola de Bordo,Acessórios de Convés,true
+Defensa Náutica,Segurança,true
+Bateria Náutica,Eletrônica Náutica,true
+Colete Salva-Vidas,Coletes Salva-Vidas,true
+asdf,Não Classificado,false
+Cliente Genérico,Não Classificado,false
+Genérico,Não Classificado,false
+TBD,Não Classificado,false
+João da Silva,Não Classificado,false
+NAO INFORMADO,Não Classificado,false
