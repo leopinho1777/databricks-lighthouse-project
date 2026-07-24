@@ -10,6 +10,9 @@ resources:
           notebook_task:
             notebook_path: ../src/sqlserver_ingest_setup.ipynb
             source: WORKSPACE
+            base_parameters:
+              catalog: "${var.catalog}"
+              schema: "${var.schema}"
           environment_key: Default
 
         #Task ingest_tables - ingestão através de for_each para cada tabela disponibilizada por 'setup'
@@ -30,6 +33,16 @@ resources:
                   table_config: "{{input}}"
                   governance_config_path: "governance_config.json"
         #Task apply_rbca - Fornece acesso de acordo com o role (role- based access control)      
+        - task_key: ingest_bcb_exchange_rates
+          depends_on:
+            - task_key: setup
+          notebook_task:
+            notebook_path: ../src/bcb_exchange_rates_ingest.ipynb
+            source: WORKSPACE
+            base_parameters:
+              catalog: "${var.catalog}"
+              schema: "${var.schema}"
+          environment_key: Default
 
       environments:
         - environment_key: Default

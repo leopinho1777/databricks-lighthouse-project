@@ -25,7 +25,8 @@ variables:
   schema:
     description: The schema to use
   dev_schema:
-    description: "Per-user dev schema (ex: pinho_analytics)"
+    description: "Schema usado no ambiente de dev, único por usuário"
+    default: "${workspace.current_user.short_name}_analytics_raw"
 
 targets:
   dev:
