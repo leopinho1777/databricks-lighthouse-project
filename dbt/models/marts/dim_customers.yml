@@ -1,0 +1,24 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: >
+      Customer dimension — one record per customer, enriched with the primary
+      address geography (city/state/country). Conformed dimension used by fct_sales.
+    columns:
+      - name: customer_sk
+        description: Surrogate key of the customer dimension.
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: Natural key — customer identifier (grain of the table).
+        data_tests:
+          - not_null
+          - unique
+      - name: person_type
+        description: Person type (PF = individual, PJ = company).
+        data_tests:
+          - not_null
+      - name: state
+        description: State of the customer's primary address (null if no address).
