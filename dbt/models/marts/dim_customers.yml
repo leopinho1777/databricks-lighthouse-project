@@ -1,0 +1,22 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: >
+      Customer dimension. One record per customer, joined with the primary
+      address (is_primary = true) to avoid duplication from multiple
+      addresses per customer.
+    columns:
+      - name: customer_id
+        description: Customer natural key.
+        data_tests:
+          - not_null
+          - unique
+      - name: person_type
+        description: Whether the customer is PF (individual) or PJ (company).
+      - name: legal_name
+        description: Customer's registered legal name.
+      - name: city
+        description: City of the customer's primary address.
+      - name: state
+        description: State of the customer's primary address.
