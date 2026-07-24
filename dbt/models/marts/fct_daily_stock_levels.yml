@@ -10,6 +10,12 @@ models:
               - stock_level_day
               - product_variant_id
               - location_id
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "physical_quantity_on_hand = greatest(raw_quantity_on_hand, 0)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "stock_level_day = cast(snapshot_valid_from as date)"
     columns:
       - name: stock_level_day
         description: Day where the snapshot change became valid.
