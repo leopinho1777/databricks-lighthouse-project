@@ -1,0 +1,24 @@
+version: 2
+
+models:
+  - name: dim_employees
+    description: >
+      Employee dimension. One record per employee.
+    columns:
+      - name: employee_id
+        description: Employee natural key.
+        data_tests:
+          - not_null
+          - unique
+      - name: full_name
+        description: Employee full name.
+      - name: role
+        description: Employee role/position.
+      - name: primary_location_id
+        description: Foreign key to the location the employee is primarily assigned to.
+      - name: hire_date
+        description: Date the employee was hired.
+      - name: termination_date
+        description: Date the employee was terminated, if applicable.
+      - name: is_active
+        description: Whether the employee is currently active.

@@ -1,0 +1,24 @@
+version: 2
+
+models:
+  - name: dim_calendary
+    description: >
+      Date dimension generated via dbt_utils.date_spine, covering the range
+      from the earliest business event date to the latest ingestion date.
+      Not sourced from staging — no calendar table exists in the source ERD.
+    columns:
+      - name: date_id
+        description: Date key (grain of the table), one row per calendar day.
+        data_tests:
+          - not_null
+          - unique
+      - name: date_day
+        description: Calendar date.
+      - name: year
+        description: Calendar year extracted from date_day.
+      - name: month
+        description: Calendar month (1-12) extracted from date_day.
+      - name: quarter
+        description: Calendar quarter (1-4) extracted from date_day.
+      - name: day_of_week
+        description: Day of week extracted from date_day.

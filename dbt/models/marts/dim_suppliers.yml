@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: dim_suppliers
+    description: >
+      Supplier dimension. One record per supplier, used by fct_purchases
+      for supplier reliability analysis.
+    columns:
+      - name: supplier_id
+        description: Supplier natural key.
+        data_tests:
+          - not_null
+          - unique
+      - name: legal_name
+        description: Supplier's registered legal name.
+      - name: country
+        description: Supplier's country of origin.

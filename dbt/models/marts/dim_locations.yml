@@ -1,0 +1,14 @@
+version: 2
+
+models:
+  - name: dim_locations
+    description: >
+      Location dimension. One record per warehouse or store location.
+    columns:
+      - name: location_id
+        description: Location natural key.
+        data_tests:
+          - not_null
+          - unique
+      - name: location_type
+        description: Type of location (warehouse or store).
