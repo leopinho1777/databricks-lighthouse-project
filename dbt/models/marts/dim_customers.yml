@@ -22,3 +22,21 @@ models:
           - not_null
       - name: state
         description: State of the customer's primary address (null if no address).
+      - name: legal_name
+        description: Customer legal (registered) name.
+      - name: trade_name
+        description: Customer trade (fantasy) name — typically null for individuals (PF).
+      - name: tax_id
+        description: Customer tax identifier (CPF/CNPJ) — natural business key.
+        data_tests:
+          - not_null
+      - name: state_registration
+        description: State registration number (inscrição estadual) — often null for individuals.
+      - name: is_active
+        description: Whether the customer is currently active.
+        data_tests:
+          - not_null
+      - name: city
+        description: City of the customer's primary address (null if no address).
+      - name: country
+        description: Country of the customer's primary address (null if no address).

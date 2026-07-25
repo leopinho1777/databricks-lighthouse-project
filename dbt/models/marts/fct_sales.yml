@@ -32,3 +32,37 @@ models:
         description: Line total amount (additive measure).
         data_tests:
           - not_null
+      - name: salesperson_id
+        description: Foreign key to the employee dimension (salesperson). Nullable — ecommerce orders may have none.
+      - name: location_id
+        description: Foreign key to the location dimension.
+        data_tests:
+          - not_null
+      - name: product_variant_id
+        description: Foreign key to the product dimension (variant grain).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_products')
+                field: product_variant_id
+              config:
+                severity: warn
+      - name: channel
+        description: Sales channel (degenerate dimension) — e.g., ecommerce, physical store.
+        data_tests:
+          - not_null
+      - name: order_status
+        description: Status of the parent order.
+        data_tests:
+          - not_null
+      - name: placed_at
+        description: Timestamp when the order was placed (links to the date dimension).
+        data_tests:
+          - not_null
+      - name: unit_price
+        description: Unit price of the order item (measure).
+      - name: icms_rate
+        description: ICMS tax rate applied to the item.
+      - name: ipi_rate
+        description: IPI tax rate applied to the item.
