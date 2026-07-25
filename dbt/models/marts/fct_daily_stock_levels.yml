@@ -57,3 +57,19 @@ models:
         description: Snapshot validity window start timestamp.
         data_tests:
           - not_null
+      - name: source_updated_at
+        description: Source record last-update timestamp (updated_at from the stock level source).
+      - name: snapshot_valid_to
+        description: End of the snapshot validity window (null for the current/open record).
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null

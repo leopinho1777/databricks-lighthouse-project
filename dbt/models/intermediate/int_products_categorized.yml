@@ -23,3 +23,15 @@ models:
         description: Flag — true if the category came from the curated map, false if bucketed.
         data_tests:
           - not_null
+      - name: product_name
+        description: Product display name (trimmed) carried from stg_products.
+        data_tests:
+          - not_null
+      - name: product_type
+        description: Product type extracted from the name (number suffix removed); used to look up the corrected category in the seed.
+        data_tests:
+          - not_null
+      - name: brand_id
+        description: Brand foreign key, passed through for the product dimension.
+        data_tests:
+          - not_null

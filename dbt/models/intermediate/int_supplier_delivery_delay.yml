@@ -23,3 +23,15 @@ models:
           - accepted_values:
               arguments:
                 values: ['late', 'early', 'on_time', 'unknown']
+      - name: supplier_id
+        description: Supplier of the related purchase order.
+        data_tests:
+          - not_null
+      - name: po_number
+        description: Purchase order business number.
+      - name: expected_delivery_at
+        description: Expected delivery timestamp for the purchase order (nullable).
+      - name: received_at
+        description: Timestamp when the goods were actually received.
+        data_tests:
+          - not_null
