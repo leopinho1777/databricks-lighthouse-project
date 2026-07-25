@@ -1,0 +1,51 @@
+version: 2
+
+models:
+  - name: fct_returns
+    description: >
+      Returns fact at returned-item grain. One record per returned order item,
+      cross-referenced to the original sale via order_item_id. Enables real net
+      revenue (sales − returns) and return-rate analysis.
+    columns:
+      - name: return_sk
+        description: Surrogate key of the returns fact.
+        data_tests:
+          - not_null
+          - unique
+      - name: return_item_id
+        description: Natural key — returned item (grain of the table).
+        data_tests:
+          - not_null
+          - unique
+      - name: order_item_id
+        description: Bridge to the original sale (fct_sales.order_item_id) — enables item-to-item net revenue.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_sales')
+                field: order_item_id
+              config:
+                severity: warn
+      - name: order_id
+        description: Parent order of the returned item.
+        data_tests:
+          - not_null
+      - name: customer_id
+        description: Customer who made the return (FK to dim_customers).
+      - name: location_id
+        description: Location where the return was received (FK to dim_locations).
+      - name: reason
+        description: Standardized return reason.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Cliente desistiu da compra','Compra duplicada','Item não corresponde à descrição','Produto avariado no transporte','Tamanho/cor incorretos','Produto com defeito de fábrica','Motivo não definido']
+      - name: quantity
+        description: Returned quantity (additive measure).
+        data_tests:
+          - not_null
+      - name: refund_amount
+        description: Line refund amount (quantity × unit_refund_amount) — additive measure.
+        data_tests:
+          - not_null
