@@ -20,3 +20,13 @@ models:
         description: Employee's home/primary location (FK to dim_locations).
       - name: employee_role
         description: Job role / position.
+      - name: full_name
+        description: Employee full name.
+      - name: hire_date
+        description: Date the employee was hired.
+        data_tests:
+          - not_null
+      - name: is_active_employee
+        description: Whether the employee is currently active.
+        data_tests:
+          - not_null
