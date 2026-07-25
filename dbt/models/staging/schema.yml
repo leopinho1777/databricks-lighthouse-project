@@ -143,6 +143,51 @@ models:
         data_tests:
           - not_null
 
+  - name: stg_goods_receipt_items
+    description: Goods receipt line items standardized from bronze.
+    columns:
+      - name: goods_receipt_item_id
+        description: Goods receipt item key.
+        data_tests:
+          - not_null
+          - unique
+      - name: goods_receipt_id
+        description: Related goods receipt key.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_goods_receipts')
+                field: goods_receipt_id
+              config:
+                severity: warn
+      - name: purchase_order_item_id
+        description: Related purchase order item key.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_purchase_order_items')
+                field: purchase_order_item_id
+              config:
+                severity: warn
+      - name: quantity_received
+        description: Quantity received for the line item.
+        data_tests:
+          - not_null
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null
+
   - name: stg_order_items
     description: Order line items standardized from bronze.
     columns:
