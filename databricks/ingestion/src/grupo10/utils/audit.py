@@ -19,7 +19,7 @@ COMMENT 'Audit log for SQL Server ingestion runs'
 """
 
 #Garante que a tabela de auditoria exista
-def ensure_audit_table(spark: SparkSession, audit_table: str = "lh_nautical.bronze._ingestion_audit") -> None:
+def ensure_audit_table(spark: SparkSession, audit_table: str) -> None:
     """Creates the audit Delta table if it does not already exist."""
     spark.sql(AUDIT_TABLE_DDL.format(audit_table=audit_table))
 
@@ -29,9 +29,9 @@ def write_audit_record(
     table_name: str,
     status: str,
     duration_seconds: float,
+    audit_table: str,
     row_count: Optional[int] = None,
     error_message: Optional[str] = None,
-    audit_table: str = "lh_nautical.bronze._ingestion_audit",
 ) -> None:
     """
     Appends a single audit record to the Delta audit table.

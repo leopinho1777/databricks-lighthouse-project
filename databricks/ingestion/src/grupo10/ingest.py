@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 # Constantes do módulo
 DEFAULT_LINES_PER_BATCH = 500
-DEFAULT_TARGET_CATALOG_SCHEMA = "lh_nautical.bronze"
 DEFAULT_INCREMENTAL_KEY = "id"
 CONTROL_TABLE_DDL = """
 CREATE TABLE IF NOT EXISTS {control_table} (
@@ -135,7 +134,7 @@ def run_incremental_ingestion(
     control_table: str,
     primary_key: Union[str, list] = DEFAULT_INCREMENTAL_KEY,
     lines_per_batch: int = DEFAULT_LINES_PER_BATCH,
-    target_catalog_schema: str = DEFAULT_TARGET_CATALOG_SCHEMA,
+    target_catalog_schema: str = None,
 ) -> int:
     """Orchestrates partitioned ingestion consuming external modular blocks.
 
@@ -143,6 +142,8 @@ def run_incremental_ingestion(
     Tables with a composite primary key use a full reload + MERGE strategy.
     All writes are idempotent MERGE operations.
     """
+    if not target_catalog_schema:
+        target_catalog_schema = ".".join(control_table.split(".")[:-1])
     pk_cols = [primary_key] if isinstance(primary_key, str) else list(primary_key)
     use_incremental = len(pk_cols) == 1  # single key → incremental; composite → full reload
     incremental_key = pk_cols[0] if use_incremental else None

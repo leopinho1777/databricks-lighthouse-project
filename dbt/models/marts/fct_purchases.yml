@@ -1,0 +1,46 @@
+version: 2
+
+models:
+  - name: fct_purchases
+    description: >
+      Purchases fact at goods-receipt-item grain. Foreign keys to
+      supplier, location, employee, and product dimensions. Measures
+      for supplier reliability (delay, lead time) and currency-converted
+      amounts (BRL).
+    columns:
+      - name: purchases_sk
+        description: Surrogate key of the purchases fact.
+        data_tests:
+          - not_null
+          - unique
+      - name: goods_receipt_item_id
+        description: Natural key — goods receipt item identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: supplier_sk
+        description: Foreign key to the supplier dimension.
+        data_tests:
+          - not_null
+      - name: location_sk
+        description: Foreign key to the location dimension.
+        data_tests:
+          - not_null
+      - name: product_variant_id
+        description: Foreign key to the product dimension.
+        data_tests:
+          - not_null
+      - name: quantity_ordered
+        description: Ordered quantity (additive measure).
+        data_tests:
+          - not_null
+      - name: quantity_received
+        description: Received quantity (additive measure).
+        data_tests:
+          - not_null
+      - name: line_total_brl
+        description: Line total converted to BRL (additive measure).
+      - name: delay_days
+        description: Days between expected and actual delivery.
+      - name: lead_time_days
+        description: Days between purchase order placement and receipt.
