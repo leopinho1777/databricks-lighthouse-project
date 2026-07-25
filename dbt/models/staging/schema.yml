@@ -723,3 +723,22 @@ models:
         description: Ingestion batch identifier.
         data_tests:
           - not_null
+  - name: stg_exchange_rates
+    description: Daily exchange rates standardized from bronze with forward fill for weekends and holidays.
+    columns:
+      - name: exchange_date
+        description: Date of the exchange rate.
+        data_tests:
+          - not_null
+      - name: currency_from
+        description: Origin currency code (e.g., USD).
+        data_tests:
+          - not_null
+      - name: currency_to
+        description: Target currency code (e.g., BRL).
+        data_tests:
+          - not_null
+      - name: exchange_rate
+        description: Conversion rate from origin to target currency.
+        data_tests:
+          - not_null    

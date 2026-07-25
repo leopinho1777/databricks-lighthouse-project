@@ -1,6 +1,5 @@
 sources:
   - name: bronze
-    database: lh_nautical
     tables:
       - name: _ingestion_audit
         columns:
@@ -665,3 +664,15 @@ sources:
             data_type: string
           - name: _batch_id
             data_type: string
+      - name: raw_exchange_rates
+        columns:
+          - name: exchange_date
+            data_type: date
+          - name: currency_from
+            data_type: string
+          - name: currency_to
+            data_type: string
+          - name: exchange_rate
+            data_type: double
+          - name: _ingested_at
+            data_type: timestamp

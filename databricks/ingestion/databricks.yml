@@ -25,8 +25,8 @@ variables:
   schema:
     description: The schema to use
   dev_schema:
-    description: "Schema usado no ambiente de dev, único por usuário"
-    default: "${workspace.current_user.short_name}_analytics_raw"
+    description: "Schema usado no ambiente de dev"
+    default: "bronze"
 
 targets:
   dev:
