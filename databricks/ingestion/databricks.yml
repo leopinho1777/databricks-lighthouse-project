@@ -34,7 +34,8 @@ targets:
     default: true
     variables:
       catalog: develop
-      schema: ${var.dev_schema}
+      schema: bronze
+
 
   prod:
     mode: production
@@ -43,7 +44,7 @@ targets:
       root_path: /Workspace/Users/teslavinci2026@gmail.com/.bundle/${bundle.name}/${bundle.target}
     variables:
       catalog: lh_nautical
-      schema: prod
+      schema: bronze
     permissions:
       - user_name: teslavinci2026@gmail.com
         level: CAN_MANAGE
