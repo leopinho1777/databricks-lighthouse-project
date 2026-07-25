@@ -1,0 +1,41 @@
+version: 2
+
+models:
+  - name: int_purchases_enriched
+    description: >
+      One record per goods receipt item, enriched with purchase order,
+      supplier (point-in-time SCD2), location (point-in-time SCD2),
+      currency-converted amounts (BRL), and delay/lead time measures.
+      Feeds fct_purchases.
+    columns:
+      - name: goods_receipt_item_id
+        description: Goods receipt item key (grain of the table).
+        data_tests:
+          - not_null
+          - unique
+      - name: purchase_order_id
+        description: Related purchase order key.
+        data_tests:
+          - not_null
+      - name: supplier_sk
+        description: Surrogate key of the supplier version valid at placed_at.
+      - name: location_sk
+        description: Surrogate key of the location version valid at placed_at.
+      - name: product_variant_id
+        description: Product variant received in this line.
+        data_tests:
+          - not_null
+      - name: quantity_ordered
+        description: Quantity ordered for the line.
+        data_tests:
+          - not_null
+      - name: quantity_received
+        description: Quantity actually received.
+        data_tests:
+          - not_null
+      - name: line_total_brl
+        description: Line total converted to BRL.
+      - name: delay_days
+        description: Days between expected and actual delivery.
+      - name: lead_time_days
+        description: Days between purchase order placement and receipt.
