@@ -42,6 +42,12 @@ models:
         description: Foreign key to the product dimension (variant grain).
         data_tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_products')
+                field: product_variant_id
+              config:
+                severity: warn
       - name: channel
         description: Sales channel (degenerate dimension) — e.g., ecommerce, physical store.
         data_tests:
