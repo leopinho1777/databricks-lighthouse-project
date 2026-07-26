@@ -84,11 +84,11 @@ Sufixo e Padronização: Cada camada aplica automaticamente seu sufixo correspon
 
 ## Estrutura dos Modelos
 
-Atualmente, o projeto conta com 36 modelos e 286 testes compilados e validados, divididos entre as três camadas principais:
+Atualmente, o projeto conta com modelos e testes compilados e validados, divididos entre as três camadas principais:
 models/
-├── staging/          # (22 modelos) Limpeza, padronização e tipagem dos dados brutos
-├── intermediate/     # (4 modelos) Regras de negócio, enriquecimento e relacionamentos complexos
-└── marts/            # (10 modelos) Modelagem dimensional pronta para análise (Star Schema)
+├── staging/          # Limpeza, padronização e tipagem dos dados brutos
+├── intermediate/     # Regras de negócio, enriquecimento e relacionamentos complexos
+└── marts/            # Modelagem dimensional pronta para análise (Star Schema)
 
 ## 1. Camada Staging
 
@@ -125,6 +125,12 @@ fct_sales: Fato de vendas com granularidade de itens de pedidos, valores, descon
 fct_daily_stock_levels: Fato de acompanhamento diário dos níveis e movimentações de estoque.
 fct_purchases: Fato de compras e suprimentos consolidando métricas de pedidos de compras e recebimentos de fornecedores.
 fct_returns: Fato de devoluções, consolidando métricas sobre itens devolvidos, motivos e impacto financeiro/operacional das devoluções.
+
+## Como gerar a documentação do dbt
+
+Utilizando o comando dbt docs generate o dbt gera documentação completa de todo o processo de transformação.
+Em seguida, utilizando o comando dbt docs serve você será redirecionado para um site local em html com uma interface interativa contendo todas as informações do projeto.
+
 ---
 
 ## Agendamento
