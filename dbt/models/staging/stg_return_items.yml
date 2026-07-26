@@ -1,0 +1,41 @@
+version: 2
+
+models:
+  - name: stg_return_items
+    description: Return items line-level details standardized from bronze.
+    columns:
+      - name: return_item_id
+        description: Return item primary key.
+        data_tests:
+          - not_null
+          - unique
+      - name: return_id
+        description: Return parent identifier.
+        data_tests:
+          - not_null
+      - name: order_item_id
+        description: Order item identifier associated with the return.
+        data_tests:
+          - not_null
+      - name: quantity
+        description: Quantity of items returned.
+        data_tests:
+          - not_null
+      - name: exchange_variant_id
+        description: Product variant requested as exchange, if applicable.
+      - name: action
+        description: Action taken for the return item (refund, exchange, store credit).
+      - name: unit_refund_amount
+        description: Refund amount per unit for the return item.
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null

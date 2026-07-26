@@ -33,6 +33,28 @@ models:
         description: Quantity actually received.
         data_tests:
           - not_null
+      - name: goods_receipt_id
+        description: Parent goods receipt identifier.
+      - name: purchase_order_item_id
+        description: Related purchase order item key.
+      - name: po_number
+        description: Human-readable purchase order reference number.
+      - name: purchase_order_status
+        description: Status of the purchase order at time of enrichment.
+      - name: currency
+        description: Currency code of the original purchase order.
+      - name: placed_at
+        description: Timestamp when the purchase order was placed.
+      - name: expected_delivery_at
+        description: Expected delivery date from the purchase order.
+      - name: received_by_employee_id
+        description: Employee who received the goods.
+      - name: received_at
+        description: Timestamp when the goods were received.
+      - name: unit_cost
+        description: Unit cost in the original purchase order currency.
+      - name: line_total
+        description: Line total in the original purchase order currency.
       - name: line_total_brl
         description: Line total converted to BRL.
       - name: delay_days

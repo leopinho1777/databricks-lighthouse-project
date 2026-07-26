@@ -1,0 +1,49 @@
+version: 2
+
+models:
+  - name: stg_payments
+    description: Payment transactions standardized from bronze.
+    columns:
+      - name: payment_id
+        description: Payment key.
+        data_tests:
+          - not_null
+          - unique
+      - name: order_id
+        description: Related order key.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_orders')
+                field: order_id
+              config:
+                severity: warn
+      - name: amount
+        description: Payment amount.
+        data_tests:
+          - not_null
+      - name: payment_method
+        description: Payment method used for the transaction.
+      - name: payment_status
+        description: Current status of the payment.
+      - name: installments
+        description: Number of payment installments.
+      - name: paid_at
+        description: Timestamp when the payment was confirmed.
+      - name: created_at
+        description: Record creation timestamp.
+      - name: updated_at
+        description: Record last update timestamp.
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null

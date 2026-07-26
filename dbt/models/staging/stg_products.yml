@@ -1,0 +1,47 @@
+version: 2
+
+models:
+  - name: stg_products
+    description: Products catalog standardized from bronze layer.
+    columns:
+      - name: product_id
+        description: Product primary key.
+        data_tests:
+          - not_null
+          - unique
+      - name: category_id
+        description: Foreign key to product category.
+        data_tests:
+          - not_null
+      - name: brand_id
+        description: Foreign key to product brand.
+        data_tests:
+          - not_null
+      - name: product_name
+        description: Official name of the product.
+        data_tests:
+          - not_null
+      - name: description
+        description: Detailed product description.
+      - name: ncm_code
+        description: Brazilian fiscal product classification code (NCM).
+      - name: unit_of_measure
+        description: Unit of measure used for the product (e.g., un, kg).
+      - name: is_active
+        description: Boolean flag indicating if the product is active in catalog.
+      - name: created_at
+        description: Record creation timestamp.
+      - name: updated_at
+        description: Record last update timestamp.
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null

@@ -1,0 +1,61 @@
+version: 2
+
+models:
+  - name: stg_purchase_orders
+    description: Purchase order headers standardized from bronze.
+    columns:
+      - name: purchase_order_id
+        description: Purchase order key.
+        data_tests:
+          - not_null
+          - unique
+      - name: supplier_id
+        description: Related supplier key.
+        data_tests:
+          - not_null
+      - name: buyer_id
+        description: Related buyer key.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_employees')
+                field: employee_id
+              config:
+                severity: warn
+      - name: destination_location_id
+        description: Destination location key.
+        data_tests:
+          - not_null
+      - name: po_number
+        description: Human-readable purchase order reference number.
+      - name: purchase_order_status
+        description: Current status of the purchase order.
+      - name: currency
+        description: Currency code used for the purchase order.
+      - name: placed_at
+        description: Purchase order placement timestamp.
+      - name: expected_delivery_at
+        description: Expected delivery date for the purchase order.
+      - name: subtotal
+        description: Purchase order subtotal before taxes.
+      - name: total
+        description: Purchase order total amount.
+        data_tests:
+          - not_null
+      - name: created_at
+        description: Record creation timestamp.
+      - name: updated_at
+        description: Record last update timestamp.
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null

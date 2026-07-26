@@ -1,0 +1,47 @@
+version: 2
+
+models:
+  - name: stg_suppliers
+    description: Suppliers and vendor information standardized from bronze.
+    columns:
+      - name: supplier_id
+        description: Supplier primary key.
+        data_tests:
+          - not_null
+          - unique
+      - name: legal_name
+        description: Official legal name of the supplier.
+        data_tests:
+          - not_null
+      - name: trade_name
+        description: Trade name or alias of the supplier.
+      - name: tax_id
+        description: Tax identification number (e.g., CNPJ, EIN, VAT).
+      - name: tax_id_type
+        description: Type of tax identifier (e.g., CNPJ, EIN).
+      - name: country
+        description: Country of the supplier.
+      - name: email
+        description: Primary contact email of the supplier.
+      - name: phone
+        description: Primary contact phone number of the supplier.
+      - name: contact_name
+        description: Primary contact person at the supplier.
+      - name: is_active
+        description: Boolean flag indicating if the supplier is active.
+      - name: created_at
+        description: Record creation timestamp.
+      - name: updated_at
+        description: Record last update timestamp.
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null

@@ -1,0 +1,47 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: Customer master data standardized from bronze.
+    columns:
+      - name: customer_id
+        description: Customer key.
+        data_tests:
+          - not_null
+          - unique
+      - name: person_type
+        description: Customer type indicator (individual or legal entity).
+      - name: legal_name
+        description: Legal name of the customer.
+      - name: trade_name
+        description: Trade name or alias of the customer.
+      - name: tax_id
+        description: Customer tax identifier.
+        data_tests:
+          - not_null
+      - name: state_registration
+        description: State tax registration number.
+      - name: email
+        description: Primary email address of the customer.
+      - name: phone
+        description: Primary phone number of the customer.
+      - name: is_active
+        description: Boolean flag indicating if the customer account is active.
+      - name: created_at
+        description: Record creation timestamp.
+        data_tests:
+          - not_null
+      - name: updated_at
+        description: Record last update timestamp.
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null
