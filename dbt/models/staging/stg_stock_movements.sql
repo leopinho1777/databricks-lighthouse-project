@@ -49,6 +49,7 @@ renamed as (
             when lower(trim(movement_type)) in ('sale_out', 'return_out') then -abs(cast(quantity as integer))
             else abs(cast(quantity as integer))
         end as quantity,
+        cast(quantity as integer) = 0 as is_zero_quantity_movement,
 
         -- Timestamps (Essencial para análise histórica de estoque)
         cast(occurred_at as timestamp) as occurred_at,

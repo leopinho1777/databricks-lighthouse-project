@@ -53,6 +53,14 @@ models:
         description: Flag indicating the source quantity was negative.
         data_tests:
           - not_null
+      - name: zero_quantity_movement_count
+        description: Number of staged stock movements on the same day and product-location pair with zero quantity.
+        data_tests:
+          - not_null
+      - name: has_zero_quantity_movement_review
+        description: Flag indicating the daily stock fact row is associated with at least one zero-quantity stock movement that should be reviewed.
+        data_tests:
+          - not_null
       - name: snapshot_valid_from
         description: Snapshot validity window start timestamp.
         data_tests:

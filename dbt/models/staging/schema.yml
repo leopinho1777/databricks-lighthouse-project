@@ -366,7 +366,7 @@ models:
     data_tests:
       - dbt_utils.expression_is_true:
           arguments:
-            expression: "(movement_type in ('purchase_in', 'return_in') and quantity > 0) or (movement_type in ('sale_out', 'return_out') and quantity < 0)"
+            expression: "(movement_type in ('purchase_in', 'return_in') and quantity > 0 and is_zero_quantity_movement = false) or (movement_type in ('sale_out', 'return_out') and quantity < 0 and is_zero_quantity_movement = false) or (quantity = 0 and is_zero_quantity_movement = true)"
           config:
             severity: warn
     columns:
@@ -389,6 +389,10 @@ models:
           - not_null
       - name: quantity
         description: Quantity moved.
+        data_tests:
+          - not_null
+      - name: is_zero_quantity_movement
+        description: Flag indicating whether the raw movement quantity was zero.
         data_tests:
           - not_null
       - name: movement_type
