@@ -27,6 +27,7 @@ variables:
     description: The schema to use
   dev_schema:
     description: "Per-user dev schema (ex: pinho_analytics)"
+    default: "develop"
   warehouse_id:
     description: "SQL Warehouse ID"
     lookup:
