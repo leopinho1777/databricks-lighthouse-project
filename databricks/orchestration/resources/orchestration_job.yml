@@ -6,7 +6,12 @@ resources:
       tasks:
         - task_key: ingestion
           run_job_task:
-            job_id: "903563107757419"
+            job_id: "839993403908453"
+        - task_key: transformation
+          depends_on:
+            - task_key: ingestion
+          run_job_task:
+            job_id: "839993403908453"
 
       schedule:
         quartz_cron_expression: "0 0 1 * * ?"
