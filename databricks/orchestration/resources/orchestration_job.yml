@@ -8,6 +8,7 @@ resources:
           run_job_task:
             job_id: "839993403908453"
         - task_key: transformation
+          max_retries: 2
           depends_on:
             - task_key: ingestion
           run_job_task:

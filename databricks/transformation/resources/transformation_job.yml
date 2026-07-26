@@ -3,8 +3,13 @@ resources:
     transformation_job:
       name: transformation-job
 
+      notification_settings:
+        email_on_failure:
+          - teslavinci2026@gmail.com
+
       tasks:
         - task_key: dbt_build
+          max_retries: 2
           environment_key: default
 
           dbt_task:
