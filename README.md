@@ -84,11 +84,11 @@ Sufixo e Padronização: Cada camada aplica automaticamente seu sufixo correspon
 
 ## Estrutura dos Modelos
 
-Atualmente, o projeto conta com 32 modelos compilados e testados, divididos entre as três camadas principais:
+Atualmente, o projeto conta com 36 modelos e 286 testes compilados e validados, divididos entre as três camadas principais:
 models/
 ├── staging/          # (22 modelos) Limpeza, padronização e tipagem dos dados brutos
 ├── intermediate/     # (4 modelos) Regras de negócio, enriquecimento e relacionamentos complexos
-└── marts/            # (9 modelos) Modelagem dimensional pronta para análise (Star Schema)
+└── marts/            # (10 modelos) Modelagem dimensional pronta para análise (Star Schema)
 
 ## 1. Camada Staging
 
@@ -124,7 +124,7 @@ dim_suppliers: Cadastro e atributos dos fornecedores.
 fct_sales: Fato de vendas com granularidade de itens de pedidos, valores, descontos e métricas financeiras.
 fct_daily_stock_levels: Fato de acompanhamento diário dos níveis e movimentações de estoque.
 fct_purchases: Fato de compras e suprimentos consolidando métricas de pedidos de compras e recebimentos de fornecedores.
-
+fct_returns: Fato de devoluções, consolidando métricas sobre itens devolvidos, motivos e impacto financeiro/operacional das devoluções.
 ---
 
 ## Agendamento
