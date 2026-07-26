@@ -4,7 +4,10 @@
         unique_key=['stock_level_day', 'product_variant_id', 'location_id'],
         incremental_strategy='merge',
         file_format='delta',
-        on_schema_change='sync_all_columns'
+        on_schema_change='sync_all_columns',
+        post_hook=[
+            "update {{ this }} set zero_quantity_movement_count = coalesce(zero_quantity_movement_count, 0), has_zero_quantity_movement_review = coalesce(has_zero_quantity_movement_review, false) where zero_quantity_movement_count is null or has_zero_quantity_movement_review is null"
+        ]
     )
 }}
 
@@ -32,6 +35,24 @@ with snapshot_history as (
 
 ),
 
+zero_quantity_movement_daily as (
+
+        select
+                cast(occurred_at as date) as stock_level_day,
+                product_variant_id,
+                location_id,
+                count(*) as zero_quantity_movement_count
+        from {{ ref('stg_stock_movements') }}
+        where is_zero_quantity_movement
+
+        {% if is_incremental() %}
+            and cast(occurred_at as date) >= date_sub(current_date(), 7)
+        {% endif %}
+
+        group by 1, 2, 3
+
+),
+
 latest_change_per_day as (
 
     select
@@ -47,21 +68,27 @@ latest_change_per_day as (
 final as (
 
     select
-        stock_level_day,
-        product_variant_id,
-        location_id,
-        stock_level_id,
-        raw_quantity_on_hand,
-        physical_quantity_on_hand,
-        raw_quantity_on_hand < 0 as is_negative_raw_quantity,
-        source_updated_at,
-        snapshot_valid_from,
-        snapshot_valid_to,
-        _ingested_at,
-        _source_origin,
-        _batch_id
-    from latest_change_per_day
-    where row_num = 1
+        l.stock_level_day,
+        l.product_variant_id,
+        l.location_id,
+        l.stock_level_id,
+        l.raw_quantity_on_hand,
+        l.physical_quantity_on_hand,
+        l.raw_quantity_on_hand < 0 as is_negative_raw_quantity,
+        coalesce(z.zero_quantity_movement_count, 0) as zero_quantity_movement_count,
+        coalesce(z.zero_quantity_movement_count, 0) > 0 as has_zero_quantity_movement_review,
+        l.source_updated_at,
+        l.snapshot_valid_from,
+        l.snapshot_valid_to,
+        l._ingested_at,
+        l._source_origin,
+        l._batch_id
+    from latest_change_per_day as l
+    left join zero_quantity_movement_daily as z
+      on l.stock_level_day = z.stock_level_day
+     and l.product_variant_id = z.product_variant_id
+     and l.location_id = z.location_id
+    where l.row_num = 1
 
 )
 
