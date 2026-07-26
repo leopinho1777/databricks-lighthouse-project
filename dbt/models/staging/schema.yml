@@ -363,6 +363,12 @@ models:
 
   - name: stg_stock_movements
     description: Stock movement transactions standardized from bronze.
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "(movement_type in ('purchase_in', 'return_in') and quantity > 0) or (movement_type in ('sale_out', 'return_out') and quantity < 0)"
+          config:
+            severity: warn
     columns:
       - name: stock_movement_id
         description: Stock movement key.
@@ -385,6 +391,13 @@ models:
         description: Quantity moved.
         data_tests:
           - not_null
+      - name: movement_type
+        description: Normalized stock movement type used to infer quantity sign.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['purchase_in', 'sale_out', 'return_in', 'return_out']
       - name: _ingested_at
         description: Ingestion timestamp.
         data_tests:
