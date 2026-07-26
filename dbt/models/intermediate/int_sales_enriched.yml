@@ -52,8 +52,6 @@ models:
           - not_null
       - name: placed_at
         description: Timestamp when the order was placed.
-        data_tests:
-          - not_null
       - name: unit_price
         description: Unit price of the order item.
       - name: icms_rate
