@@ -1,0 +1,66 @@
+version: 2
+
+models:
+  - name: stg_orders
+    description: Sales order headers standardized from bronze.
+    columns:
+      - name: order_id
+        description: Order key.
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: Related customer key.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_customers')
+                field: customer_id
+              config:
+                severity: warn
+      - name: salesperson_id
+        description: Related salesperson key.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_employees')
+                field: employee_id
+              config:
+                severity: warn
+      - name: location_id
+        description: Related location key.
+        data_tests:
+          - not_null
+      - name: order_number
+        description: Human-readable order reference number.
+      - name: channel
+        description: Sales channel through which the order was placed.
+      - name: status
+        description: Current status of the order.
+      - name: placed_at
+        description: Order placement timestamp.
+      - name: subtotal
+        description: Order subtotal before discounts.
+      - name: discount_amount
+        description: Total discount applied to the order.
+      - name: total
+        description: Order total amount.
+        data_tests:
+          - not_null
+      - name: created_at
+        description: Record creation timestamp.
+      - name: updated_at
+        description: Record last update timestamp.
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null

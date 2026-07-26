@@ -1,0 +1,55 @@
+version: 2
+
+models:
+  - name: stg_fiscal_invoices
+    description: Fiscal invoice records standardized from bronze.
+    columns:
+      - name: fiscal_invoice_id
+        description: Fiscal invoice key.
+        data_tests:
+          - not_null
+          - unique
+      - name: order_id
+        description: Related order key.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_orders')
+                field: order_id
+              config:
+                severity: warn
+      - name: nfe_number
+        description: NF-e document number.
+      - name: nfe_access_key
+        description: NF-e unique access key (44-digit SEFAZ identifier).
+      - name: series
+        description: NF-e document series number.
+      - name: nfe_status
+        description: Current status of the NF-e document.
+      - name: total_amount
+        description: Total fiscal invoice amount.
+        data_tests:
+          - not_null
+      - name: issued_at
+        description: Invoice issue timestamp.
+        data_tests:
+          - not_null
+      - name: xml_storage_uri
+        description: Storage URI for the NF-e XML file.
+      - name: created_at
+        description: Record creation timestamp.
+      - name: updated_at
+        description: Record last update timestamp.
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null
