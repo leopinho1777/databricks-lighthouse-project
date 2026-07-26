@@ -12,7 +12,7 @@ resources:
           depends_on:
             - task_key: ingestion
           run_job_task:
-            job_id: "661266408946924"
+            job_id: "14366332811615"
 
       schedule:
         quartz_cron_expression: "0 0 1 * * ?"
