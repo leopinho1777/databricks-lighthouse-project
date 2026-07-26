@@ -1,0 +1,47 @@
+version: 2
+
+models:
+  - name: stg_employees
+    description: Employee master data standardized from bronze.
+    columns:
+      - name: employee_id
+        description: Employee key.
+        data_tests:
+          - not_null
+          - unique
+      - name: full_name
+        description: Full name of the employee.
+      - name: cpf
+        description: Brazilian individual tax identifier (CPF) of the employee.
+      - name: email
+        description: Work email address of the employee.
+      - name: employee_role
+        description: Role or job title of the employee.
+      - name: location_id
+        description: Primary location for the employee.
+        data_tests:
+          - not_null
+      - name: hire_date
+        description: Hiring date.
+        data_tests:
+          - not_null
+      - name: is_active_employee
+        description: Boolean flag indicating if the employee is currently active.
+      - name: termination_date
+        description: Date of employment termination, null if still active.
+      - name: created_at
+        description: Record creation timestamp.
+      - name: updated_at
+        description: Record last update timestamp.
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null

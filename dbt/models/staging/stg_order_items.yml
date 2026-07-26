@@ -1,0 +1,51 @@
+version: 2
+
+models:
+  - name: stg_order_items
+    description: Order line items standardized from bronze.
+    columns:
+      - name: order_item_id
+        description: Order item key.
+        data_tests:
+          - not_null
+          - unique
+      - name: order_id
+        description: Related order key.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_orders')
+                field: order_id
+              config:
+                severity: warn
+      - name: product_variant_id
+        description: Related product variant key.
+        data_tests:
+          - not_null
+      - name: quantity
+        description: Ordered quantity.
+        data_tests:
+          - not_null
+      - name: unit_price
+        description: Unit selling price at time of order.
+      - name: line_total
+        description: Line total amount.
+        data_tests:
+          - not_null
+      - name: icms_rate
+        description: ICMS tax rate applied to the line item.
+      - name: ipi_rate
+        description: IPI tax rate applied to the line item.
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null

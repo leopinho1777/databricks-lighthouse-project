@@ -1,0 +1,41 @@
+version: 2
+
+models:
+  - name: stg_purchase_order_items
+    description: Purchase order items line-level details standardized from bronze.
+    columns:
+      - name: purchase_order_item_id
+        description: Purchase order item primary key.
+        data_tests:
+          - not_null
+          - unique
+      - name: purchase_order_id
+        description: Purchase order parent identifier.
+        data_tests:
+          - not_null
+      - name: product_variant_id
+        description: Product variant identifier.
+        data_tests:
+          - not_null
+      - name: quantity_ordered
+        description: Quantity of product ordered.
+        data_tests:
+          - not_null
+      - name: unit_cost
+        description: Unit cost of the product.
+        data_tests:
+          - not_null
+      - name: line_total
+        description: Line total amount for the purchase order item.
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null

@@ -1,0 +1,30 @@
+resources:
+  jobs:
+    transformation_job:
+      name: transformation-job
+
+      notification_settings:
+        email_on_failure:
+          - teslavinci2026@gmail.com
+
+      tasks:
+        - task_key: dbt_build
+          max_retries: 2
+          environment_key: default
+
+          dbt_task:
+            project_directory: ../../../dbt
+            warehouse_id: ${var.warehouse_id}
+            catalog: ${var.catalog}
+            schema: ${var.schema}
+
+            commands:
+              - dbt deps
+              - dbt build
+
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "2"
+            dependencies:
+              - dbt-databricks>=1.8.0,<2.0.0

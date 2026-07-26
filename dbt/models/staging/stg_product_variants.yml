@@ -1,0 +1,54 @@
+version: 2
+
+models:
+  - name: stg_product_variants
+    description: Product variants (SKUs, pricing, weight and tax rates) standardized from bronze.
+    columns:
+      - name: product_variant_id
+        description: Variant primary key.
+        data_tests:
+          - not_null
+          - unique
+      - name: product_id
+        description: Foreign key to parent product.
+        data_tests:
+          - not_null
+      - name: sku
+        description: Stock Keeping Unit identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: barcode_ean
+        description: EAN barcode of the product variant.
+      - name: sale_price
+        description: Current selling price.
+        data_tests:
+          - not_null
+      - name: cost_price
+        description: Unit cost price.
+        data_tests:
+          - not_null
+      - name: icms_rate
+        description: ICMS tax rate applicable to the variant.
+      - name: ipi_rate
+        description: IPI tax rate applicable to the variant.
+      - name: weight_kg
+        description: Weight of the product variant in kilograms.
+      - name: is_active
+        description: Boolean flag indicating if the SKU is active.
+      - name: created_at
+        description: Record creation timestamp.
+      - name: updated_at
+        description: Record last update timestamp.
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null

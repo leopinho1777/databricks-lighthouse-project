@@ -72,6 +72,67 @@ Credenciais lidas via `dbutils.secrets.get()` (scope `sqlserver` no Databricks)
 
 ---
 
+## Camada de Transformação de Dados (dbt)
+
+A fase de transformação de dados é orquestrada via dbt (data build tool) sobre o Databricks, seguindo os princípios de engenharia de analytics modular e separação de responsabilidades em camadas. 
+
+## Arquitetura de Schemas e Isolamento de Ambiência
+
+Para garantir a qualidade dos testes e impedir que o trabalho individual de um desenvolvedor sobreponha o de outro, configuramos uma resolução dinâmica de schemas por meio de macro customizada (generate_schema_name):
+Ambiente de Desenvolvimento (Dev): Todas as camadas de cada desenvolvedor são isoladas em schemas individuais com o prefixo da sua credencial (<usuario>_<camada>), por exemplo: usuario_analytics_staging, usuario_analytics_intermediate e usuario_analytics_marts. 
+Sufixo e Padronização: Cada camada aplica automaticamente seu sufixo correspondente no Databricks.
+
+## Estrutura dos Modelos
+
+Atualmente, o projeto conta com modelos e testes compilados e validados, divididos entre as três camadas principais:
+models/
+├── staging/          # Limpeza, padronização e tipagem dos dados brutos
+├── intermediate/     # Regras de negócio, enriquecimento e relacionamentos complexos
+└── marts/            # Modelagem dimensional pronta para análise (Star Schema)
+
+## 1. Camada Staging
+
+Responsável pela limpeza técnica, padronização de nomenclatura, remoção de duplicatas e tipagem correta dos dados vindos da camada Bronze.
+Clientes e Localidades: stg_addresses, stg_customers, stg_employees, stg_locations
+Catálogo e Produtos: stg_brands, stg_categories, stg_products, stg_product_variants
+Vendas, Financeiro e Operações: stg_orders, stg_order_items, stg_payments, stg_fiscal_invoices, stg_returns, stg_return_items, stg_exchange_rates
+Suprimentos e Estoque: stg_suppliers, stg_purchase_orders, stg_purchase_order_items, stg_goods_receipts, stg_goods_receipt_items, stg_stock_levels, stg_stock_movements
+
+## 2. Camada Intermediate
+
+Responsável por centralizar regras de negócio intermediárias, cruzamento de entidades e cruzamento de métricas operacionais.
+int_products_categorized: Consolida produtos, variantes, marcas e hierarquia de categorias.
+int_sales_enriched: Enriquece transações de vendas combinando pedidos, itens, pagamentos e notas fiscais.
+int_supplier_delivery_delay: Calcula métricas e indicadores de atraso na entrega de pedidos de compras de fornecedores.
+int_purchases_enriched: Consolida e enriquece os pedidos de compras integrando dados de itens e recebimentos.
+
+## 3. Camada Marts
+
+Contém os modelos dimensionais finais (Tabelas Fato e Dimensão) modelados no formato Star Schema, otimizados para consultas analíticas e ferramentas de BI. 
+
+## Tabelas Dimensão 
+
+dim_calendary: Dimensão temporal para análises de tendências e sazonalidade.
+dim_customers: Visão consolidada dos clientes e seus endereços.
+dim_employees: Cadastro e perfil de funcionários.
+dim_locations: Localizações físicas e filiais.
+dim_products: Dimensão completa do catálogo de produtos, atributos e categorias.
+dim_suppliers: Cadastro e atributos dos fornecedores.
+
+## Tabelas Fato
+
+fct_sales: Fato de vendas com granularidade de itens de pedidos, valores, descontos e métricas financeiras.
+fct_daily_stock_levels: Fato de acompanhamento diário dos níveis e movimentações de estoque.
+fct_purchases: Fato de compras e suprimentos consolidando métricas de pedidos de compras e recebimentos de fornecedores.
+fct_returns: Fato de devoluções, consolidando métricas sobre itens devolvidos, motivos e impacto financeiro/operacional das devoluções.
+
+## Como gerar a documentação do dbt
+
+Utilizando o comando dbt docs generate o dbt gera documentação completa de todo o processo de transformação.
+Em seguida, utilizando o comando dbt docs serve você será redirecionado para um site local em html com uma interface interativa contendo todas as informações do projeto.
+
+---
+
 ## Agendamento
 
 `resources/ingestion.job.yml` agenda execução diária às **01:00 (America/Sao_Paulo)** via cron `0 0 1 * * ?`, com status `UNPAUSED`.

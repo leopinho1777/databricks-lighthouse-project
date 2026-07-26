@@ -1,0 +1,55 @@
+# This is a Databricks asset bundle definition for transformation.
+# See https://docs.databricks.com/dev-tools/bundles/index.html for documentation.
+
+bundle:
+  name: transformation
+  uuid: 2ccd1c51-d6bf-483e-addc-cdd477bf5a82
+
+include:
+  - resources/transformation_job.yml
+
+artifacts:
+  python_artifact:
+    type: whl
+    path: ../..
+    build: uv build --wheel
+
+sync:
+  paths:
+    - ../../dbt
+    - .
+
+# Variable declarations. These variables are assigned in the dev/prod targets below.
+variables:
+  catalog:
+    description: The catalog to use
+  schema:
+    description: The schema to use
+  dev_schema:
+    description: "Per-user dev schema (ex: pinho_analytics)"
+    default: "develop"
+  warehouse_id:
+    description: "SQL Warehouse ID"
+    lookup:
+      warehouse: "Serverless Starter Warehouse"
+
+targets:
+  dev:
+    mode: development
+    default: true
+    variables:
+      catalog: develop
+      schema: ${workspace.current_user.short_name}_analytics
+      dev_schema: ${workspace.current_user.short_name}_analytics
+
+  prod:
+    mode: production
+    workspace:
+      host: https://dbc-fc67e327-d40e.cloud.databricks.com/
+      root_path: /Workspace/Users/teslavinci2026@gmail.com/.bundle/${bundle.name}/${bundle.target}
+    variables:
+      catalog: lh_nautical
+      schema: prod
+    permissions:
+      - user_name: teslavinci2026@gmail.com
+        level: CAN_MANAGE

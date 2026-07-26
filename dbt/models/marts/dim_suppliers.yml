@@ -1,0 +1,44 @@
+version: 2
+
+models:
+  - name: dim_suppliers
+    description: >
+      Supplier dimension. Contains historical records for each supplier (SCD Type 2),
+      used by fct_purchases for supplier reliability analysis.
+    columns:
+      - name: supplier_sk
+        description: Version-aware surrogate key generated from supplier_id and updated_at.
+        data_tests:
+          - not_null
+          - unique
+
+      - name: supplier_id
+        description: Supplier natural key.
+        data_tests:
+          - not_null
+
+      - name: supplier_legal_name
+        description: Supplier's registered legal name.
+
+      - name: supplier_trade_name
+        description: Supplier's commercial or trade name.
+
+      - name: supplier_country_name
+        description: Supplier's country of origin.
+
+      - name: tax_id_type
+        description: Type of tax identification code (e.g., CNPJ, EIN, VAT).
+
+      - name: is_active
+        description: Flag indicating if the supplier is active in the source system.
+
+      - name: valid_from
+        description: Timestamp when this version of the supplier record became active.
+
+      - name: valid_to
+        description: Timestamp when this version expired (null if current).
+
+      - name: is_current
+        description: Boolean flag indicating if this is the active/latest version of the supplier record.
+        data_tests:
+          - not_null

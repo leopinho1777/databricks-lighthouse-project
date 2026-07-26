@@ -1,0 +1,60 @@
+version: 2
+
+models:
+  - name: int_sales_enriched
+    description: >
+      One record per order item, enriched with its order header context
+      (customer, salesperson, location, channel, status). Reusable sales
+      base grain that feeds the sales marts.
+    columns:
+      - name: order_item_id
+        description: Order item key (grain of the table).
+        data_tests:
+          - not_null
+          - unique
+      - name: order_id
+        description: Related order key.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_orders')
+                field: order_id
+              config:
+                severity: warn
+      - name: customer_id
+        description: Customer who placed the order.
+        data_tests:
+          - not_null
+      - name: product_variant_id
+        description: Product variant sold in this line.
+        data_tests:
+          - not_null
+      - name: order_status
+        description: Status of the parent order.
+      - name: quantity
+        description: Ordered quantity for the line.
+        data_tests:
+          - not_null
+      - name: line_total
+        description: Total amount for the line.
+        data_tests:
+          - not_null
+      - name: salesperson_id
+        description: Salesperson (employee) who placed the order. Nullable — ecommerce orders may have no salesperson.
+      - name: location_id
+        description: Location where the order was placed.
+        data_tests:
+          - not_null
+      - name: channel
+        description: Sales channel of the order (e.g., ecommerce, physical store).
+        data_tests:
+          - not_null
+      - name: placed_at
+        description: Timestamp when the order was placed.
+      - name: unit_price
+        description: Unit price of the order item.
+      - name: icms_rate
+        description: ICMS tax rate applied to the item.
+      - name: ipi_rate
+        description: IPI tax rate applied to the item.

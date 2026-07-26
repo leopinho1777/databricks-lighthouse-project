@@ -1,0 +1,37 @@
+version: 2
+
+models:
+  - name: int_products_categorized
+    description: >
+      One record per product, with the category corrected via the seed_category_fix
+      mapping (product type -> canonical category). Products whose type is not mapped
+      fall into 'Não Classificado' with is_categorized = false.
+    columns:
+      - name: product_id
+        description: Product key (grain of the table).
+        data_tests:
+          - not_null
+          - unique
+      - name: category_name
+        description: Corrected business category for the product.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Motores','Eletrônica Náutica','Cabos','Hélices','Velas','Pintura Marítima','Âncoras','Acessórios de Convés','Segurança','Coletes Salva-Vidas','Não Classificado']
+      - name: is_categorized
+        description: Flag — true if the category came from the curated map, false if bucketed.
+        data_tests:
+          - not_null
+      - name: product_name
+        description: Product display name (trimmed) carried from stg_products.
+        data_tests:
+          - not_null
+      - name: product_type
+        description: Product type extracted from the name (number suffix removed); used to look up the corrected category in the seed.
+        data_tests:
+          - not_null
+      - name: brand_id
+        description: Brand foreign key, passed through for the product dimension.
+        data_tests:
+          - not_null

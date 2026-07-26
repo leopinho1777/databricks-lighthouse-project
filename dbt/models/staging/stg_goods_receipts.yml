@@ -1,0 +1,51 @@
+version: 2
+
+models:
+  - name: stg_goods_receipts
+    description: Goods receipt transactions standardized from bronze.
+    columns:
+      - name: goods_receipt_id
+        description: Goods receipt key.
+        data_tests:
+          - not_null
+          - unique
+      - name: purchase_order_id
+        description: Related purchase order key.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_purchase_orders')
+                field: purchase_order_id
+              config:
+                severity: warn
+      - name: received_by_employee_id
+        description: Employee who received goods.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_employees')
+                field: employee_id
+              config:
+                severity: warn
+      - name: received_at
+        description: Receipt timestamp.
+        data_tests:
+          - not_null
+      - name: notes
+        description: Free-text notes recorded at time of receipt.
+      - name: created_at
+        description: Record creation timestamp.
+      - name: _ingested_at
+        description: Ingestion timestamp.
+        data_tests:
+          - not_null
+      - name: _source_origin
+        description: Source system identifier.
+        data_tests:
+          - not_null
+      - name: _batch_id
+        description: Ingestion batch identifier.
+        data_tests:
+          - not_null

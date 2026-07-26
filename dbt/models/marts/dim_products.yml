@@ -1,0 +1,63 @@
+version: 2
+
+models:
+  - name: dim_products
+    description: >
+      Product dimension at variant grain. One record per sellable variant (SKU),
+      with the corrected business category, brand, and reference measures
+      (sale price, cost price, tax rates). Conformed dimension used by fct_sales.
+    columns:
+      - name: product_sk
+        description: Surrogate key of the product dimension.
+        data_tests:
+          - not_null
+          - unique
+      - name: product_variant_id
+        description: Natural key — sellable variant (grain of the table).
+        data_tests:
+          - not_null
+          - unique
+      - name: category_name
+        description: Corrected business category (from int_products_categorized).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Motores','Eletrônica Náutica','Cabos','Hélices','Velas','Pintura Marítima','Âncoras','Acessórios de Convés','Segurança','Coletes Salva-Vidas','Não Classificado']
+      - name: is_categorized
+        description: Flag — true if category came from the curated map.
+        data_tests:
+          - not_null
+      - name: product_id
+        description: Parent product identifier of the variant.
+        data_tests:
+          - not_null
+      - name: sku
+        description: Stock keeping unit (standardized/uppercased) — unique per variant.
+        data_tests:
+          - not_null
+          - unique
+      - name: barcode_ean
+        description: EAN barcode of the variant.
+      - name: product_name
+        description: Product display name.
+        data_tests:
+          - not_null
+      - name: brand_name
+        description: Brand name (null if the product has no brand).
+      - name: brand_country
+        description: Brand country code (null if the product has no brand).
+      - name: sale_price
+        description: Reference sale price of the variant.
+        data_tests:
+          - not_null
+      - name: cost_price
+        description: Reference cost price of the variant, used for contribution margin.
+        data_tests:
+          - not_null
+      - name: icms_rate
+        description: ICMS tax rate of the variant.
+      - name: ipi_rate
+        description: IPI tax rate of the variant.
+      - name: weight_kg
+        description: Variant weight in kilograms.
