@@ -86,16 +86,16 @@ Sufixo e Padronização: Cada camada aplica automaticamente seu sufixo correspon
 
 Atualmente, o projeto conta com 32 modelos compilados e testados, divididos entre as três camadas principais:
 models/
-├── staging/          # (21 modelos) Limpeza, padronização e tipagem dos dados brutos
-├── intermediate/     # (3 modelos) Regras de negócio, enriquecimento e relacionamentos complexos
-└── marts/            # (8 modelos) Modelagem dimensional pronta para análise (Star Schema)
+├── staging/          # (22 modelos) Limpeza, padronização e tipagem dos dados brutos
+├── intermediate/     # (4 modelos) Regras de negócio, enriquecimento e relacionamentos complexos
+└── marts/            # (9 modelos) Modelagem dimensional pronta para análise (Star Schema)
 
 ## 1. Camada Staging
 
 Responsável pela limpeza técnica, padronização de nomenclatura, remoção de duplicatas e tipagem correta dos dados vindos da camada Bronze.
 Clientes e Localidades: stg_addresses, stg_customers, stg_employees, stg_locations
 Catálogo e Produtos: stg_brands, stg_categories, stg_products, stg_product_variants
-Vendas e Operações: stg_orders, stg_order_items, stg_payments, stg_fiscal_invoices, stg_returns, stg_return_items
+Vendas, Financeiro e Operações: stg_orders, stg_order_items, stg_payments, stg_fiscal_invoices, stg_returns, stg_return_items, stg_exchange_rates
 Suprimentos e Estoque: stg_suppliers, stg_purchase_orders, stg_purchase_order_items, stg_goods_receipts, stg_goods_receipt_items, stg_stock_levels, stg_stock_movements
 
 ## 2. Camada Intermediate
@@ -104,6 +104,7 @@ Responsável por centralizar regras de negócio intermediárias, cruzamento de e
 int_products_categorized: Consolida produtos, variantes, marcas e hierarquia de categorias.
 int_sales_enriched: Enriquece transações de vendas combinando pedidos, itens, pagamentos e notas fiscais.
 int_supplier_delivery_delay: Calcula métricas e indicadores de atraso na entrega de pedidos de compras de fornecedores.
+int_purchases_enriched: Consolida e enriquece os pedidos de compras integrando dados de itens e recebimentos.
 
 ## 3. Camada Marts
 
@@ -122,6 +123,7 @@ dim_suppliers: Cadastro e atributos dos fornecedores.
 
 fct_sales: Fato de vendas com granularidade de itens de pedidos, valores, descontos e métricas financeiras.
 fct_daily_stock_levels: Fato de acompanhamento diário dos níveis e movimentações de estoque.
+fct_purchases: Fato de compras e suprimentos consolidando métricas de pedidos de compras e recebimentos de fornecedores.
 
 ---
 
