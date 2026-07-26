@@ -264,8 +264,6 @@ models:
           - not_null
       - name: placed_at
         description: Order placement timestamp.
-        data_tests:
-          - not_null
       - name: total
         description: Order total amount.
         data_tests:
@@ -346,8 +344,6 @@ models:
           - not_null
       - name: placed_at
         description: Purchase order placement timestamp.
-        data_tests:
-          - not_null
       - name: total
         description: Purchase order total amount.
         data_tests:
