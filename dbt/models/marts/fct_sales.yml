@@ -24,6 +24,12 @@ models:
         description: Foreign key to the customer dimension.
         data_tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: customer_id
+              config:
+                severity: warn
       - name: quantity
         description: Ordered quantity (additive measure).
         data_tests:
@@ -34,10 +40,23 @@ models:
           - not_null
       - name: salesperson_id
         description: Foreign key to the employee dimension (salesperson). Nullable — ecommerce orders may have none.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_employees')
+                field: employee_id
+              config:
+                severity: warn
       - name: location_id
         description: Foreign key to the location dimension.
         data_tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_id
+              config:
+                severity: warn
       - name: product_variant_id
         description: Foreign key to the product dimension (variant grain).
         data_tests:

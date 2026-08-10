@@ -22,14 +22,32 @@ models:
         description: Foreign key to the supplier dimension.
         data_tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_suppliers')
+                field: supplier_sk
+              config:
+                severity: warn
       - name: location_sk
         description: Foreign key to the location dimension.
         data_tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_sk
+              config:
+                severity: warn
       - name: product_variant_id
         description: Foreign key to the product dimension.
         data_tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_products')
+                field: product_variant_id
+              config:
+                severity: warn
       - name: quantity_ordered
         description: Ordered quantity (additive measure).
         data_tests:
@@ -46,6 +64,13 @@ models:
         description: Related purchase order key.
       - name: employee_id
         description: Employee who received the goods.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_employees')
+                field: employee_id
+              config:
+                severity: warn
       - name: po_number
         description: Human-readable purchase order reference number.
       - name: purchase_order_status
