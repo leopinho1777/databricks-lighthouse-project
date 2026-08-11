@@ -53,6 +53,24 @@ zero_quantity_movement_daily as (
 
 ),
 
+products as (
+
+    select
+        product_sk,
+        product_variant_id
+    from {{ ref('dim_products') }}
+
+),
+
+locations as (
+
+    select
+        location_sk,
+        location_id
+    from {{ ref('dim_locations') }}
+
+),
+
 latest_change_per_day as (
 
     select
@@ -69,7 +87,9 @@ final as (
 
     select
         l.stock_level_day,
+        p.product_sk,
         l.product_variant_id,
+        loc.location_sk,
         l.location_id,
         l.stock_level_id,
         l.raw_quantity_on_hand,
@@ -88,6 +108,10 @@ final as (
       on l.stock_level_day = z.stock_level_day
      and l.product_variant_id = z.product_variant_id
      and l.location_id = z.location_id
+    left join products as p
+      on l.product_variant_id = p.product_variant_id
+    left join locations as loc
+      on l.location_id = loc.location_id
     where l.row_num = 1
 
 )
