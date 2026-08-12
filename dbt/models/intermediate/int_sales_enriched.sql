@@ -61,7 +61,7 @@ enriched as (
         o.channel,
         o.status as order_status,
         o.placed_at,
-        p.payment_method,
+        coalesce(p.payment_method, 'Não informado') as payment_method,
 
         -- Metrics (for sum)
         oi.quantity,
