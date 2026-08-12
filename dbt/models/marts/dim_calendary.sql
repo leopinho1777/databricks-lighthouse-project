@@ -27,8 +27,14 @@ final as (
         cast(date_day as date) as date_day,
         extract(year from date_day) as year,
         extract(month from date_day) as month,
+        date_format(date_day, 'MMMM') as month_name,
+        trunc(date_day, 'MM') as month_start,
         extract(quarter from date_day) as quarter,
-        extract(dayofweek from date_day) as day_of_week
+        extract(dayofweek from date_day) as day_of_week,
+        
+        -- Flags para Time Intelligence no DAX
+        case when extract(year from date_day) = extract(year from current_date()) then true else false end as is_current_year,
+        case when extract(year from date_day) = extract(year from current_date()) - 1 then true else false end as is_previous_year
     from spine
 
 )

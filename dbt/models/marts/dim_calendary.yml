@@ -18,7 +18,15 @@ models:
         description: Calendar year extracted from date_day.
       - name: month
         description: Calendar month (1-12) extracted from date_day.
+      - name: month_name
+        description: Full name of the calendar month.
+      - name: month_start
+        description: First day of the calendar month (useful for monthly aggregations).
       - name: quarter
         description: Calendar quarter (1-4) extracted from date_day.
       - name: day_of_week
         description: Day of week extracted from date_day.
+      - name: is_current_year
+        description: Boolean flag indicating if the date belongs to the current year.
+      - name: is_previous_year
+        description: Boolean flag indicating if the date belongs to the previous year.
