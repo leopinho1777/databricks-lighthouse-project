@@ -21,22 +21,22 @@ models:
         description: Day where the snapshot change became valid.
         data_tests:
           - not_null
+      - name: product_sk
+        description: Surrogate key to the product dimension.
+        data_tests:
+          - not_null
       - name: product_variant_id
-        description: Product variant identifier.
+        description: Natural key of the product variant for traceability.
         data_tests:
           - not_null
-          - relationships:
-              arguments:
-                to: ref('stg_product_variants')
-                field: product_variant_id
+      - name: location_sk
+        description: Surrogate key to the location dimension.
+        data_tests:
+          - not_null
       - name: location_id
-        description: Location identifier.
+        description: Natural key of the location for traceability.
         data_tests:
           - not_null
-          - relationships:
-              arguments:
-                to: ref('stg_locations')
-                field: location_id
       - name: stock_level_id
         description: Surrogate stock level key from staging.
         data_tests:

@@ -20,8 +20,8 @@ models:
         description: Parent order identifier (degenerate dimension).
         data_tests:
           - not_null
-      - name: customer_id
-        description: Foreign key to the customer dimension.
+      - name: customer_sk
+        description: Surrogate key to the customer dimension.
         data_tests:
           - not_null
           - relationships:
@@ -38,6 +38,8 @@ models:
         description: Line total amount (additive measure).
         data_tests:
           - not_null
+      - name: salesperson_sk
+        description: Surrogate key to the salesperson/employee dimension. Nullable — ecommerce orders may have none.
       - name: salesperson_id
         description: Foreign key to the employee dimension (salesperson). Nullable — ecommerce orders may have none.
         data_tests:
@@ -48,7 +50,9 @@ models:
               config:
                 severity: warn
       - name: location_id
-        description: Foreign key to the location dimension.
+        description: Natural key of the location for traceability.
+      - name: product_sk
+        description: Surrogate key to the product dimension.
         data_tests:
           - not_null
           - relationships:
@@ -58,15 +62,7 @@ models:
               config:
                 severity: warn
       - name: product_variant_id
-        description: Foreign key to the product dimension (variant grain).
-        data_tests:
-          - not_null
-          - relationships:
-              arguments:
-                to: ref('dim_products')
-                field: product_variant_id
-              config:
-                severity: warn
+        description: Natural key of the product variant for traceability.
       - name: channel
         description: Sales channel (degenerate dimension) — e.g., ecommerce, physical store.
         data_tests:

@@ -31,6 +31,8 @@ models:
         description: Parent order of the returned item.
         data_tests:
           - not_null
+      - name: customer_sk
+        description: Surrogate key to the customer dimension.
       - name: customer_id
         description: Customer who made the return (FK to dim_customers).
         data_tests:
