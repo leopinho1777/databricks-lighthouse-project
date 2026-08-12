@@ -31,10 +31,18 @@ models:
         description: Parent order of the returned item.
         data_tests:
           - not_null
+      - name: customer_sk
+        description: Surrogate key to the customer dimension.
       - name: customer_id
-        description: Customer who made the return (FK to dim_customers).
+        description: Natural key of the customer for traceability.
+      - name: location_sk
+        description: Surrogate key to the location dimension.
       - name: location_id
-        description: Location where the return was received (FK to dim_locations).
+        description: Natural key of the location for traceability.
+      - name: product_sk
+        description: Surrogate key to the product dimension.
+      - name: exchange_variant_id
+        description: Natural key of the exchanged product variant for traceability.
       - name: reason
         description: Standardized return reason.
         data_tests:

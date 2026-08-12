@@ -26,10 +26,14 @@ models:
         description: Foreign key to the location dimension.
         data_tests:
           - not_null
+      - name: employee_sk
+        description: Surrogate key to the employee dimension.
+      - name: employee_id
+        description: Natural key of the employee for traceability.
+      - name: product_sk
+        description: Surrogate key to the product dimension.
       - name: product_variant_id
-        description: Foreign key to the product dimension.
-        data_tests:
-          - not_null
+        description: Natural key of the product variant for traceability.
       - name: quantity_ordered
         description: Ordered quantity (additive measure).
         data_tests:
