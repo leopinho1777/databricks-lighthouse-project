@@ -66,3 +66,15 @@ models:
         description: ICMS tax rate applied to the item.
       - name: ipi_rate
         description: IPI tax rate applied to the item.
+      - name: date_id
+        description: Foreign key to the date dimension (integer format YYYYMMDD).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_calendary')
+                field: date_id
+              config:
+                severity: warn
+      - name: payment_method
+        description: Primary payment method used for the order (deduplicated by highest amount).
