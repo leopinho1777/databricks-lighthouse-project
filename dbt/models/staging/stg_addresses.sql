@@ -34,15 +34,23 @@ renamed as (
 
         -- Categorical & Standardized
         lower(trim(address_type)) as address_type,
-        
-        -- Address Details
-        trim(postal_code) as postal_code,
+
+        -- Address Details - postal code in Brazillian standard with hyphen
+        case
+            when postal_code is not null
+            then concat(
+                substr(trim(regexp_replace(postal_code, '[^0-9]', '')), 1, 5),
+                '-',
+                substr(trim(regexp_replace(postal_code, '[^0-9]', '')), 6, 3)
+            )
+            else null
+        end as postal_code,
         trim(street) as street,
         trim(number) as number,
         trim(complement) as complement,
         trim(district) as district,
         trim(city) as city,
-        
+
         -- Geopolitics (Padronizando para maiúsculas e sem espaços)
         upper(trim(state)) as state,
         upper(trim(country)) as country,

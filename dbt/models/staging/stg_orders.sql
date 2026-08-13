@@ -48,7 +48,7 @@ select
         total,
 
 -- Timestamps
-case when placed_at <= current_timestamp() then cast(placed_at as timestamp) end as placed_at,
+cast(placed_at as timestamp) as placed_at,
 cast(created_at as timestamp) as created_at,
 cast(updated_at as timestamp) as updated_at,
 
@@ -61,4 +61,6 @@ from cleaned_required
 
 )
 
+-- Exclude orders with future-placed_at dates — mock data contains future-dated rows that should not reach marts
 select * from renamed
+where placed_at <= current_timestamp()

@@ -26,7 +26,7 @@ models:
       - name: is_primary
         description: Boolean marker for the primary customer address.
       - name: postal_code
-        description: Postal code or ZIP code.
+        description: Brazilian postal code (CEP) in standard XXXXX-XXX format.
       - name: street
         description: Street name.
       - name: number
@@ -41,8 +41,6 @@ models:
         description: State or province.
       - name: country
         description: Country name.
-      - name: source_created_at
-        description: Original address record creation timestamp from the source.
       - name: valid_from
         description: Timestamp when this address version became active.
       - name: valid_to

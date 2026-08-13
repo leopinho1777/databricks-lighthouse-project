@@ -6,6 +6,16 @@ models:
       Product dimension at variant grain. One record per sellable variant (SKU),
       with the corrected business category, brand, and reference measures
       (sale price, cost price, tax rates). Conformed dimension used by fct_sales.
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "sale_price > 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "cost_price > 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "cost_price <= sale_price"
     columns:
       - name: product_sk
         description: Surrogate key of the product dimension.
