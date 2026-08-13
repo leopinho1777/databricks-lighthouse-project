@@ -5,6 +5,7 @@ resources:
 
       tasks:
         - task_key: ingestion
+          max_retries: 2
           run_job_task:
             job_id: "661266408946924"
         - task_key: transformation
