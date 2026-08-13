@@ -1,5 +1,5 @@
 {% set max_date_query %}
-    select cast(greatest(max(updated_at), current_date()) as date) as max_date
+    select cast(date_add(greatest(max(updated_at), current_date()), 1) as date) as max_date
     from lh_nautical.bronze._ingestion_control
 {% endset %}
 
