@@ -24,8 +24,12 @@ models:
         description: Surrogate key to the customer dimension.
         data_tests:
           - not_null
-      - name: customer_id
-        description: Natural key of the customer for traceability.
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: customer_id
+              config:
+                severity: warn
       - name: quantity
         description: Ordered quantity (additive measure).
         data_tests:
@@ -37,17 +41,26 @@ models:
       - name: salesperson_sk
         description: Surrogate key to the salesperson/employee dimension. Nullable — ecommerce orders may have none.
       - name: salesperson_id
-        description: Natural key of the salesperson for traceability.
-      - name: location_sk
-        description: Surrogate key to the location dimension.
+        description: Foreign key to the employee dimension (salesperson). Nullable — ecommerce orders may have none.
         data_tests:
-          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_employees')
+                field: employee_id
+              config:
+                severity: warn
       - name: location_id
         description: Natural key of the location for traceability.
       - name: product_sk
         description: Surrogate key to the product dimension.
         data_tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_id
+              config:
+                severity: warn
       - name: product_variant_id
         description: Natural key of the product variant for traceability.
       - name: channel

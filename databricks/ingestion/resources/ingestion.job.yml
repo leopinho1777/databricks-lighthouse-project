@@ -34,7 +34,7 @@ resources:
                   governance_config_path: "governance_config.json"
                   catalog: "${var.catalog}"
                   schema: "${var.schema}"
-        #Task apply_rbca - Fornece acesso de acordo com o role (role- based access control)      
+        #Task apply_rbca - Fornece acesso de acordo com o role (role- based access control)
         - task_key: ingest_bcb_exchange_rates
           depends_on:
             - task_key: setup
@@ -45,6 +45,23 @@ resources:
               catalog: "${var.catalog}"
               schema: "${var.schema}"
           environment_key: Default
+
+        #Task check_bcb_consecutive_failures - só roda se ingest_bcb_exchange_rates falhar;
+        #falha de propósito na 3a falha consecutiva para acionar o email nativo de on_failure
+        - task_key: check_bcb_consecutive_failures
+          depends_on:
+            - task_key: ingest_bcb_exchange_rates
+          run_if: AT_LEAST_ONE_FAILED
+          notebook_task:
+            notebook_path: ../src/check_bcb_consecutive_failures.ipynb
+            source: WORKSPACE
+            base_parameters:
+              catalog: "${var.catalog}"
+              schema: "${var.schema}"
+          environment_key: Default
+          email_notifications:
+            on_failure:
+              - teslavinci2026@gmail.com
 
       environments:
         - environment_key: Default
