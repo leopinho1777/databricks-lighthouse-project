@@ -3,30 +3,33 @@ version: 2
 models:
   - name: dim_calendary
     description: >
-      Date dimension generated via dbt_utils.date_spine, covering the range
-      from the earliest business event date to the latest ingestion date.
-      Not sourced from staging — no calendar table exists in the source ERD.
+      Calendar dimension built using dbt_utils.date_spine. Spans from 2020-01-01 
+      up to the maximum ingestion date (or end of current year). Includes a dummy 
+      record (1900-01-01 / 19000101) to handle missing or future dates from the source.
     columns:
       - name: date_id
-        description: Date key (grain of the table), one row per calendar day.
+        description: Integer representation of the date (YYYYMMDD). Primary key. Includes 19000101 for unknown/invalid dates.
         data_tests:
           - not_null
           - unique
       - name: date_day
-        description: Calendar date.
+        description: The actual date format (YYYY-MM-DD).
+        data_tests:
+          - not_null
+          - unique
       - name: year
-        description: Calendar year extracted from date_day.
+        description: Year extracted from the date.
       - name: month
-        description: Calendar month (1-12) extracted from date_day.
+        description: Month number (1-12) extracted from the date.
       - name: month_name
-        description: Full name of the calendar month.
+        description: Full name of the month. Returns 'Não informado' for the dummy date.
       - name: month_start
-        description: First day of the calendar month (useful for monthly aggregations).
+        description: The first day of the respective month.
       - name: quarter
-        description: Calendar quarter (1-4) extracted from date_day.
+        description: Quarter of the year (1-4).
       - name: day_of_week
-        description: Day of week extracted from date_day.
+        description: Day of the week (integer).
       - name: is_current_year
-        description: Boolean flag indicating if the date belongs to the current year.
+        description: Boolean flag indicating if the date belongs to the current ongoing year. Useful for Time Intelligence in BI.
       - name: is_previous_year
-        description: Boolean flag indicating if the date belongs to the previous year.
+        description: Boolean flag indicating if the date belongs to the immediately preceding year.
