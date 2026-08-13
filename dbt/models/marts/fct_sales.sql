@@ -59,7 +59,7 @@ final as (
         sales.location_id,
         p.product_sk,
         sales.product_variant_id,
-        cast(date_format(sales.placed_at, 'yyyyMMdd') as int) as date_id,
+        coalesce(cast(date_format(sales.placed_at, 'yyyyMMdd') as int), 19000101) as date_id,
 
         -- Context attributes for customer dimension
         sales.channel,
