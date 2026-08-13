@@ -86,8 +86,8 @@ models:
           - not_null
           - relationships:
               arguments:
-                to: ref('dim_locations')
-                field: location_id
+                to: ref('dim_products')
+                field: product_sk
               config:
                 severity: warn
       - name: product_sk
@@ -124,3 +124,15 @@ models:
         description: ICMS tax rate applied to the item.
       - name: ipi_rate
         description: IPI tax rate applied to the item.
+      - name: date_id
+        description: Foreign key to the date dimension (integer format YYYYMMDD). Defaults to 19000101 for unknown/invalid/future dates.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_calendary')
+                field: date_id
+              config:
+                severity: warn
+      - name: payment_method
+        description: Primary payment method used for the order (deduplicated by highest amount).

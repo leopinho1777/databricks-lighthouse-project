@@ -1,0 +1,56 @@
+version: 2
+
+models:
+  - name: int_returns_enriched
+    description: >
+      One record per returned order item, enriched with its return header context
+      (customer, location, status, reason, etc.). Reusable returns base grain 
+      that feeds the returns marts.
+    columns:
+      - name: return_item_id
+        description: Returned item key (grain of the table).
+        data_tests:
+          - not_null
+          - unique
+      - name: return_id
+        description: Related return header key.
+        data_tests:
+          - not_null
+      - name: order_item_id
+        description: Bridge to the original sale item. Critical for calculating item-to-item net revenue.
+        data_tests:
+          - not_null
+      - name: order_id
+        description: Parent order identifier.
+        data_tests:
+          - not_null
+      - name: customer_id
+        description: Customer who made the return.
+        data_tests:
+          - not_null
+      - name: location_id
+        description: Location where the return was received.
+        data_tests:
+          - not_null
+      - name: exchange_variant_id
+        description: Product variant ID if the return action is an exchange. Nullable for refunds.
+      - name: return_number
+        description: Human-readable return identifier.
+      - name: return_status
+        description: Current status of the return.
+      - name: reason
+        description: Reason provided by the customer for the return.
+      - name: action
+        description: Action taken for the return (e.g., refund, exchange).
+        data_tests:
+          - not_null
+      - name: returned_at
+        description: Timestamp when the return was created.
+      - name: quantity
+        description: Quantity of the item returned (additive measure).
+        data_tests:
+          - not_null
+      - name: unit_refund_amount
+        description: Refund amount per unit.
+      - name: refund_amount
+        description: Total refund amount for this return line (quantity × unit_refund_amount).

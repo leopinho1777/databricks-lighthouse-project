@@ -59,11 +59,13 @@ final as (
         sales.location_id,
         p.product_sk,
         sales.product_variant_id,
+        coalesce(cast(date_format(sales.placed_at, 'yyyyMMdd') as int), 19000101) as date_id,
 
         -- Context attributes for customer dimension
         sales.channel,
         sales.order_status,
         sales.placed_at,
+        sales.payment_method,
 
         -- Metrics (for sum)
         sales.quantity,
