@@ -5,6 +5,16 @@ models:
     description: >
       Sales fact at order-item grain. One record per order item, with foreign
       keys to the dimensions and additive measures (quantity, prices, taxes).
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "quantity > 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "unit_price > 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "line_total > 0"
     columns:
       - name: sales_sk
         description: Surrogate key of the sales fact (hash of order_item_id).
@@ -30,6 +40,10 @@ models:
                 field: customer_sk
               config:
                 severity: warn
+      - name: customer_id
+        description: Natural key — customer identifier for traceability.
+        data_tests:
+          - not_null
       - name: quantity
         description: Ordered quantity (additive measure).
         data_tests:
@@ -40,6 +54,13 @@ models:
           - not_null
       - name: salesperson_sk
         description: Surrogate key to the salesperson/employee dimension. Nullable — ecommerce orders may have none.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_employees')
+                field: employee_sk
+              config:
+                severity: warn
       - name: salesperson_id
         description: Foreign key to the employee dimension (salesperson). Nullable — ecommerce orders may have none.
         data_tests:
@@ -49,8 +70,26 @@ models:
                 field: employee_id
               config:
                 severity: warn
+      - name: location_sk
+        description: Surrogate key to the location dimension.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_sk
+              config:
+                severity: warn
       - name: location_id
-        description: Natural key of the location for traceability.
+        description: Location where the order was placed (FK to dim_locations).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_products')
+                field: product_sk
+              config:
+                severity: warn
       - name: product_sk
         description: Surrogate key to the product dimension.
         data_tests:
@@ -63,6 +102,8 @@ models:
                 severity: warn
       - name: product_variant_id
         description: Natural key of the product variant for traceability.
+        data_tests:
+          - not_null
       - name: channel
         description: Sales channel (degenerate dimension) — e.g., ecommerce, physical store.
         data_tests:
@@ -73,8 +114,12 @@ models:
           - not_null
       - name: placed_at
         description: Timestamp when the order was placed (links to the date dimension).
+        data_tests:
+          - not_null
       - name: unit_price
         description: Unit price of the order item (measure).
+        data_tests:
+          - not_null
       - name: icms_rate
         description: ICMS tax rate applied to the item.
       - name: ipi_rate

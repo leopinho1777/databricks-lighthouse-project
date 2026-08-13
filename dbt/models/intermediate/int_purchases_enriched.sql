@@ -151,7 +151,9 @@ enriched as (
 
         -- Chaves para dimensões
         sp.supplier_sk,
+        b.supplier_id,
         lp.location_sk,
+        b.destination_location_id,
         b.buyer_id as employee_id,
         b.product_variant_id,
 

@@ -7,6 +7,22 @@ models:
       supplier, location, employee, and product dimensions. Measures
       for supplier reliability (delay, lead time) and currency-converted
       amounts (BRL).
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "quantity_ordered > 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "quantity_received >= 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "quantity_received <= quantity_ordered"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "unit_cost > 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "line_total > 0"
     columns:
       - name: purchases_sk
         description: Surrogate key of the purchases fact.
@@ -19,7 +35,7 @@ models:
           - not_null
           - unique
       - name: supplier_sk
-        description: Foreign key to the supplier dimension.
+        description: Surrogate key to the supplier dimension.
         data_tests:
           - not_null
           - relationships:
@@ -28,8 +44,12 @@ models:
                 field: supplier_sk
               config:
                 severity: warn
+      - name: supplier_id
+        description: Natural key — supplier identifier for traceability.
+        data_tests:
+          - not_null
       - name: location_sk
-        description: Foreign key to the location dimension.
+        description: Surrogate key to the location dimension.
         data_tests:
           - not_null
           - relationships:
@@ -38,6 +58,10 @@ models:
                 field: location_sk
               config:
                 severity: warn
+      - name: destination_location_id
+        description: Natural key — destination location identifier for traceability.
+        data_tests:
+          - not_null
       - name: product_variant_id
         description: Foreign key to the product dimension.
         data_tests:
@@ -63,7 +87,7 @@ models:
       - name: purchase_order_id
         description: Related purchase order key.
       - name: employee_id
-        description: Employee who received the goods.
+        description: Employee who placed/created the purchase order (buyer).
         data_tests:
           - relationships:
               arguments:
@@ -74,7 +98,7 @@ models:
       - name: po_number
         description: Human-readable purchase order reference number.
       - name: purchase_order_status
-        description: Status of the purchase order at time of receipt.
+        description: Status of the purchase order at time of receipt — either 'partially_received' or 'received'.
       - name: currency
         description: Currency code of the original purchase order.
       - name: placed_at

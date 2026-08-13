@@ -33,7 +33,7 @@ renamed as (
 
         -- Attributes
         trim(name) as brand_name,
-        upper(trim(country)) as country_code, 
+        upper(trim(country)) as country_code,
 
         -- Flags
         cast(is_active as boolean) as is_active,

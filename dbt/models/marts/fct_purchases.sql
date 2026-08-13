@@ -35,7 +35,9 @@ final as (
 
         -- Chaves estrangeiras para dimensões
         purchases.supplier_sk,
+        purchases.supplier_id,
         purchases.location_sk,
+        purchases.destination_location_id,
         e.employee_sk,
         purchases.employee_id,
         p.product_sk,
