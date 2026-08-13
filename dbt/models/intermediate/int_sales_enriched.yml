@@ -58,3 +58,5 @@ models:
         description: ICMS tax rate applied to the item.
       - name: ipi_rate
         description: IPI tax rate applied to the item.
+      - name: payment_method
+        description: Primary payment method used for the order (deduplicated by highest amount).
