@@ -2,9 +2,8 @@
     config(
         materialized='incremental',
         unique_key=['stock_level_day', 'product_variant_id', 'location_id'],
-        incremental_strategy='merge',
+        incremental_strategy='insert_overwrite',
         file_format='delta',
-        on_schema_change='sync_all_columns',
         post_hook=[
             "update {{ this }} set zero_quantity_movement_count = coalesce(zero_quantity_movement_count, 0), has_zero_quantity_movement_review = coalesce(has_zero_quantity_movement_review, false) where zero_quantity_movement_count is null or has_zero_quantity_movement_review is null",
             "merge into {{ this }} as target
@@ -119,10 +118,7 @@ final as (
         coalesce(z.zero_quantity_movement_count, 0) > 0 as has_zero_quantity_movement_review,
         l.source_updated_at,
         l.snapshot_valid_from,
-        l.snapshot_valid_to,
-        l._ingested_at,
-        l._source_origin,
-        l._batch_id
+        l.snapshot_valid_to
     from latest_change_per_day as l
     left join zero_quantity_movement_daily as z
       on l.stock_level_day = z.stock_level_day

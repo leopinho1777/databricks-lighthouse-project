@@ -10,7 +10,7 @@ models:
           - not_null
           - unique
       - name: customer_id
-        description: Related customer key.
+        description: Related customer key. (Warned due to future dates being filtered out)
         data_tests:
           - not_null
           - relationships:
@@ -20,7 +20,7 @@ models:
               config:
                 severity: warn
       - name: salesperson_id
-        description: Related salesperson key.
+        description: Related salesperson key. (Warned due to future dates being filtered out)
         data_tests:
           - relationships:
               arguments:

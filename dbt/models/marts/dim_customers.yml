@@ -17,7 +17,7 @@ models:
           - not_null
           - unique
       - name: person_type
-        description: Person type (PF = individual, PJ = company).
+        description: Customer type — PF (Pessoa Física, individual) or PJ (Pessoa Jurídica, company).
         data_tests:
           - not_null
       - name: state
