@@ -31,10 +31,26 @@ models:
         description: Parent order of the returned item.
         data_tests:
           - not_null
+      - name: customer_sk
+        description: Surrogate key to the customer dimension.
       - name: customer_id
         description: Customer who made the return (FK to dim_customers).
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: customer_id
+              config:
+                severity: warn
       - name: location_id
         description: Location where the return was received (FK to dim_locations).
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_id
+              config:
+                severity: warn
       - name: reason
         description: Standardized return reason.
         data_tests:

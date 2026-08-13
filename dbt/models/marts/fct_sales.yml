@@ -20,10 +20,16 @@ models:
         description: Parent order identifier (degenerate dimension).
         data_tests:
           - not_null
-      - name: customer_id
-        description: Foreign key to the customer dimension.
+      - name: customer_sk
+        description: Surrogate key to the customer dimension.
         data_tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: customer_sk
+              config:
+                severity: warn
       - name: quantity
         description: Ordered quantity (additive measure).
         data_tests:
@@ -32,22 +38,31 @@ models:
         description: Line total amount (additive measure).
         data_tests:
           - not_null
+      - name: salesperson_sk
+        description: Surrogate key to the salesperson/employee dimension. Nullable — ecommerce orders may have none.
       - name: salesperson_id
         description: Foreign key to the employee dimension (salesperson). Nullable — ecommerce orders may have none.
-      - name: location_id
-        description: Foreign key to the location dimension.
         data_tests:
-          - not_null
-      - name: product_variant_id
-        description: Foreign key to the product dimension (variant grain).
+          - relationships:
+              arguments:
+                to: ref('dim_employees')
+                field: employee_id
+              config:
+                severity: warn
+      - name: location_id
+        description: Natural key of the location for traceability.
+      - name: product_sk
+        description: Surrogate key to the product dimension.
         data_tests:
           - not_null
           - relationships:
               arguments:
                 to: ref('dim_products')
-                field: product_variant_id
+                field: product_sk
               config:
                 severity: warn
+      - name: product_variant_id
+        description: Natural key of the product variant for traceability.
       - name: channel
         description: Sales channel (degenerate dimension) — e.g., ecommerce, physical store.
         data_tests:
@@ -64,3 +79,15 @@ models:
         description: ICMS tax rate applied to the item.
       - name: ipi_rate
         description: IPI tax rate applied to the item.
+      - name: date_id
+        description: Foreign key to the date dimension (integer format YYYYMMDD). Defaults to 19000101 for unknown/invalid/future dates.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_calendary')
+                field: date_id
+              config:
+                severity: warn
+      - name: payment_method
+        description: Primary payment method used for the order (deduplicated by highest amount).
