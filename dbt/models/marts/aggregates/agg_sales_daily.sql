@@ -8,8 +8,9 @@ returns as (
 
     select
         order_item_id,
-        refund_amount
+        sum(refund_amount) as refund_amount
     from {{ ref('int_returns_enriched') }}
+    group by 1
 
 ),
 
@@ -40,7 +41,7 @@ daily_metrics as (
         sum(
             case 
                 when s.order_status != 'canceled' then 
-                    (s.line_total - coalesce(r.refund_amount, 0)) * (coalesce(s.icms_rate, 0) + coalesce(s.ipi_rate, 0))
+                    (s.line_total - coalesce(r.refund_amount, 0)) * ((coalesce(s.icms_rate, 0) + coalesce(s.ipi_rate, 0)) / 100.0)
                 else 0 
             end
         ) as total_taxes,
@@ -50,7 +51,7 @@ daily_metrics as (
             case 
                 when s.order_status != 'canceled' then 
                     (s.line_total - coalesce(r.refund_amount, 0)) - 
-                    ((s.line_total - coalesce(r.refund_amount, 0)) * (coalesce(s.icms_rate, 0) + coalesce(s.ipi_rate, 0)))
+                    ((s.line_total - coalesce(r.refund_amount, 0)) * ((coalesce(s.icms_rate, 0) + coalesce(s.ipi_rate, 0)) / 100.0))
                 else 0 
             end
         ) as net_revenue,
