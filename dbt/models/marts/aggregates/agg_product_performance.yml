@@ -1,0 +1,47 @@
+version: 2
+
+models:
+  - name: agg_product_performance
+    description: >
+      Aggregate table tracking product performance at a monthly grain. 
+      Calculates Cost of Goods Sold (COGS) based on standard cost, and 
+      the true Contribution Margin after deducting returns, taxes, and costs.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - performance_month
+              - product_variant_id
+    columns:
+      - name: performance_month
+        description: The first day of the performance month (YYYY-MM-01).
+        data_tests:
+          - not_null
+      - name: product_variant_id
+        description: Natural key of the product variant.
+        data_tests:
+          - not_null
+      - name: product_name
+        description: Product display name.
+      - name: category_name
+        description: Product business category.
+      - name: brand_name
+        description: Brand name of the product.
+      - name: gross_quantity_sold
+        description: Total quantity sold (excluding canceled orders).
+      - name: returned_quantity
+        description: Total quantity returned by customers.
+      - name: net_quantity_sold
+        description: Net quantity sold (Gross Quantity - Returned Quantity).
+      - name: gross_revenue
+        description: Gross revenue from sales.
+      - name: returned_amount
+        description: Total amount refunded for returns.
+      - name: total_taxes
+        description: Total taxes (ICMS + IPI) calculated over the non-returned amount.
+      - name: total_cogs
+        description: Cost of Goods Sold (CMV). Calculated as Net Quantity Sold multiplied by the product's standard cost_price.
+      - name: net_revenue
+        description: Net Revenue (Gross Revenue - Returned Amount - Taxes).
+      - name: contribution_margin
+        description: Real Contribution Margin (Net Revenue - COGS). This is the true profit before operational expenses.
