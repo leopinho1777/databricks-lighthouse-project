@@ -6,6 +6,7 @@ with fct_sales as (
 
 returns as (
 
+    -- Prevenção de fan-out: agregando a devolução por item antes do JOIN
     select
         order_item_id,
         sum(refund_amount) as refund_amount

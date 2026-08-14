@@ -6,10 +6,21 @@ with fct_sales as (
 
 customers as (
 
-    select 
+    select
         customer_id,
         person_type
     from {{ ref('dim_customers') }}
+
+),
+
+returns as (
+
+    -- Prevenção de fan-out: agregando a devolução por item antes do JOIN
+    select
+        order_item_id,
+        sum(refund_amount) as refund_amount
+    from {{ ref('int_returns_enriched') }}
+    group by 1
 
 ),
 
@@ -17,28 +28,47 @@ customer_aggs as (
 
     select
         -- Table grain: Customer
-        customer_id,
-        
+        s.customer_id,
+
         -- Temporal metrics
-        min(cast(placed_at as date)) as first_purchase_date,
-        max(cast(placed_at as date)) as last_purchase_date,
-        
+        min(cast(s.placed_at as date)) as first_purchase_date,
+        max(cast(s.placed_at as date)) as last_purchase_date,
+
         -- Volume metrics
-        count(distinct 
-            case 
-                when order_status != 'canceled' then order_id 
+        count(distinct
+            case
+                when s.order_status != 'canceled' then s.order_id
             end
         ) as total_valid_orders,
-        
+
         -- Lifetime Value (Gross Revenue proxy for ABC classification)
         sum(
-            case 
-                when order_status != 'canceled' then line_total 
-                else 0 
+            case
+                when s.order_status != 'canceled' then s.line_total
+                else 0
             end
-        ) as lifetime_gross_revenue
+        ) as lifetime_gross_revenue,
 
-    from fct_sales
+        -- Returned Amount (Abated in the original sale)
+        sum(
+            case
+                when s.order_status != 'canceled' then coalesce(r.refund_amount, 0)
+                else 0
+            end
+        ) as returned_amount,
+
+        -- Total Taxes (ICMS + IPI applied only to the retained amount)
+        sum(
+            case
+                when s.order_status != 'canceled' then
+                    (s.line_total - coalesce(r.refund_amount, 0)) * ((coalesce(s.icms_rate, 0) + coalesce(s.ipi_rate, 0)) / 100.0)
+                else 0
+            end
+        ) as total_taxes
+
+    from fct_sales as s
+    left join returns as r
+        on s.order_item_id = r.order_item_id
     group by 1
 
 ),
@@ -55,14 +85,18 @@ customer_behavior as (
             else 'Leisure'
         end as inferred_purchase_reason,
 
-        -- Churn Risk metrics (Decision D6: 18 months / ~540 days)
+        -- Churn Risk metrics, segmented by person_type (PJ reorders faster/more predictably than PF)
         datediff(current_date(), ca.last_purchase_date) as days_since_last_purchase,
-        
-        case 
-            when datediff(current_date(), ca.last_purchase_date) > 540 then true 
-            else false 
+
+        case
+            when c.person_type = 'PJ' and datediff(current_date(), ca.last_purchase_date) > 180 then true
+            when c.person_type != 'PJ' and datediff(current_date(), ca.last_purchase_date) > 240 then true
+            else false
         end as is_churn_risk,
-        
+
+        -- Net Revenue (Gross minus returns and taxes, for profit-based LTV analysis)
+        ca.lifetime_gross_revenue - ca.returned_amount - ca.total_taxes as lifetime_net_revenue,
+
         -- Window functions for ABC Curve calculation
         sum(ca.lifetime_gross_revenue) over (
             order by ca.lifetime_gross_revenue desc
@@ -89,7 +123,10 @@ final as (
         is_churn_risk,
         total_valid_orders,
         lifetime_gross_revenue,
-        
+        returned_amount,
+        total_taxes,
+        lifetime_net_revenue,
+
         -- ABC Classification (Decision D7: Class A = Top 80% Revenue)
         case
             when running_revenue / total_revenue <= 0.80 then 'A'
