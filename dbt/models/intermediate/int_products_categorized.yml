@@ -24,7 +24,7 @@ models:
         data_tests:
           - not_null
       - name: product_name
-        description: Product display name (trimmed) carried from stg_products.
+        description: Product display name carried from stg_products, cleansed for generic entries (tests, placeholders, typos) and trimmed.
         data_tests:
           - not_null
       - name: product_type
