@@ -20,3 +20,10 @@ where 1 = 1
   and {{ column_name }} is not null
 {% endfor %}
 {% endmacro %}
+
+-- Keep only rows whose order_id still exists in stg_orders (drops rows tied to filtered-out/future orders)
+{% macro filter_valid_orders(relation_name, order_id_column='order_id') %}
+select *
+from {{ relation_name }}
+where {{ order_id_column }} in (select order_id from {{ ref('stg_orders') }})
+{% endmacro %}
