@@ -86,8 +86,8 @@ models:
           - not_null
           - relationships:
               arguments:
-                to: ref('dim_products')
-                field: product_sk
+                to: ref('dim_locantions')
+                field: location_id
               config:
                 severity: warn
       - name: product_sk
