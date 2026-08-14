@@ -10,7 +10,7 @@ models:
           - not_null
           - unique
       - name: order_id
-        description: Related order key.
+        description: Related order key. (Rows for future-dated orders are filtered out.)
         data_tests:
           - not_null
           - relationships:
