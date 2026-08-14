@@ -12,6 +12,13 @@ with return_items as (
 
 ),
 
+order_items as (
+
+    select order_item_id
+    from {{ ref('stg_order_items') }}
+
+),
+
 returns as (
 
     select
@@ -54,6 +61,8 @@ enriched as (
         ri.quantity * ri.unit_refund_amount as refund_amount
 
     from return_items as ri
+    inner join order_items as oi
+        on ri.order_item_id = oi.order_item_id
     inner join returns as r
         on ri.return_id = r.return_id
 

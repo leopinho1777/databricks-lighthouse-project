@@ -2,7 +2,37 @@ with products as (
 
     select
         product_id,
-        product_name,
+        
+        -- Defensive and Scalable Rule for Name Sanitization
+        case 
+            -- 1. Catches test products and system validations
+            when lower(product_name) like '%teste%' 
+              or lower(product_name) like '%homolog%' 
+              or lower(product_name) like '%qa%' 
+            then 'Internal Item (Test)'
+            
+            -- 2. Catches unfinished/placeholder products
+            when lower(product_name) like '%tbd%' 
+              or lower(product_name) like '%a definir%' 
+            then 'Product to be Defined'
+            
+            -- 3. Catches the already mapped human error and dummy names
+            when lower(product_name) like '%joão%silva%' 
+              or lower(product_name) like '%joao%silva%' 
+              or lower(product_name) like '%genérico%'
+              or lower(product_name) like '%generico%'
+              or lower(product_name) = 'nao informado'
+              or lower(product_name) = 'asdf'
+            then 'Generic Product (Registration Error)'
+            
+            -- 4. Catches typing garbage (very short names or just spaces)
+            when length(trim(product_name)) <= 2 
+            then 'Generic Product (Invalid Name)'
+            
+            -- 5. If it is a real product, standardizes by removing leading/trailing whitespaces
+            else trim(product_name)
+        end as product_name,
+        
         category_id,
         brand_id
     from {{ ref('stg_products') }}

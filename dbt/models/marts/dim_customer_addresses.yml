@@ -1,0 +1,51 @@
+version: 2
+
+models:
+  - name: dim_customer_addresses
+    description: >
+      Customer address dimension with historical versions for address changes.
+      Captures address history at the address-level and exposes current and prior
+      versions for SCD2 reporting.
+
+    columns:
+      - name: customer_address_sk
+        description: Version-aware surrogate key for the customer address record.
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: Customer natural key.
+        data_tests:
+          - not_null
+      - name: address_id
+        description: Source address key.
+        data_tests:
+          - not_null
+      - name: address_type
+        description: Type of address (home, billing, shipping, etc.).
+      - name: is_primary
+        description: Boolean marker for the primary customer address.
+      - name: postal_code
+        description: Brazilian postal code (CEP) in standard XXXXX-XXX format.
+      - name: street
+        description: Street name.
+      - name: number
+        description: Street number.
+      - name: complement
+        description: Extra address detail such as unit or apartment.
+      - name: district
+        description: Address district or neighbourhood.
+      - name: city
+        description: City name.
+      - name: state
+        description: State or province.
+      - name: country
+        description: Country name.
+      - name: valid_from
+        description: Timestamp when this address version became active.
+      - name: valid_to
+        description: Timestamp when this address version expired (null for current).
+      - name: is_current
+        description: Boolean flag indicating whether this row is the active address version.
+        data_tests:
+          - not_null

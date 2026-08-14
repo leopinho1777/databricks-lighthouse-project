@@ -12,6 +12,7 @@ with customers as (
 
 ),
 
+
 primary_address as (
 
     select
@@ -19,8 +20,9 @@ primary_address as (
         city,
         state,
         country
-    from {{ ref('stg_addresses') }}
+    from {{ ref('dim_customer_addresses') }}
     where is_primary = true
+      and is_current = true
     -- Garante 1 endereço por cliente mesmo se houver mais de um "primary"
     qualify row_number() over (partition by customer_id order by address_id) = 1
 

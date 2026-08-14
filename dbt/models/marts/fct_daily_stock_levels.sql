@@ -2,11 +2,30 @@
     config(
         materialized='incremental',
         unique_key=['stock_level_day', 'product_variant_id', 'location_id'],
-        incremental_strategy='merge',
+        incremental_strategy='insert_overwrite',
         file_format='delta',
-        on_schema_change='sync_all_columns',
         post_hook=[
-            "update {{ this }} set zero_quantity_movement_count = coalesce(zero_quantity_movement_count, 0), has_zero_quantity_movement_review = coalesce(has_zero_quantity_movement_review, false) where zero_quantity_movement_count is null or has_zero_quantity_movement_review is null"
+            "update {{ this }} set zero_quantity_movement_count = coalesce(zero_quantity_movement_count, 0), has_zero_quantity_movement_review = coalesce(has_zero_quantity_movement_review, false) where zero_quantity_movement_count is null or has_zero_quantity_movement_review is null",
+            "merge into {{ this }} as target
+             using (
+                 select
+                     l.product_variant_id,
+                     l.location_id,
+                     p.product_sk,
+                     loc.location_sk
+                 from (
+                     select distinct product_variant_id, location_id
+                     from {{ this }}
+                     where product_sk is null or location_sk is null
+                 ) as l
+                 left join {{ ref('dim_products') }} as p on l.product_variant_id = p.product_variant_id
+                 left join {{ ref('dim_locations') }} as loc on l.location_id = loc.location_id
+             ) as source
+             on target.product_variant_id = source.product_variant_id
+                and target.location_id = source.location_id
+             when matched and (target.product_sk is null or target.location_sk is null) then update set
+                 target.product_sk = coalesce(target.product_sk, source.product_sk),
+                 target.location_sk = coalesce(target.location_sk, source.location_sk)"
         ]
     )
 }}
@@ -53,6 +72,24 @@ zero_quantity_movement_daily as (
 
 ),
 
+products as (
+
+    select
+        product_sk,
+        product_variant_id
+    from {{ ref('dim_products') }}
+
+),
+
+locations as (
+
+    select
+        location_sk,
+        location_id
+    from {{ ref('dim_locations') }}
+
+),
+
 latest_change_per_day as (
 
     select
@@ -69,7 +106,9 @@ final as (
 
     select
         l.stock_level_day,
+        p.product_sk,
         l.product_variant_id,
+        loc.location_sk,
         l.location_id,
         l.stock_level_id,
         l.raw_quantity_on_hand,
@@ -79,15 +118,16 @@ final as (
         coalesce(z.zero_quantity_movement_count, 0) > 0 as has_zero_quantity_movement_review,
         l.source_updated_at,
         l.snapshot_valid_from,
-        l.snapshot_valid_to,
-        l._ingested_at,
-        l._source_origin,
-        l._batch_id
+        l.snapshot_valid_to
     from latest_change_per_day as l
     left join zero_quantity_movement_daily as z
       on l.stock_level_day = z.stock_level_day
      and l.product_variant_id = z.product_variant_id
      and l.location_id = z.location_id
+    left join products as p
+      on l.product_variant_id = p.product_variant_id
+    left join locations as loc
+      on l.location_id = loc.location_id
     where l.row_num = 1
 
 )

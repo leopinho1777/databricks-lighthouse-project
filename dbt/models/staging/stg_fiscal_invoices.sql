@@ -56,6 +56,12 @@ renamed as (
 
     from cleaned_required
 
+),
+
+valid_orders_only as (
+
+    {{ filter_valid_orders('renamed') }}
+
 )
 
-select * from renamed
+select * from valid_orders_only

@@ -1,0 +1,43 @@
+version: 2
+
+models:
+  - name: agg_sales_daily
+    description: >
+      Aggregate table with daily sales metrics by channel. Contains gross revenue, 
+      returned amounts, taxes applied to the residual amount, net revenue, and order volumes. 
+      Grain: 1 row per Day (date_id) and Channel (channel).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - date_id
+              - channel
+    columns:
+      - name: date_id
+        description: Foreign key to the calendar dimension (integer format YYYYMMDD).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_calendary')
+                field: date_id
+              config:
+                severity: warn
+      - name: channel
+        description: Sales channel (e.g., ecommerce, physical store).
+        data_tests:
+          - not_null
+      - name: gross_revenue
+        description: Gross revenue from valid orders (excludes canceled ones).
+      - name: returned_amount
+        description: Total refunded amount corresponding to items sold on this specific day.
+      - name: total_taxes
+        description: Total taxes (ICMS + IPI) calculated exclusively over the residual amount (gross minus return).
+      - name: net_revenue
+        description: Net revenue (Gross Revenue - Returned Amount - Total Taxes).
+      - name: valid_orders_volume
+        description: Distinct count of valid orders.
+      - name: canceled_orders_volume
+        description: Distinct count of canceled orders. Used for the Cancellation Rate metric.
+      - name: valid_items_volume
+        description: Total volume of items in valid orders. Base for calculating Items per Order (Average Basket Size).

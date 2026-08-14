@@ -24,7 +24,7 @@ models:
       - name: district
         description: Neighbourhood or district of the address.
       - name: postal_code
-        description: Postal code or ZIP code.
+        description: Brazilian postal code (CEP) in standard XXXXX-XXX format.
       - name: city
         description: City name.
       - name: state

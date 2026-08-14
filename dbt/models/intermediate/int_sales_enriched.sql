@@ -27,6 +27,23 @@ orders as (
 
 ),
 
+-- Deduplicate payments to get the primary method per order (highest amount)
+payments as (
+
+    select 
+        order_id, 
+        payment_method
+    from (
+        select 
+            order_id, 
+            payment_method,
+            row_number() over (partition by order_id order by amount desc) as rn
+        from {{ ref('stg_payments') }}
+    )
+    where rn = 1
+
+),
+
 enriched as (
 
     select
@@ -44,6 +61,7 @@ enriched as (
         o.channel,
         o.status as order_status,
         o.placed_at,
+        coalesce(p.payment_method, 'Não informado') as payment_method,
 
         -- Metrics (for sum)
         oi.quantity,
@@ -55,6 +73,8 @@ enriched as (
     from order_items as oi
     inner join orders as o
         on oi.order_id = o.order_id
+    left join payments as p
+        on o.order_id = p.order_id
 
 )
 
