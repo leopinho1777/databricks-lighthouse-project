@@ -4,6 +4,15 @@ with fct_sales as (
 
 ),
 
+customers as (
+
+    select 
+        customer_id,
+        person_type
+    from {{ ref('dim_customers') }}
+
+),
+
 customer_aggs as (
 
     select
@@ -37,24 +46,34 @@ customer_aggs as (
 customer_behavior as (
 
     select
-        *,
+        ca.*,
+        c.person_type,
+        
+        -- Proxy for Purchase Reason (Decision L1: PJ = Professional Use, PF = Leisure)
+        case 
+            when c.person_type = 'PJ' then 'Professional Use'
+            else 'Leisure'
+        end as inferred_purchase_reason,
+
         -- Churn Risk metrics (Decision D6: 18 months / ~540 days)
-        datediff(current_date(), last_purchase_date) as days_since_last_purchase,
+        datediff(current_date(), ca.last_purchase_date) as days_since_last_purchase,
         
         case 
-            when datediff(current_date(), last_purchase_date) > 540 then true 
+            when datediff(current_date(), ca.last_purchase_date) > 540 then true 
             else false 
         end as is_churn_risk,
         
         -- Window functions for ABC Curve calculation
-        sum(lifetime_gross_revenue) over (
-            order by lifetime_gross_revenue desc
+        sum(ca.lifetime_gross_revenue) over (
+            order by ca.lifetime_gross_revenue desc
         ) as running_revenue,
         
-        sum(lifetime_gross_revenue) over () as total_revenue
+        sum(ca.lifetime_gross_revenue) over () as total_revenue
 
-    from customer_aggs
-    where lifetime_gross_revenue > 0
+    from customer_aggs as ca
+    left join customers as c 
+        on ca.customer_id = c.customer_id
+    where ca.lifetime_gross_revenue > 0
 
 ),
 
@@ -62,6 +81,8 @@ final as (
 
     select
         customer_id,
+        person_type,
+        inferred_purchase_reason,
         first_purchase_date,
         last_purchase_date,
         days_since_last_purchase,

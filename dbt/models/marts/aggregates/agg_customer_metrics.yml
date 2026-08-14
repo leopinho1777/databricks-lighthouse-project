@@ -39,3 +39,9 @@ models:
           - accepted_values:
               arguments:
                 values: ['A', 'B', 'C']
+      - name: person_type
+        description: Indicates whether the customer is an individual (PF) or a company (PJ). Brought from dim_customers.
+      - name: inferred_purchase_reason
+        description: >
+          Proxy for the purchase reason based on the customer profile. 
+          'Professional Use' for corporate entities (PJ) and 'Leisure' for individuals (PF).
