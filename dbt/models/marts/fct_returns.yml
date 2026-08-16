@@ -110,6 +110,18 @@ models:
           - accepted_values:
               arguments:
                 values: ['refund', 'exchange']
+      - name: date_id
+        description: >
+          Return date as an integer key (yyyyMMdd), used to relate this fact to
+          dim_calendary. Falls back to 19000101 when returned_at is null.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_calendary')
+                field: date_id
+              config:
+                severity: warn
       - name: returned_at
         description: Timestamp when the item was returned.
         data_tests:

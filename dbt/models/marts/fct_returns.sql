@@ -56,6 +56,7 @@ final as (
         returns.return_status,
         returns.reason,
         returns.action,
+        coalesce(cast(date_format(returns.returned_at, 'yyyyMMdd') as int), 19000101) as date_id,
         returns.returned_at,
 
         -- Metrics

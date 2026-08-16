@@ -109,9 +109,14 @@ models:
         data_tests:
           - not_null
       - name: order_status
-        description: Status of the parent order.
+        description: >
+          Status of the parent order. Only 'paid' and 'confirmed' are treated as
+          valid revenue by the aggregate models; 'cancelled' and 'draft' are excluded.
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: ['paid', 'confirmed', 'cancelled', 'draft']
       - name: placed_at
         description: Timestamp when the order was placed (links to the date dimension).
         data_tests:
