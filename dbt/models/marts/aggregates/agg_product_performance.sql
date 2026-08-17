@@ -43,14 +43,14 @@ monthly_aggs as (
         -- Volumes
         sum(
             case 
-                when s.order_status != 'canceled' then s.quantity 
+                when s.order_status in ('paid', 'confirmed') then s.quantity 
                 else 0 
             end
         ) as gross_quantity_sold,
         
         sum(
             case 
-                when s.order_status != 'canceled' then coalesce(r.returned_quantity, 0) 
+                when s.order_status in ('paid', 'confirmed') then coalesce(r.returned_quantity, 0) 
                 else 0 
             end
         ) as returned_quantity,
@@ -58,14 +58,14 @@ monthly_aggs as (
         -- Revenues
         sum(
             case 
-                when s.order_status != 'canceled' then s.line_total 
+                when s.order_status in ('paid', 'confirmed') then s.line_total 
                 else 0 
             end
         ) as gross_revenue,
         
         sum(
             case 
-                when s.order_status != 'canceled' then coalesce(r.refund_amount, 0) 
+                when s.order_status in ('paid', 'confirmed') then coalesce(r.refund_amount, 0) 
                 else 0 
             end
         ) as returned_amount,
@@ -73,7 +73,7 @@ monthly_aggs as (
         -- Taxes (Applied to the residual amount and divided by 100 to fix percentage)
         sum(
             case 
-                when s.order_status != 'canceled' then
+                when s.order_status in ('paid', 'confirmed') then
                     (s.line_total - coalesce(r.refund_amount, 0)) * ((coalesce(s.icms_rate, 0) + coalesce(s.ipi_rate, 0)) / 100.0)
                 else 0 
             end
@@ -82,7 +82,7 @@ monthly_aggs as (
         -- Cost of Goods Sold (CMV: Net quantity * Standard Cost)
         sum(
             case 
-                when s.order_status != 'canceled' then
+                when s.order_status in ('paid', 'confirmed') then
                     (s.quantity - coalesce(r.returned_quantity, 0)) * coalesce(p.cost_price, 0)
                 else 0 
             end

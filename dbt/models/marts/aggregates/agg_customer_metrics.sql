@@ -37,14 +37,14 @@ customer_aggs as (
         -- Volume metrics
         count(distinct
             case
-                when s.order_status != 'canceled' then s.order_id
+                when s.order_status in ('paid', 'confirmed') then s.order_id
             end
         ) as total_valid_orders,
 
         -- Lifetime Value (Gross Revenue proxy for ABC classification)
         sum(
             case
-                when s.order_status != 'canceled' then s.line_total
+                when s.order_status in ('paid', 'confirmed') then s.line_total
                 else 0
             end
         ) as lifetime_gross_revenue,
@@ -52,7 +52,7 @@ customer_aggs as (
         -- Returned Amount (Abated in the original sale)
         sum(
             case
-                when s.order_status != 'canceled' then coalesce(r.refund_amount, 0)
+                when s.order_status in ('paid', 'confirmed') then coalesce(r.refund_amount, 0)
                 else 0
             end
         ) as returned_amount,
@@ -60,7 +60,7 @@ customer_aggs as (
         -- Total Taxes (ICMS + IPI applied only to the retained amount)
         sum(
             case
-                when s.order_status != 'canceled' then
+                when s.order_status in ('paid', 'confirmed') then
                     (s.line_total - coalesce(r.refund_amount, 0)) * ((coalesce(s.icms_rate, 0) + coalesce(s.ipi_rate, 0)) / 100.0)
                 else 0
             end
@@ -98,8 +98,9 @@ customer_behavior as (
         ca.lifetime_gross_revenue - ca.returned_amount - ca.total_taxes as lifetime_net_revenue,
 
         -- Window functions for ABC Curve calculation
+        -- customer_id as tie-breaker keeps the running total deterministic across runs
         sum(ca.lifetime_gross_revenue) over (
-            order by ca.lifetime_gross_revenue desc
+            order by ca.lifetime_gross_revenue desc, ca.customer_id
         ) as running_revenue,
         
         sum(ca.lifetime_gross_revenue) over () as total_revenue

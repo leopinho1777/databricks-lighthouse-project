@@ -22,10 +22,10 @@ daily_metrics as (
         s.date_id,
         s.channel,
         
-        -- Gross Revenue (Excluding canceled orders)
+        -- Gross Revenue (valid orders only: 'paid' and 'confirmed')
         sum(
             case 
-                when s.order_status != 'cancelled' then s.line_total 
+                when s.order_status in ('paid', 'confirmed') then s.line_total 
                 else 0 
             end
         ) as gross_revenue,
@@ -33,7 +33,7 @@ daily_metrics as (
         -- Returned Amount (Abated in the original sale month)
         sum(
             case 
-                when s.order_status != 'cancelled' then coalesce(r.refund_amount, 0) 
+                when s.order_status in ('paid', 'confirmed') then coalesce(r.refund_amount, 0) 
                 else 0 
             end
         ) as returned_amount,
@@ -41,7 +41,7 @@ daily_metrics as (
         -- Total Taxes (ICMS + IPI applied only to the retained amount)
         sum(
             case 
-                when s.order_status != 'cancelled' then 
+                when s.order_status in ('paid', 'confirmed') then 
                     (s.line_total - coalesce(r.refund_amount, 0)) * ((coalesce(s.icms_rate, 0) + coalesce(s.ipi_rate, 0)) / 100.0)
                 else 0 
             end
@@ -50,7 +50,7 @@ daily_metrics as (
         -- Net Revenue (Retained amount minus taxes)
         sum(
             case 
-                when s.order_status != 'cancelled' then 
+                when s.order_status in ('paid', 'confirmed') then 
                     (s.line_total - coalesce(r.refund_amount, 0)) - 
                     ((s.line_total - coalesce(r.refund_amount, 0)) * ((coalesce(s.icms_rate, 0) + coalesce(s.ipi_rate, 0)) / 100.0))
                 else 0 
@@ -60,7 +60,7 @@ daily_metrics as (
         -- Valid Orders Volume
         count(distinct 
             case 
-                when s.order_status != 'cancelled' then s.order_id 
+                when s.order_status in ('paid', 'confirmed') then s.order_id 
             end
         ) as valid_orders_volume,
         
@@ -74,7 +74,7 @@ daily_metrics as (
         -- Total Items Volume (For Average Basket Size)
         count(
             case 
-                when s.order_status != 'cancelled' then s.order_item_id 
+                when s.order_status in ('paid', 'confirmed') then s.order_item_id 
             end
         ) as valid_items_volume
 
