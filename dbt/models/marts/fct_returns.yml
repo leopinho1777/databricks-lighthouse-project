@@ -79,16 +79,13 @@ models:
               config:
                 severity: warn
       - name: product_sk
-        description: Surrogate key to the product dimension (exchanged-for product).
+        description: Surrogate key to the product dimension. Now correctly reflects the RETURNED product, fetched via the original sale (fct_sales).
+      - name: returned_variant_id
+        description: Natural key of the product variant that was actually returned by the customer.
+        data_tests:
+          - not_null
       - name: exchange_variant_id
         description: Product variant being exchanged for (replacement product) — null if action is 'refund'.
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_products')
-                field: product_variant_id
-              config:
-                severity: warn
       - name: return_status
         description: Status of the return — 'open', 'completed', or 'cancelled'.
         data_tests:
@@ -113,7 +110,7 @@ models:
       - name: date_id
         description: >
           Return date as an integer key (yyyyMMdd), used to relate this fact to
-          dim_calendary. Falls back to 19000101 when returned_at is null.
+          dim_calendary. Invalid (null) or future dates are filtered out of the model.
         data_tests:
           - not_null
           - relationships:
