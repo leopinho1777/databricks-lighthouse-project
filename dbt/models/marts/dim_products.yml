@@ -17,7 +17,7 @@ models:
           arguments:
             expression: "cost_price <= sale_price"
     columns:
-      - name: product_sk
+      - name: product_variant_sk
         description: Surrogate key of the product dimension.
         data_tests:
           - not_null

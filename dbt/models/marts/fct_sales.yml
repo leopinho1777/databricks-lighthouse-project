@@ -90,14 +90,14 @@ models:
                 field: location_id
               config:
                 severity: warn
-      - name: product_sk
+      - name: product_variant_sk
         description: Surrogate key to the product dimension.
         data_tests:
           - not_null
           - relationships:
               arguments:
                 to: ref('dim_products')
-                field: product_sk
+                field: product_variant_sk
               config:
                 severity: warn
       - name: product_variant_id

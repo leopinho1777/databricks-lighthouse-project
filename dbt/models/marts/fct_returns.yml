@@ -78,8 +78,8 @@ models:
                 field: location_id
               config:
                 severity: warn
-      - name: product_sk
-        description: Surrogate key to the product dimension. Now correctly reflects the RETURNED product, fetched via the original sale (fct_sales).
+      - name: product_variant_sk
+        description: Surrogate key to the product dimension. Correctly reflects the RETURNED product, resolved directly from dim_products.
       - name: returned_variant_id
         description: Natural key of the product variant that was actually returned by the customer.
         data_tests:
