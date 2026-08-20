@@ -130,7 +130,11 @@ models:
       - name: ipi_rate
         description: IPI tax rate applied to the item.
       - name: date_id
-        description: Foreign key to the date dimension (integer format YYYYMMDD). Defaults to 19000101 for unknown/invalid/future dates.
+        description: >
+          Foreign key to the date dimension (integer format YYYYMMDD). Falls back to
+          19000101 when placed_at is null. That key has no match in dim_calendary,
+          so such rows are reported by the relationships test and land in the blank
+          row of the relationship in Power BI.
         data_tests:
           - not_null
           - relationships:

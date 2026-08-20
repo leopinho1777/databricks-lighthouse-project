@@ -20,7 +20,6 @@ with spine as (
 
 ),
 
--- Aqui deve se chamar 'calendar_dates' e não 'final'
 calendar_dates as (
 
     select
@@ -38,29 +37,9 @@ calendar_dates as (
 
 ),
 
-dummy_date as (
-
-    -- Registro fictício para vendas com data nula/invalida/futura na origem
-    select
-        19000101 as date_id,
-        cast('1900-01-01' as date) as date_day,
-        1900 as year,
-        1 as month,
-        'Não informado' as month_name,
-        cast('1900-01-01' as date) as month_start,
-        1 as quarter,
-        1 as day_of_week,
-        false as is_current_year,
-        false as is_previous_year
-
-),
-
--- Esta sim é a única CTE chamada 'final'
 final as (
 
     select * from calendar_dates
-    union all
-    select * from dummy_date
 
 )
 
