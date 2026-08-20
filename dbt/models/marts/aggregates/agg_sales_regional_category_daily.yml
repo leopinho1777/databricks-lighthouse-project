@@ -1,0 +1,39 @@
+version: 2
+
+models:
+  - name: agg_sales_regional_category_daily
+    description: >
+      Daily sales aggregation at the Region (State) and Product Category grain. 
+      Designed specifically to support geographical and categorical filtering in BI dashboards
+      without hitting the detailed fact table. Excludes order counts to prevent fan-out 
+      (double-counting) issues for multi-category orders.
+    columns:
+      - name: agg_sk
+        description: Surrogate key for the aggregate row.
+        data_tests:
+          - not_null
+          - unique
+      - name: date_id
+        description: Date of the sales (links to dim_calendary).
+        data_tests:
+          - not_null
+      - name: channel
+        description: Sales channel (e.g., ecommerce, physical store).
+        data_tests:
+          - not_null
+      - name: customer_state
+        description: State of the customer. Defaults to 'Não Informado' if unknown.
+        data_tests:
+          - not_null
+      - name: category_name
+        description: Product category name.
+        data_tests:
+          - not_null
+      - name: daily_items_sold
+        description: Total quantity of items sold for this specific grain. Additive metric.
+        data_tests:
+          - not_null
+      - name: daily_gross_revenue
+        description: Total gross revenue (line_total) for this specific grain. Additive metric.
+        data_tests:
+          - not_null
