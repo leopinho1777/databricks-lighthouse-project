@@ -113,7 +113,9 @@ models:
       - name: date_id
         description: >
           Return date as an integer key (yyyyMMdd), used to relate this fact to
-          dim_calendary. Falls back to 19000101 when returned_at is null.
+          dim_calendary. Falls back to 19000101 when returned_at is null. That key has
+          no match in dim_calendary, so such rows are reported by the relationships test
+          and land in the blank row of the relationship in Power BI.
         data_tests:
           - not_null
           - relationships:

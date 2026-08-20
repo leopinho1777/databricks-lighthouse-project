@@ -4,11 +4,12 @@ models:
   - name: dim_calendary
     description: >
       Calendar dimension built using dbt_utils.date_spine. Spans from 2020-01-01 
-      up to the maximum ingestion date (or end of current year). Includes a dummy 
-      record (1900-01-01 / 19000101) to handle missing or future dates from the source.
+      up to the maximum ingestion date (or end of current year). The date range is
+      contiguous by construction, with no gaps, so the table can be flagged as a
+      date table in Power BI — a requirement for the Time Intelligence measures.
     columns:
       - name: date_id
-        description: Integer representation of the date (YYYYMMDD). Primary key. Includes 19000101 for unknown/invalid dates.
+        description: Integer representation of the date (YYYYMMDD). Primary key.
         data_tests:
           - not_null
           - unique
@@ -22,7 +23,7 @@ models:
       - name: month
         description: Month number (1-12) extracted from the date.
       - name: month_name
-        description: Full name of the month. Returns 'Não informado' for the dummy date.
+        description: Full name of the month.
       - name: month_start
         description: The first day of the respective month.
       - name: quarter
