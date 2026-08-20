@@ -16,7 +16,7 @@ employees as (
 products as (
 
     select
-        product_sk,
+        product_variant_sk,
         product_variant_id
     from {{ ref('dim_products') }}
 
@@ -40,7 +40,7 @@ final as (
         purchases.destination_location_id,
         e.employee_sk,
         purchases.employee_id,
-        p.product_sk,
+        p.product_variant_sk,
         purchases.product_variant_id,
 
         -- Contexto

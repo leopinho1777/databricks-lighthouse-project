@@ -14,7 +14,7 @@ with return_items as (
 
 order_items as (
 
-    select order_item_id
+    select order_item_id, product_variant_id
     from {{ ref('stg_order_items') }}
 
 ),
@@ -43,6 +43,7 @@ enriched as (
 
         -- Bridge with original sale + keys for dimensions
         ri.order_item_id,
+        oi.product_variant_id,
         r.order_id,
         r.customer_id,
         r.received_at_location_id as location_id,
