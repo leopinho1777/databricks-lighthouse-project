@@ -4,7 +4,7 @@ with fct_sales as (
         date_id,
         channel,
         customer_sk,
-        product_sk,
+        product_variant_sk,
         quantity,
         line_total
     from {{ ref('fct_sales') }}
@@ -24,7 +24,7 @@ customers as (
 products as (
 
     select
-        product_sk,
+        product_variant_sk,
         category_name
     from {{ ref('dim_products') }}
 
@@ -43,7 +43,7 @@ joined as (
     left join customers as c
         on s.customer_sk = c.customer_sk
     left join products as p
-        on s.product_sk = p.product_sk
+        on s.product_variant_sk = p.product_variant_sk
 
 ),
 
