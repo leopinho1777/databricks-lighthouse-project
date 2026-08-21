@@ -21,7 +21,7 @@ models:
         description: Day where the snapshot change became valid.
         data_tests:
           - not_null
-      - name: product_sk
+      - name: product_variant_sk
         description: Surrogate key to the product dimension.
         data_tests:
           - not_null

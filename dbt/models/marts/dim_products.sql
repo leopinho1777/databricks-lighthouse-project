@@ -69,7 +69,7 @@ final as (
 
     select
         -- Surrogate key
-        {{ dbt_utils.generate_surrogate_key(['product_variant_id']) }} as product_sk,
+        {{ dbt_utils.generate_surrogate_key(['product_variant_id']) }} as product_variant_sk,
 
         -- Natural key
         product_variant_id,
