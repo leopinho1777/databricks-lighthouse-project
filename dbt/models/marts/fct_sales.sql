@@ -34,7 +34,7 @@ locations as (
 products as (
 
     select
-        product_sk,
+        product_variant_sk,
         product_variant_id
     from {{ ref('dim_products') }}
 
@@ -57,7 +57,7 @@ final as (
         sales.salesperson_id,
         l.location_sk,
         sales.location_id,
-        p.product_sk,
+        p.product_variant_sk,
         sales.product_variant_id,
         coalesce(cast(date_format(sales.placed_at, 'yyyyMMdd') as int), 19000101) as date_id,
 
