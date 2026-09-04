@@ -15,5 +15,5 @@ venv/
 skills-lock.json
 logs/
 .scratch
-CLAUDE.md
+
 .claude
