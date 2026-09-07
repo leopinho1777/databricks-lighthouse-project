@@ -21,6 +21,11 @@ dev = [
     "databricks-connect>=15.4,<15.5",
     "ipykernel",
 ]
+forecasting = [
+    "databricks-sql-connector>=4.5.0",
+    "numpy>=1.26.4",
+    "pandas>=2.3.3",
+]
 
 [project.scripts]
 main = "grupo10.main:main"
