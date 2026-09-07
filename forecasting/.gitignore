@@ -1,0 +1,3 @@
+# Local query-result caches used to speed up re-runs — not deliverables.
+# The small summary/metrics CSVs in output/ are still tracked.
+**/output/_*.parquet
