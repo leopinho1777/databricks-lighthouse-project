@@ -2,6 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Reference to personal CLAUDE.md
+@CLAUDE.local.md
+
 ## Project Configuration
 
 ### to-tickets skill
@@ -26,6 +29,8 @@ databricks/
   orchestration/   # Bundle "orchestration": top-level job that chains ingestion -> transformation
 dbt/                # dbt project ("desafio_lh"): staging -> intermediate -> marts (star schema)
 ```
+
+- Consult `docs/dbt_marts_context.json` for exact names of tables and columns. Never make stuff up.
 
 `databricks/orchestration` does **not** reference the other two bundles by include; it wires them together at the Databricks job level via hardcoded `job_id`s in `orchestration_job.yml` (`run_job_task`), so the ingestion and transformation jobs must already be deployed before the orchestration job can run.
 

@@ -1,0 +1,3835 @@
+{
+  "project": "desafio_lh",
+  "adapter": "databricks",
+  "layer": [
+    "models/marts"
+  ],
+  "generated_at": "2026-09-04T18:17:41.660836Z",
+  "counts": {
+    "models": 17,
+    "upstream_nodes": 54
+  },
+  "models": [
+    {
+      "name": "agg_customer_metrics",
+      "relation": "develop.pinho_analytics_marts.agg_customer_metrics",
+      "description": "Aggregate table with historical customer metrics. Calculates gross and net Lifetime Value (LTV), first and last purchase dates, churn risk (segmented thresholds by person_type: 180 days for PJ, 240 days for PF), and dynamic ABC Curve classification based on revenue concentration. Grain: 1 row per customer.",
+      "materialized": "table",
+      "path": "models/marts/aggregates/agg_customer_metrics.sql",
+      "upstream_direct": [
+        "dim_customers",
+        "fct_sales",
+        "int_returns_enriched"
+      ],
+      "upstream_lineage": [
+        {
+          "node": "dim_customers",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "fct_sales",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "int_returns_enriched",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "dim_customer_addresses",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "dim_employees",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "dim_locations",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "dim_products",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "int_sales_enriched",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_customers",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_order_items",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_return_items",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_returns",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "int_products_categorized",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_addresses",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_brands",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_employees",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_locations",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_orders",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_payments",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_product_variants",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "bronze.customers",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.order_items",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.return_items",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.returns",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "stg_products",
+          "depth": 4,
+          "type": "model"
+        },
+        {
+          "node": "seed_category_fix",
+          "depth": 4,
+          "type": "model"
+        },
+        {
+          "node": "bronze.addresses",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.brands",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.employees",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.locations",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.orders",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.payments",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.product_variants",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.products",
+          "depth": 5,
+          "type": "source"
+        }
+      ],
+      "source_tables": [
+        "bronze.addresses",
+        "bronze.brands",
+        "bronze.customers",
+        "bronze.employees",
+        "bronze.locations",
+        "bronze.order_items",
+        "bronze.orders",
+        "bronze.payments",
+        "bronze.product_variants",
+        "bronze.products",
+        "bronze.return_items",
+        "bronze.returns"
+      ],
+      "columns": [
+        {
+          "name": "customer_id",
+          "type": "integer",
+          "description": "Natural key of the customer.",
+          "tests": [
+            "not_null",
+            "relationships",
+            "unique"
+          ]
+        },
+        {
+          "name": "first_purchase_date",
+          "type": "date",
+          "description": "Date of the customer's very first order."
+        },
+        {
+          "name": "last_purchase_date",
+          "type": "date",
+          "description": "Date of the customer's most recent order."
+        },
+        {
+          "name": "days_since_last_purchase",
+          "type": "integer",
+          "description": "Number of days elapsed between the last purchase and the current date."
+        },
+        {
+          "name": "is_churn_risk",
+          "type": "boolean",
+          "description": "Boolean flag indicating if the customer is at risk of churning, using segmented thresholds by person_type: PJ (corporate) customers are flagged after 180 days of inactivity (~3x median repurchase interval), PF (individual) customers after 240 days (~4x median repurchase interval)."
+        },
+        {
+          "name": "total_valid_orders",
+          "type": "bigint",
+          "description": "Historical count of valid orders placed by the customer."
+        },
+        {
+          "name": "lifetime_gross_revenue",
+          "type": "decimal(28,2)",
+          "description": "Total gross revenue generated by the customer over their entire lifecycle (LTV)."
+        },
+        {
+          "name": "returned_amount",
+          "type": "decimal(38,2)",
+          "description": "Total refunded amount across the customer's lifetime, on valid (non-canceled) orders."
+        },
+        {
+          "name": "total_taxes",
+          "type": "decimal(38,6)",
+          "description": "Total ICMS + IPI taxes across the customer's lifetime, applied to the amount retained after returns."
+        },
+        {
+          "name": "lifetime_net_revenue",
+          "type": "decimal(38,6)",
+          "description": "Lifetime revenue net of returns and taxes (lifetime_gross_revenue - returned_amount - total_taxes), usable for profit-based LTV analysis."
+        },
+        {
+          "name": "abc_class",
+          "type": "string",
+          "description": "Customer classification based on the ABC Curve (Pareto Principle). 'A' = top 80% of revenue, 'B' = next 15%, 'C' = bottom 5%.",
+          "tests": [
+            "accepted_values",
+            "not_null"
+          ]
+        },
+        {
+          "name": "person_type",
+          "type": "string",
+          "description": "Indicates whether the customer is an individual (PF) or a company (PJ). Brought from dim_customers."
+        },
+        {
+          "name": "inferred_purchase_reason",
+          "type": "string",
+          "description": "Proxy for the purchase reason based on the customer profile. 'Professional Use' for corporate entities (PJ) and 'Leisure' for individuals (PF)."
+        }
+      ]
+    },
+    {
+      "name": "agg_customer_monthly",
+      "relation": "develop.pinho_analytics_marts.agg_customer_monthly",
+      "description": "Monthly aggregate table at the customer grain (Customer x Month). Built using a date spine cross-join to ensure every month since the customer's first purchase is represented, even if they made no purchases (zero-filled). Ideal for cohort analysis, Monthly Recurring Revenue (MRR), and MoM retention charts.",
+      "materialized": "table",
+      "path": "models/marts/aggregates/agg_customer_monthly.sql",
+      "upstream_direct": [
+        "dim_calendary",
+        "dim_customers",
+        "fct_sales"
+      ],
+      "upstream_lineage": [
+        {
+          "node": "dim_calendary",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "dim_customers",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "fct_sales",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "dim_customer_addresses",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "dim_employees",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "dim_locations",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "dim_products",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "int_sales_enriched",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_customers",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "int_products_categorized",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_addresses",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_brands",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_employees",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_locations",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_order_items",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_orders",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_payments",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_product_variants",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "bronze.customers",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "stg_products",
+          "depth": 4,
+          "type": "model"
+        },
+        {
+          "node": "seed_category_fix",
+          "depth": 4,
+          "type": "model"
+        },
+        {
+          "node": "bronze.addresses",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.brands",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.employees",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.locations",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.order_items",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.orders",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.payments",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.product_variants",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.products",
+          "depth": 5,
+          "type": "source"
+        }
+      ],
+      "source_tables": [
+        "bronze.addresses",
+        "bronze.brands",
+        "bronze.customers",
+        "bronze.employees",
+        "bronze.locations",
+        "bronze.order_items",
+        "bronze.orders",
+        "bronze.payments",
+        "bronze.product_variants",
+        "bronze.products"
+      ],
+      "columns": [
+        {
+          "name": "customer_monthly_sk",
+          "type": "string",
+          "description": "Surrogate key for the aggregate, generated by hashing the customer_id and the reporting_month.",
+          "tests": [
+            "not_null",
+            "unique"
+          ]
+        },
+        {
+          "name": "customer_id",
+          "type": "integer",
+          "description": "Natural key for the customer.",
+          "tests": [
+            "not_null",
+            "relationships"
+          ]
+        },
+        {
+          "name": "person_type",
+          "type": "string",
+          "description": "Customer type (PF or PJ) brought in for easy slicing in BI tools.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "reporting_month",
+          "type": "date",
+          "description": "The first day of the reporting month.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "total_valid_orders",
+          "type": "bigint",
+          "description": "Count of paid or confirmed orders placed by the customer in this specific month. Zero if no orders were placed.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "monthly_revenue",
+          "type": "decimal(28,2)",
+          "description": "Total gross revenue (line_total) generated by the customer in this specific month. Zero if no orders were placed.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "last_purchase_at",
+          "type": "timestamp",
+          "description": "Timestamp of the latest purchase made within this specific month. Null if the customer made no purchases."
+        }
+      ]
+    },
+    {
+      "name": "agg_product_performance",
+      "relation": "develop.pinho_analytics_marts.agg_product_performance",
+      "description": "Aggregate table tracking product performance at a monthly grain. Calculates Cost of Goods Sold (COGS) based on standard cost, and the true Contribution Margin after deducting returns, taxes, and costs.",
+      "materialized": "table",
+      "path": "models/marts/aggregates/agg_product_performance.sql",
+      "upstream_direct": [
+        "dim_products",
+        "fct_sales",
+        "int_returns_enriched"
+      ],
+      "upstream_lineage": [
+        {
+          "node": "dim_products",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "fct_sales",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "int_returns_enriched",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "dim_customers",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "dim_employees",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "dim_locations",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "int_products_categorized",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "int_sales_enriched",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_brands",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_order_items",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_product_variants",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_return_items",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_returns",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "dim_customer_addresses",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_customers",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_employees",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_locations",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_orders",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_payments",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_products",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "seed_category_fix",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "bronze.brands",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.order_items",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.product_variants",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.return_items",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.returns",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "stg_addresses",
+          "depth": 4,
+          "type": "model"
+        },
+        {
+          "node": "bronze.customers",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.employees",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.locations",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.orders",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.payments",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.products",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.addresses",
+          "depth": 5,
+          "type": "source"
+        }
+      ],
+      "source_tables": [
+        "bronze.addresses",
+        "bronze.brands",
+        "bronze.customers",
+        "bronze.employees",
+        "bronze.locations",
+        "bronze.order_items",
+        "bronze.orders",
+        "bronze.payments",
+        "bronze.product_variants",
+        "bronze.products",
+        "bronze.return_items",
+        "bronze.returns"
+      ],
+      "columns": [
+        {
+          "name": "performance_month",
+          "type": "date",
+          "description": "The first day of the performance month (YYYY-MM-01).",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "product_variant_id",
+          "type": "string",
+          "description": "Natural key of the product variant.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "product_name",
+          "type": "string",
+          "description": "Product display name."
+        },
+        {
+          "name": "category_name",
+          "type": "string",
+          "description": "Product business category."
+        },
+        {
+          "name": "brand_name",
+          "type": "string",
+          "description": "Brand name of the product."
+        },
+        {
+          "name": "gross_quantity_sold",
+          "type": "bigint",
+          "description": "Total quantity sold (excluding canceled orders)."
+        },
+        {
+          "name": "returned_quantity",
+          "type": "bigint",
+          "description": "Total quantity returned by customers."
+        },
+        {
+          "name": "net_quantity_sold",
+          "type": "bigint",
+          "description": "Net quantity sold (Gross Quantity - Returned Quantity)."
+        },
+        {
+          "name": "gross_revenue",
+          "type": "decimal(28,2)",
+          "description": "Gross revenue from sales."
+        },
+        {
+          "name": "returned_amount",
+          "type": "decimal(38,2)",
+          "description": "Total amount refunded for returns."
+        },
+        {
+          "name": "total_taxes",
+          "type": "decimal(38,6)",
+          "description": "Total taxes (ICMS + IPI) calculated over the non-returned amount."
+        },
+        {
+          "name": "total_cogs",
+          "type": "decimal(38,2)",
+          "description": "Cost of Goods Sold (CMV). Calculated as Net Quantity Sold multiplied by the product's standard cost_price."
+        },
+        {
+          "name": "net_revenue",
+          "type": "decimal(38,6)",
+          "description": "Net Revenue (Gross Revenue - Returned Amount - Taxes)."
+        },
+        {
+          "name": "contribution_margin",
+          "type": "decimal(38,6)",
+          "description": "Real Contribution Margin (Net Revenue - COGS). This is the true profit before operational expenses."
+        }
+      ],
+      "model_tests": [
+        "unique_combination_of_columns"
+      ]
+    },
+    {
+      "name": "agg_sales_daily",
+      "relation": "develop.pinho_analytics_marts.agg_sales_daily",
+      "description": "Aggregate table with daily sales metrics by channel. Contains gross revenue, returned amounts, taxes applied to the residual amount, net revenue, and order volumes. Grain: 1 row per Day (date_id) and Channel (channel).",
+      "materialized": "table",
+      "path": "models/marts/aggregates/agg_sales_daily.sql",
+      "upstream_direct": [
+        "fct_sales",
+        "int_returns_enriched"
+      ],
+      "upstream_lineage": [
+        {
+          "node": "fct_sales",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "int_returns_enriched",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "dim_customers",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "dim_employees",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "dim_locations",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "dim_products",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "int_sales_enriched",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_order_items",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_return_items",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_returns",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "dim_customer_addresses",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "int_products_categorized",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_brands",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_customers",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_employees",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_locations",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_orders",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_payments",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_product_variants",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "bronze.order_items",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.return_items",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.returns",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "stg_addresses",
+          "depth": 4,
+          "type": "model"
+        },
+        {
+          "node": "stg_products",
+          "depth": 4,
+          "type": "model"
+        },
+        {
+          "node": "seed_category_fix",
+          "depth": 4,
+          "type": "model"
+        },
+        {
+          "node": "bronze.brands",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.customers",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.employees",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.locations",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.orders",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.payments",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.product_variants",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.addresses",
+          "depth": 5,
+          "type": "source"
+        },
+        {
+          "node": "bronze.products",
+          "depth": 5,
+          "type": "source"
+        }
+      ],
+      "source_tables": [
+        "bronze.addresses",
+        "bronze.brands",
+        "bronze.customers",
+        "bronze.employees",
+        "bronze.locations",
+        "bronze.order_items",
+        "bronze.orders",
+        "bronze.payments",
+        "bronze.product_variants",
+        "bronze.products",
+        "bronze.return_items",
+        "bronze.returns"
+      ],
+      "columns": [
+        {
+          "name": "date_id",
+          "type": "integer",
+          "description": "Foreign key to the calendar dimension (integer format YYYYMMDD).",
+          "tests": [
+            "not_null",
+            "relationships"
+          ]
+        },
+        {
+          "name": "channel",
+          "type": "string",
+          "description": "Sales channel (e.g., ecommerce, physical store).",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "gross_revenue",
+          "type": "decimal(28,2)",
+          "description": "Gross revenue from valid orders (excludes canceled ones)."
+        },
+        {
+          "name": "returned_amount",
+          "type": "decimal(38,2)",
+          "description": "Total refunded amount corresponding to items sold on this specific day."
+        },
+        {
+          "name": "total_taxes",
+          "type": "decimal(38,6)",
+          "description": "Total taxes (ICMS + IPI) calculated exclusively over the residual amount (gross minus return)."
+        },
+        {
+          "name": "net_revenue",
+          "type": "decimal(38,6)",
+          "description": "Net revenue (Gross Revenue - Returned Amount - Total Taxes)."
+        },
+        {
+          "name": "valid_orders_volume",
+          "type": "bigint",
+          "description": "Distinct count of valid orders."
+        },
+        {
+          "name": "canceled_orders_volume",
+          "type": "bigint",
+          "description": "Distinct count of canceled orders. Used for the Cancellation Rate metric."
+        },
+        {
+          "name": "valid_items_volume",
+          "type": "bigint",
+          "description": "Total volume of items in valid orders. Base for calculating Items per Order (Average Basket Size)."
+        }
+      ],
+      "model_tests": [
+        "unique_combination_of_columns"
+      ]
+    },
+    {
+      "name": "agg_sales_regional_category_daily",
+      "relation": "develop.pinho_analytics_marts.agg_sales_regional_category_daily",
+      "description": "Daily sales aggregation at the Region (State) and Product Category grain. Designed specifically to support geographical and categorical filtering in BI dashboards without hitting the detailed fact table. Excludes order counts to prevent fan-out (double-counting) issues for multi-category orders.",
+      "materialized": "table",
+      "path": "models/marts/aggregates/agg_sales_regional_category_daily.sql",
+      "upstream_direct": [
+        "dim_customers",
+        "dim_products",
+        "fct_sales"
+      ],
+      "upstream_lineage": [
+        {
+          "node": "dim_customers",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "dim_products",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "fct_sales",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "dim_customer_addresses",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "dim_employees",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "dim_locations",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "int_products_categorized",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "int_sales_enriched",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_brands",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_customers",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_product_variants",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_addresses",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_employees",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_locations",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_order_items",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_orders",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_payments",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_products",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "seed_category_fix",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "bronze.brands",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.customers",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.product_variants",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.addresses",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.employees",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.locations",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.order_items",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.orders",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.payments",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.products",
+          "depth": 4,
+          "type": "source"
+        }
+      ],
+      "source_tables": [
+        "bronze.addresses",
+        "bronze.brands",
+        "bronze.customers",
+        "bronze.employees",
+        "bronze.locations",
+        "bronze.order_items",
+        "bronze.orders",
+        "bronze.payments",
+        "bronze.product_variants",
+        "bronze.products"
+      ],
+      "columns": [
+        {
+          "name": "agg_sk",
+          "type": "string",
+          "description": "Surrogate key for the aggregate row.",
+          "tests": [
+            "not_null",
+            "unique"
+          ]
+        },
+        {
+          "name": "date_id",
+          "type": "integer",
+          "description": "Date of the sales (links to dim_calendary).",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "channel",
+          "type": "string",
+          "description": "Sales channel (e.g., ecommerce, physical store).",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "customer_state",
+          "type": "string",
+          "description": "State of the customer. Defaults to 'Não Informado' if unknown.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "category_name",
+          "type": "string",
+          "description": "Product category name.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "daily_items_sold",
+          "type": "bigint",
+          "description": "Total quantity of items sold for this specific grain. Additive metric.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "daily_gross_revenue",
+          "type": "decimal(28,2)",
+          "description": "Total gross revenue (line_total) for this specific grain. Additive metric.",
+          "tests": [
+            "not_null"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "agg_sales_regional_orders_daily",
+      "relation": "develop.pinho_analytics_marts.agg_sales_regional_orders_daily",
+      "description": "Daily order count aggregation at the Region (State) and Channel grain. Built separately from the category aggregate to avoid fan-out (double-counting) of orders that contain items from multiple categories.",
+      "materialized": "table",
+      "path": "models/marts/aggregates/agg_sales_regional_orders_daily.sql",
+      "upstream_direct": [
+        "dim_customers",
+        "fct_sales"
+      ],
+      "upstream_lineage": [
+        {
+          "node": "dim_customers",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "fct_sales",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "dim_customer_addresses",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "dim_employees",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "dim_locations",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "dim_products",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "int_sales_enriched",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_customers",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "int_products_categorized",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_addresses",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_brands",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_employees",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_locations",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_order_items",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_orders",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_payments",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_product_variants",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "bronze.customers",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "stg_products",
+          "depth": 4,
+          "type": "model"
+        },
+        {
+          "node": "seed_category_fix",
+          "depth": 4,
+          "type": "model"
+        },
+        {
+          "node": "bronze.addresses",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.brands",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.employees",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.locations",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.order_items",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.orders",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.payments",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.product_variants",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.products",
+          "depth": 5,
+          "type": "source"
+        }
+      ],
+      "source_tables": [
+        "bronze.addresses",
+        "bronze.brands",
+        "bronze.customers",
+        "bronze.employees",
+        "bronze.locations",
+        "bronze.order_items",
+        "bronze.orders",
+        "bronze.payments",
+        "bronze.product_variants",
+        "bronze.products"
+      ],
+      "columns": [
+        {
+          "name": "agg_sk",
+          "type": "string",
+          "description": "Surrogate key for the aggregate row.",
+          "tests": [
+            "not_null",
+            "unique"
+          ]
+        },
+        {
+          "name": "date_id",
+          "type": "integer",
+          "description": "Date of the sales (links to dim_calendary).",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "channel",
+          "type": "string",
+          "description": "Sales channel (e.g., ecommerce, physical store).",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "customer_state",
+          "type": "string",
+          "description": "State of the customer. Defaults to 'Não Informado' if unknown.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "daily_valid_orders",
+          "type": "bigint",
+          "description": "Count of distinct paid or confirmed orders for this specific region and channel.",
+          "tests": [
+            "not_null"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "dim_calendary",
+      "relation": "develop.pinho_analytics_marts.dim_calendary",
+      "description": "Calendar dimension built using dbt_utils.date_spine. Spans from 2020-01-01 up to the maximum ingestion date (or end of current year). The date range is contiguous by construction, with no gaps, so the table can be flagged as a date table in Power BI — a requirement for the Time Intelligence measures.",
+      "materialized": "table",
+      "path": "models/marts/dim_calendary.sql",
+      "columns": [
+        {
+          "name": "date_id",
+          "type": "integer",
+          "description": "Integer representation of the date (YYYYMMDD). Primary key.",
+          "tests": [
+            "not_null",
+            "unique"
+          ]
+        },
+        {
+          "name": "date_day",
+          "type": "date",
+          "description": "The actual date format (YYYY-MM-DD).",
+          "tests": [
+            "not_null",
+            "unique"
+          ]
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "description": "Year extracted from the date."
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "description": "Month number (1-12) extracted from the date."
+        },
+        {
+          "name": "month_name",
+          "type": "string",
+          "description": "Full name of the month."
+        },
+        {
+          "name": "month_start",
+          "type": "date",
+          "description": "The first day of the respective month."
+        },
+        {
+          "name": "quarter",
+          "type": "integer",
+          "description": "Quarter of the year (1-4)."
+        },
+        {
+          "name": "day_of_week",
+          "type": "integer",
+          "description": "Day of the week (integer)."
+        },
+        {
+          "name": "is_current_year",
+          "type": "boolean",
+          "description": "Boolean flag indicating if the date belongs to the current ongoing year. Useful for Time Intelligence in BI."
+        },
+        {
+          "name": "is_previous_year",
+          "type": "boolean",
+          "description": "Boolean flag indicating if the date belongs to the immediately preceding year."
+        }
+      ]
+    },
+    {
+      "name": "dim_customer_addresses",
+      "relation": "develop.pinho_analytics_marts.dim_customer_addresses",
+      "description": "Customer address dimension with historical versions for address changes. Captures address history at the address-level and exposes current and prior versions for SCD2 reporting.",
+      "materialized": "table",
+      "path": "models/marts/dim_customer_addresses.sql",
+      "upstream_direct": [
+        "stg_addresses"
+      ],
+      "upstream_lineage": [
+        {
+          "node": "stg_addresses",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "bronze.addresses",
+          "depth": 2,
+          "type": "source"
+        }
+      ],
+      "source_tables": [
+        "bronze.addresses"
+      ],
+      "columns": [
+        {
+          "name": "customer_address_sk",
+          "type": "string",
+          "description": "Version-aware surrogate key for the customer address record.",
+          "tests": [
+            "not_null",
+            "unique"
+          ]
+        },
+        {
+          "name": "customer_id",
+          "type": "integer",
+          "description": "Customer natural key.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "address_id",
+          "type": "integer",
+          "description": "Source address key.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "address_type",
+          "type": "string",
+          "description": "Type of address (home, billing, shipping, etc.)."
+        },
+        {
+          "name": "is_primary",
+          "type": "boolean",
+          "description": "Boolean marker for the primary customer address."
+        },
+        {
+          "name": "postal_code",
+          "type": "string",
+          "description": "Brazilian postal code (CEP) in standard XXXXX-XXX format."
+        },
+        {
+          "name": "street",
+          "type": "string",
+          "description": "Street name."
+        },
+        {
+          "name": "number",
+          "type": "string",
+          "description": "Street number."
+        },
+        {
+          "name": "complement",
+          "type": "string",
+          "description": "Extra address detail such as unit or apartment."
+        },
+        {
+          "name": "district",
+          "type": "string",
+          "description": "Address district or neighbourhood."
+        },
+        {
+          "name": "city",
+          "type": "string",
+          "description": "City name."
+        },
+        {
+          "name": "state",
+          "type": "string",
+          "description": "State or province."
+        },
+        {
+          "name": "country",
+          "type": "string",
+          "description": "Country name."
+        },
+        {
+          "name": "valid_from",
+          "type": "timestamp",
+          "description": "Timestamp when this address version became active."
+        },
+        {
+          "name": "valid_to",
+          "type": "timestamp",
+          "description": "Timestamp when this address version expired (null for current)."
+        },
+        {
+          "name": "is_current",
+          "type": "boolean",
+          "description": "Boolean flag indicating whether this row is the active address version.",
+          "tests": [
+            "not_null"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "dim_customers",
+      "relation": "develop.pinho_analytics_marts.dim_customers",
+      "description": "Customer dimension — one record per customer, enriched with the primary address geography (city/state/country). Conformed dimension used by fct_sales.",
+      "materialized": "table",
+      "path": "models/marts/dim_customers.sql",
+      "upstream_direct": [
+        "dim_customer_addresses",
+        "stg_customers"
+      ],
+      "upstream_lineage": [
+        {
+          "node": "dim_customer_addresses",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "stg_customers",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "stg_addresses",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "bronze.customers",
+          "depth": 2,
+          "type": "source"
+        },
+        {
+          "node": "bronze.addresses",
+          "depth": 3,
+          "type": "source"
+        }
+      ],
+      "source_tables": [
+        "bronze.addresses",
+        "bronze.customers"
+      ],
+      "columns": [
+        {
+          "name": "customer_sk",
+          "type": "string",
+          "description": "Surrogate key of the customer dimension.",
+          "tests": [
+            "not_null",
+            "unique"
+          ]
+        },
+        {
+          "name": "customer_id",
+          "type": "integer",
+          "description": "Natural key — customer identifier (grain of the table).",
+          "tests": [
+            "not_null",
+            "unique"
+          ]
+        },
+        {
+          "name": "person_type",
+          "type": "string",
+          "description": "Customer type — PF (Pessoa Física, individual) or PJ (Pessoa Jurídica, company).",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "state",
+          "type": "string",
+          "description": "State of the customer's primary address (null if no address)."
+        },
+        {
+          "name": "legal_name",
+          "type": "string",
+          "description": "Customer legal (registered) name."
+        },
+        {
+          "name": "trade_name",
+          "type": "string",
+          "description": "Customer trade (fantasy) name — typically null for individuals (PF)."
+        },
+        {
+          "name": "tax_id",
+          "type": "string",
+          "description": "Customer tax identifier (CPF/CNPJ) — natural business key.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "state_registration",
+          "type": "string",
+          "description": "State registration number (inscrição estadual) — often null for individuals."
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "description": "Whether the customer is currently active.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "city",
+          "type": "string",
+          "description": "City of the customer's primary address (null if no address)."
+        },
+        {
+          "name": "country",
+          "type": "string",
+          "description": "Country of the customer's primary address (null if no address)."
+        }
+      ]
+    },
+    {
+      "name": "dim_employees",
+      "relation": "develop.pinho_analytics_marts.dim_employees",
+      "description": "Employee dimension — one record per employee, with role and home location. Conformed dimension used by fct_sales (salesperson) and future purchase facts (buyer).",
+      "materialized": "table",
+      "path": "models/marts/dim_employees.sql",
+      "upstream_direct": [
+        "stg_employees"
+      ],
+      "upstream_lineage": [
+        {
+          "node": "stg_employees",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "bronze.employees",
+          "depth": 2,
+          "type": "source"
+        }
+      ],
+      "source_tables": [
+        "bronze.employees"
+      ],
+      "columns": [
+        {
+          "name": "employee_sk",
+          "type": "string",
+          "description": "Surrogate key of the employee dimension.",
+          "tests": [
+            "not_null",
+            "unique"
+          ]
+        },
+        {
+          "name": "employee_id",
+          "type": "integer",
+          "description": "Natural key — employee identifier from source.",
+          "tests": [
+            "not_null",
+            "unique"
+          ]
+        },
+        {
+          "name": "location_id",
+          "type": "integer",
+          "description": "Employee's home/primary location (FK to dim_locations)."
+        },
+        {
+          "name": "employee_role",
+          "type": "string",
+          "description": "Job role / position."
+        },
+        {
+          "name": "full_name",
+          "type": "string",
+          "description": "Employee full name."
+        },
+        {
+          "name": "hire_date",
+          "type": "date",
+          "description": "Date the employee was hired.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "is_active_employee",
+          "type": "boolean",
+          "description": "Whether the employee is currently active.",
+          "tests": [
+            "not_null"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "dim_locations",
+      "relation": "develop.pinho_analytics_marts.dim_locations",
+      "description": "Location dimension. Contains historical records for each warehouse or store location (SCD Type 2).",
+      "materialized": "table",
+      "path": "models/marts/dim_locations.sql",
+      "upstream_direct": [
+        "stg_locations"
+      ],
+      "upstream_lineage": [
+        {
+          "node": "stg_locations",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "bronze.locations",
+          "depth": 2,
+          "type": "source"
+        }
+      ],
+      "source_tables": [
+        "bronze.locations"
+      ],
+      "columns": [
+        {
+          "name": "location_sk",
+          "type": "string",
+          "description": "Surrogate key generated from location_id and updated_at.",
+          "tests": [
+            "not_null",
+            "unique"
+          ]
+        },
+        {
+          "name": "location_id",
+          "type": "integer",
+          "description": "Location natural key.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "location_name",
+          "type": "string",
+          "description": "Name of the location."
+        },
+        {
+          "name": "location_type",
+          "type": "string",
+          "description": "Type of location (e.g., warehouse or store)."
+        },
+        {
+          "name": "city_name",
+          "type": "string",
+          "description": "City where the location is situated."
+        },
+        {
+          "name": "state_code",
+          "type": "string",
+          "description": "State or province code."
+        },
+        {
+          "name": "country_name",
+          "type": "string",
+          "description": "Country name."
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "description": "Flag indicating if the location is currently active."
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp",
+          "description": "Timestamp when the location record was last updated."
+        }
+      ]
+    },
+    {
+      "name": "dim_products",
+      "relation": "develop.pinho_analytics_marts.dim_products",
+      "description": "Product dimension at variant grain. One record per sellable variant (SKU), with the corrected business category, brand, and reference measures (sale price, cost price, tax rates). Conformed dimension used by fct_sales.",
+      "materialized": "table",
+      "path": "models/marts/dim_products.sql",
+      "upstream_direct": [
+        "int_products_categorized",
+        "stg_brands",
+        "stg_product_variants"
+      ],
+      "upstream_lineage": [
+        {
+          "node": "int_products_categorized",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "stg_brands",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "stg_product_variants",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "stg_products",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "seed_category_fix",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "bronze.brands",
+          "depth": 2,
+          "type": "source"
+        },
+        {
+          "node": "bronze.product_variants",
+          "depth": 2,
+          "type": "source"
+        },
+        {
+          "node": "bronze.products",
+          "depth": 3,
+          "type": "source"
+        }
+      ],
+      "source_tables": [
+        "bronze.brands",
+        "bronze.product_variants",
+        "bronze.products"
+      ],
+      "columns": [
+        {
+          "name": "product_variant_sk",
+          "type": "string",
+          "description": "Surrogate key of the product dimension.",
+          "tests": [
+            "not_null",
+            "unique"
+          ]
+        },
+        {
+          "name": "product_variant_id",
+          "type": "integer",
+          "description": "Natural key — sellable variant (grain of the table).",
+          "tests": [
+            "not_null",
+            "unique"
+          ]
+        },
+        {
+          "name": "category_name",
+          "type": "string",
+          "description": "Corrected business category (from int_products_categorized).",
+          "tests": [
+            "accepted_values",
+            "not_null"
+          ]
+        },
+        {
+          "name": "is_categorized",
+          "type": "boolean",
+          "description": "Flag — true if category came from the curated map.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "product_id",
+          "type": "integer",
+          "description": "Parent product identifier of the variant.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "sku",
+          "type": "string",
+          "description": "Stock keeping unit (standardized/uppercased) — unique per variant.",
+          "tests": [
+            "not_null",
+            "unique"
+          ]
+        },
+        {
+          "name": "barcode_ean",
+          "type": "string",
+          "description": "EAN barcode of the variant."
+        },
+        {
+          "name": "product_name",
+          "type": "string",
+          "description": "Product display name.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "brand_name",
+          "type": "string",
+          "description": "Brand name (null if the product has no brand)."
+        },
+        {
+          "name": "brand_country",
+          "type": "string",
+          "description": "Brand country code (null if the product has no brand)."
+        },
+        {
+          "name": "sale_price",
+          "type": "decimal(16,2)",
+          "description": "Reference sale price of the variant.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "cost_price",
+          "type": "decimal(16,2)",
+          "description": "Reference cost price of the variant, used for contribution margin.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "icms_rate",
+          "type": "decimal(10,4)",
+          "description": "ICMS tax rate of the variant."
+        },
+        {
+          "name": "ipi_rate",
+          "type": "decimal(10,4)",
+          "description": "IPI tax rate of the variant."
+        },
+        {
+          "name": "weight_kg",
+          "type": "decimal(10,3)",
+          "description": "Variant weight in kilograms."
+        }
+      ],
+      "model_tests": [
+        "expression_is_true"
+      ]
+    },
+    {
+      "name": "dim_suppliers",
+      "relation": "develop.pinho_analytics_marts.dim_suppliers",
+      "description": "Supplier dimension. Contains historical records for each supplier (SCD Type 2), used by fct_purchases for supplier reliability analysis.",
+      "materialized": "table",
+      "path": "models/marts/dim_suppliers.sql",
+      "upstream_direct": [
+        "stg_suppliers"
+      ],
+      "upstream_lineage": [
+        {
+          "node": "stg_suppliers",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "bronze.suppliers",
+          "depth": 2,
+          "type": "source"
+        }
+      ],
+      "source_tables": [
+        "bronze.suppliers"
+      ],
+      "columns": [
+        {
+          "name": "supplier_sk",
+          "type": "string",
+          "description": "Version-aware surrogate key generated from supplier_id and updated_at.",
+          "tests": [
+            "not_null",
+            "unique"
+          ]
+        },
+        {
+          "name": "supplier_id",
+          "type": "integer",
+          "description": "Supplier natural key.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "supplier_legal_name",
+          "type": "string",
+          "description": "Supplier's registered legal name."
+        },
+        {
+          "name": "supplier_trade_name",
+          "type": "string",
+          "description": "Supplier's commercial or trade name."
+        },
+        {
+          "name": "supplier_country_name",
+          "type": "string",
+          "description": "Supplier's country of origin."
+        },
+        {
+          "name": "tax_id_type",
+          "type": "string",
+          "description": "Type of tax identification code (e.g., CNPJ, EIN, VAT)."
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "description": "Flag indicating if the supplier is active in the source system."
+        },
+        {
+          "name": "valid_from",
+          "type": "timestamp",
+          "description": "Timestamp when this version of the supplier record became active."
+        },
+        {
+          "name": "valid_to",
+          "type": "timestamp",
+          "description": "Timestamp when this version expired (null if current)."
+        },
+        {
+          "name": "is_current",
+          "type": "boolean",
+          "description": "Boolean flag indicating if this is the active/latest version of the supplier record.",
+          "tests": [
+            "not_null"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "fct_daily_stock_levels",
+      "relation": "develop.pinho_analytics_marts.fct_daily_stock_levels",
+      "description": "Sparse daily stock fact built from stock level snapshots. One row per stock change day and product-location pair.",
+      "materialized": "incremental",
+      "path": "models/marts/fct_daily_stock_levels.sql",
+      "upstream_direct": [
+        "dim_locations",
+        "dim_products",
+        "snap_stock_levels",
+        "stg_stock_movements"
+      ],
+      "upstream_lineage": [
+        {
+          "node": "dim_locations",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "dim_products",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "stg_stock_movements",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "snap_stock_levels",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "int_products_categorized",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_brands",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_locations",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_product_variants",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_stock_levels",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "bronze.stock_movements",
+          "depth": 2,
+          "type": "source"
+        },
+        {
+          "node": "stg_products",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "seed_category_fix",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "bronze.brands",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.locations",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.product_variants",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.stock_levels",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.products",
+          "depth": 4,
+          "type": "source"
+        }
+      ],
+      "source_tables": [
+        "bronze.brands",
+        "bronze.locations",
+        "bronze.product_variants",
+        "bronze.products",
+        "bronze.stock_levels",
+        "bronze.stock_movements"
+      ],
+      "columns": [
+        {
+          "name": "stock_level_day",
+          "type": "date",
+          "description": "Day where the snapshot change became valid.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "product_variant_sk",
+          "type": "string",
+          "description": "Surrogate key to the product dimension.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "product_variant_id",
+          "type": "integer",
+          "description": "Natural key of the product variant for traceability.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "location_sk",
+          "type": "string",
+          "description": "Surrogate key to the location dimension.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "location_id",
+          "type": "integer",
+          "description": "Natural key of the location for traceability.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "stock_level_id",
+          "type": "string",
+          "description": "Surrogate stock level key from staging.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "raw_quantity_on_hand",
+          "type": "integer",
+          "description": "Raw quantity captured from snapshot history.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "physical_quantity_on_hand",
+          "type": "integer",
+          "description": "Non-negative quantity used for operational stock analytics.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "is_negative_raw_quantity",
+          "type": "boolean",
+          "description": "Flag indicating the source quantity was negative.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "zero_quantity_movement_count",
+          "type": "bigint",
+          "description": "Number of staged stock movements on the same day and product-location pair with zero quantity.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "has_zero_quantity_movement_review",
+          "type": "boolean",
+          "description": "Flag indicating the daily stock fact row is associated with at least one zero-quantity stock movement that should be reviewed.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "snapshot_valid_from",
+          "type": "timestamp",
+          "description": "Snapshot validity window start timestamp.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "source_updated_at",
+          "type": "timestamp",
+          "description": "Source record last-update timestamp (updated_at from the stock level source)."
+        },
+        {
+          "name": "snapshot_valid_to",
+          "type": "timestamp",
+          "description": "End of the snapshot validity window (null for the current/open record)."
+        }
+      ],
+      "model_tests": [
+        "expression_is_true",
+        "test_fct_daily_stock_levels_daily_count_parity_7d",
+        "test_fct_daily_stock_levels_matches_snapshot_7d",
+        "unique_combination_of_columns"
+      ]
+    },
+    {
+      "name": "fct_purchases",
+      "relation": "develop.pinho_analytics_marts.fct_purchases",
+      "description": "Purchases fact at goods-receipt-item grain. Foreign keys to supplier, location, employee, and product dimensions. Measures for supplier reliability (delay, lead time) and currency-converted amounts (BRL).",
+      "materialized": "table",
+      "path": "models/marts/fct_purchases.sql",
+      "upstream_direct": [
+        "dim_employees",
+        "dim_products",
+        "int_purchases_enriched"
+      ],
+      "upstream_lineage": [
+        {
+          "node": "dim_employees",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "dim_products",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "int_purchases_enriched",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "dim_locations",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "dim_suppliers",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "int_products_categorized",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_brands",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_employees",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_exchange_rates",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_goods_receipt_items",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_goods_receipts",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_product_variants",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_purchase_order_items",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_purchase_orders",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_locations",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_products",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_suppliers",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "seed_category_fix",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "bronze.brands",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.employees",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.goods_receipt_items",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.goods_receipts",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.product_variants",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.purchase_order_items",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.purchase_orders",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.raw_exchange_rates",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.locations",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.products",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.suppliers",
+          "depth": 4,
+          "type": "source"
+        }
+      ],
+      "source_tables": [
+        "bronze.brands",
+        "bronze.employees",
+        "bronze.goods_receipt_items",
+        "bronze.goods_receipts",
+        "bronze.locations",
+        "bronze.product_variants",
+        "bronze.products",
+        "bronze.purchase_order_items",
+        "bronze.purchase_orders",
+        "bronze.raw_exchange_rates",
+        "bronze.suppliers"
+      ],
+      "columns": [
+        {
+          "name": "purchases_sk",
+          "type": "string",
+          "description": "Surrogate key of the purchases fact.",
+          "tests": [
+            "not_null",
+            "unique"
+          ]
+        },
+        {
+          "name": "goods_receipt_item_id",
+          "type": "integer",
+          "description": "Natural key — goods receipt item identifier.",
+          "tests": [
+            "not_null",
+            "unique"
+          ]
+        },
+        {
+          "name": "supplier_sk",
+          "type": "string",
+          "description": "Surrogate key to the supplier dimension.",
+          "tests": [
+            "not_null",
+            "relationships"
+          ]
+        },
+        {
+          "name": "supplier_id",
+          "type": "integer",
+          "description": "Natural key — supplier identifier for traceability.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "location_sk",
+          "type": "string",
+          "description": "Surrogate key to the location dimension.",
+          "tests": [
+            "not_null",
+            "relationships"
+          ]
+        },
+        {
+          "name": "destination_location_id",
+          "type": "integer",
+          "description": "Natural key — destination location identifier for traceability.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "product_variant_id",
+          "type": "integer",
+          "description": "Foreign key to the product dimension.",
+          "tests": [
+            "not_null",
+            "relationships"
+          ]
+        },
+        {
+          "name": "quantity_ordered",
+          "type": "integer",
+          "description": "Ordered quantity (additive measure).",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "quantity_received",
+          "type": "decimal(14,3)",
+          "description": "Received quantity (additive measure).",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "goods_receipt_id",
+          "type": "integer",
+          "description": "Parent goods receipt identifier."
+        },
+        {
+          "name": "purchase_order_item_id",
+          "type": "integer",
+          "description": "Related purchase order item key."
+        },
+        {
+          "name": "purchase_order_id",
+          "type": "integer",
+          "description": "Related purchase order key."
+        },
+        {
+          "name": "employee_id",
+          "type": "integer",
+          "description": "Employee who placed/created the purchase order (buyer).",
+          "tests": [
+            "relationships"
+          ]
+        },
+        {
+          "name": "po_number",
+          "type": "string",
+          "description": "Human-readable purchase order reference number."
+        },
+        {
+          "name": "purchase_order_status",
+          "type": "string",
+          "description": "Status of the purchase order at time of receipt — either 'partially_received' or 'received'."
+        },
+        {
+          "name": "currency",
+          "type": "string",
+          "description": "Currency code of the original purchase order."
+        },
+        {
+          "name": "placed_at",
+          "type": "timestamp",
+          "description": "Timestamp when the purchase order was placed."
+        },
+        {
+          "name": "expected_delivery_at",
+          "type": "timestamp",
+          "description": "Expected delivery date from the purchase order."
+        },
+        {
+          "name": "received_by_employee_id",
+          "type": "integer",
+          "description": "Employee identifier of the goods receiver."
+        },
+        {
+          "name": "received_at",
+          "type": "timestamp",
+          "description": "Timestamp when the goods were received."
+        },
+        {
+          "name": "unit_cost",
+          "type": "decimal(18,2)",
+          "description": "Unit cost in the original purchase order currency."
+        },
+        {
+          "name": "line_total",
+          "type": "decimal(18,2)",
+          "description": "Line total in the original purchase order currency."
+        },
+        {
+          "name": "line_total_brl",
+          "type": "decimal(36,13)",
+          "description": "Line total converted to BRL (additive measure)."
+        },
+        {
+          "name": "delay_days",
+          "type": "integer",
+          "description": "Days between expected and actual delivery."
+        },
+        {
+          "name": "lead_time_days",
+          "type": "integer",
+          "description": "Days between purchase order placement and receipt."
+        },
+        {
+          "name": "employee_sk",
+          "type": "string",
+          "undocumented": true
+        },
+        {
+          "name": "product_variant_sk",
+          "type": "string",
+          "undocumented": true
+        },
+        {
+          "name": "unit_cost_brl",
+          "type": "decimal(36,13)",
+          "undocumented": true
+        }
+      ],
+      "model_tests": [
+        "assert_lead_time_not_negative",
+        "assert_no_future_dates",
+        "assert_quantity_received_not_exceed_ordered",
+        "expression_is_true"
+      ]
+    },
+    {
+      "name": "fct_returns",
+      "relation": "develop.pinho_analytics_marts.fct_returns",
+      "description": "Returns fact at returned-item grain. One record per returned order item, cross-referenced to the original sale via order_item_id. Enables real net revenue (sales − returns) and return-rate analysis.",
+      "materialized": "table",
+      "path": "models/marts/fct_returns.sql",
+      "upstream_direct": [
+        "dim_customers",
+        "dim_locations",
+        "dim_products",
+        "int_returns_enriched"
+      ],
+      "upstream_lineage": [
+        {
+          "node": "dim_customers",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "dim_locations",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "dim_products",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "int_returns_enriched",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "dim_customer_addresses",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "int_products_categorized",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_brands",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_customers",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_locations",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_order_items",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_product_variants",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_return_items",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_returns",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_addresses",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_orders",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_products",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "seed_category_fix",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "bronze.brands",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.customers",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.locations",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.order_items",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.product_variants",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.return_items",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.returns",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.addresses",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.orders",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.products",
+          "depth": 4,
+          "type": "source"
+        }
+      ],
+      "source_tables": [
+        "bronze.addresses",
+        "bronze.brands",
+        "bronze.customers",
+        "bronze.locations",
+        "bronze.order_items",
+        "bronze.orders",
+        "bronze.product_variants",
+        "bronze.products",
+        "bronze.return_items",
+        "bronze.returns"
+      ],
+      "columns": [
+        {
+          "name": "return_sk",
+          "type": "string",
+          "description": "Surrogate key of the returns fact.",
+          "tests": [
+            "not_null",
+            "unique"
+          ]
+        },
+        {
+          "name": "return_item_id",
+          "type": "integer",
+          "description": "Natural key — returned item (grain of the table).",
+          "tests": [
+            "not_null",
+            "unique"
+          ]
+        },
+        {
+          "name": "return_id",
+          "type": "integer",
+          "description": "Parent return order identifier.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "return_number",
+          "type": "string",
+          "description": "Human-readable return reference number.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "order_item_id",
+          "type": "integer",
+          "description": "Bridge to the original sale (fct_sales.order_item_id) — enables item-to-item net revenue.",
+          "tests": [
+            "not_null",
+            "relationships"
+          ]
+        },
+        {
+          "name": "order_id",
+          "type": "integer",
+          "description": "Parent order of the returned item.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "customer_sk",
+          "type": "string",
+          "description": "Surrogate key to the customer dimension."
+        },
+        {
+          "name": "customer_id",
+          "type": "integer",
+          "description": "Customer who made the return (FK to dim_customers).",
+          "tests": [
+            "not_null",
+            "relationships"
+          ]
+        },
+        {
+          "name": "location_sk",
+          "type": "string",
+          "description": "Surrogate key to the location dimension.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "location_id",
+          "type": "integer",
+          "description": "Location where the return was received (FK to dim_locations).",
+          "tests": [
+            "not_null",
+            "relationships"
+          ]
+        },
+        {
+          "name": "product_variant_sk",
+          "type": "string",
+          "description": "Surrogate key to the product dimension. Correctly reflects the RETURNED product, resolved directly from dim_products."
+        },
+        {
+          "name": "returned_variant_id",
+          "type": "string",
+          "description": "Natural key of the product variant that was actually returned by the customer.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "exchange_variant_id",
+          "type": "integer",
+          "description": "Product variant being exchanged for (replacement product) — null if action is 'refund'."
+        },
+        {
+          "name": "return_status",
+          "type": "string",
+          "description": "Status of the return — 'open', 'completed', or 'cancelled'.",
+          "tests": [
+            "accepted_values",
+            "not_null"
+          ]
+        },
+        {
+          "name": "reason",
+          "type": "string",
+          "description": "Standardized return reason.",
+          "tests": [
+            "accepted_values",
+            "not_null"
+          ]
+        },
+        {
+          "name": "action",
+          "type": "string",
+          "description": "Return action — 'refund' or 'exchange' (exchange references exchange_variant_id).",
+          "tests": [
+            "accepted_values",
+            "not_null"
+          ]
+        },
+        {
+          "name": "date_id",
+          "type": "integer",
+          "description": "Return date as an integer key (yyyyMMdd), used to relate this fact to dim_calendary. Invalid (null) or future dates are filtered out of the model.",
+          "tests": [
+            "not_null",
+            "relationships"
+          ]
+        },
+        {
+          "name": "returned_at",
+          "type": "timestamp",
+          "description": "Timestamp when the item was returned.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "quantity",
+          "type": "integer",
+          "description": "Returned quantity (additive measure).",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "unit_refund_amount",
+          "type": "decimal(18,2)",
+          "description": "Unit refund amount in the original transaction currency.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "refund_amount",
+          "type": "decimal(29,2)",
+          "description": "Line refund amount (quantity × unit_refund_amount) — additive measure.",
+          "tests": [
+            "not_null"
+          ]
+        }
+      ],
+      "model_tests": [
+        "assert_fct_returns_non_negative_refund",
+        "assert_fct_returns_positive_quantity",
+        "expression_is_true"
+      ]
+    },
+    {
+      "name": "fct_sales",
+      "relation": "develop.pinho_analytics_marts.fct_sales",
+      "description": "Sales fact at order-item grain. One record per order item, with foreign keys to the dimensions and additive measures (quantity, prices, taxes).",
+      "materialized": "table",
+      "path": "models/marts/fct_sales.sql",
+      "upstream_direct": [
+        "dim_customers",
+        "dim_employees",
+        "dim_locations",
+        "dim_products",
+        "int_sales_enriched"
+      ],
+      "upstream_lineage": [
+        {
+          "node": "dim_customers",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "dim_employees",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "dim_locations",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "dim_products",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "int_sales_enriched",
+          "depth": 1,
+          "type": "model"
+        },
+        {
+          "node": "dim_customer_addresses",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "int_products_categorized",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_brands",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_customers",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_employees",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_locations",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_order_items",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_orders",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_payments",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_product_variants",
+          "depth": 2,
+          "type": "model"
+        },
+        {
+          "node": "stg_addresses",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "stg_products",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "seed_category_fix",
+          "depth": 3,
+          "type": "model"
+        },
+        {
+          "node": "bronze.brands",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.customers",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.employees",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.locations",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.order_items",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.orders",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.payments",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.product_variants",
+          "depth": 3,
+          "type": "source"
+        },
+        {
+          "node": "bronze.addresses",
+          "depth": 4,
+          "type": "source"
+        },
+        {
+          "node": "bronze.products",
+          "depth": 4,
+          "type": "source"
+        }
+      ],
+      "source_tables": [
+        "bronze.addresses",
+        "bronze.brands",
+        "bronze.customers",
+        "bronze.employees",
+        "bronze.locations",
+        "bronze.order_items",
+        "bronze.orders",
+        "bronze.payments",
+        "bronze.product_variants",
+        "bronze.products"
+      ],
+      "columns": [
+        {
+          "name": "sales_sk",
+          "type": "string",
+          "description": "Surrogate key of the sales fact (hash of order_item_id).",
+          "tests": [
+            "not_null",
+            "unique"
+          ]
+        },
+        {
+          "name": "order_item_id",
+          "type": "string",
+          "description": "Natural / degenerate key — order item identifier.",
+          "tests": [
+            "not_null",
+            "unique"
+          ]
+        },
+        {
+          "name": "order_id",
+          "type": "string",
+          "description": "Parent order identifier (degenerate dimension).",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "customer_sk",
+          "type": "string",
+          "description": "Surrogate key to the customer dimension.",
+          "tests": [
+            "not_null",
+            "relationships"
+          ]
+        },
+        {
+          "name": "customer_id",
+          "type": "integer",
+          "description": "Natural key — customer identifier for traceability.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "quantity",
+          "type": "integer",
+          "description": "Ordered quantity (additive measure).",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "line_total",
+          "type": "decimal(18,2)",
+          "description": "Line total amount (additive measure).",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "salesperson_sk",
+          "type": "string",
+          "description": "Surrogate key to the salesperson/employee dimension. Nullable — ecommerce orders may have none.",
+          "tests": [
+            "relationships"
+          ]
+        },
+        {
+          "name": "salesperson_id",
+          "type": "integer",
+          "description": "Foreign key to the employee dimension (salesperson). Nullable — ecommerce orders may have none.",
+          "tests": [
+            "relationships"
+          ]
+        },
+        {
+          "name": "location_sk",
+          "type": "string",
+          "description": "Surrogate key to the location dimension.",
+          "tests": [
+            "not_null",
+            "relationships"
+          ]
+        },
+        {
+          "name": "location_id",
+          "type": "integer",
+          "description": "Location where the order was placed (FK to dim_locations).",
+          "tests": [
+            "not_null",
+            "relationships"
+          ]
+        },
+        {
+          "name": "product_variant_sk",
+          "type": "string",
+          "description": "Surrogate key to the product dimension.",
+          "tests": [
+            "not_null",
+            "relationships"
+          ]
+        },
+        {
+          "name": "product_variant_id",
+          "type": "string",
+          "description": "Natural key of the product variant for traceability.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "channel",
+          "type": "string",
+          "description": "Sales channel (degenerate dimension) — e.g., ecommerce, physical store.",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "order_status",
+          "type": "string",
+          "description": "Status of the parent order. Only 'paid' and 'confirmed' are treated as valid revenue by the aggregate models; 'cancelled' and 'draft' are excluded.",
+          "tests": [
+            "accepted_values",
+            "not_null"
+          ]
+        },
+        {
+          "name": "placed_at",
+          "type": "timestamp",
+          "description": "Timestamp when the order was placed (links to the date dimension).",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "unit_price",
+          "type": "decimal(18,2)",
+          "description": "Unit price of the order item (measure).",
+          "tests": [
+            "not_null"
+          ]
+        },
+        {
+          "name": "icms_rate",
+          "type": "decimal(5,2)",
+          "description": "ICMS tax rate applied to the item."
+        },
+        {
+          "name": "ipi_rate",
+          "type": "decimal(5,2)",
+          "description": "IPI tax rate applied to the item."
+        },
+        {
+          "name": "date_id",
+          "type": "integer",
+          "description": "Foreign key to the date dimension (integer format YYYYMMDD). Falls back to 19000101 when placed_at is null. That key has no match in dim_calendary, so such rows are reported by the relationships test and land in the blank row of the relationship in Power BI.",
+          "tests": [
+            "not_null",
+            "relationships"
+          ]
+        },
+        {
+          "name": "payment_method",
+          "type": "string",
+          "description": "Primary payment method used for the order (deduplicated by highest amount)."
+        }
+      ],
+      "model_tests": [
+        "assert_fct_sales_line_total_non_negative",
+        "assert_fct_sales_no_future_dates",
+        "assert_fct_sales_positive_quantity",
+        "expression_is_true"
+      ]
+    }
+  ],
+  "upstream_nodes": {
+    "dim_calendary": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_marts.dim_calendary",
+      "description": "Calendar dimension built using dbt_utils.date_spine. Spans from 2020-01-01 up to the maximum ingestion date (or end of current year). The date range is contiguous by construction, with no gaps, so the table can be flagged as a date table in Power BI — a requirement for the Time Intelligence measures."
+    },
+    "dim_customer_addresses": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_marts.dim_customer_addresses",
+      "description": "Customer address dimension with historical versions for address changes. Captures address history at the address-level and exposes current and prior versions for SCD2 reporting.",
+      "parents": [
+        "stg_addresses"
+      ]
+    },
+    "dim_customers": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_marts.dim_customers",
+      "description": "Customer dimension — one record per customer, enriched with the primary address geography (city/state/country). Conformed dimension used by fct_sales.",
+      "parents": [
+        "dim_customer_addresses",
+        "stg_customers"
+      ]
+    },
+    "dim_employees": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_marts.dim_employees",
+      "description": "Employee dimension — one record per employee, with role and home location. Conformed dimension used by fct_sales (salesperson) and future purchase facts (buyer).",
+      "parents": [
+        "stg_employees"
+      ]
+    },
+    "dim_locations": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_marts.dim_locations",
+      "description": "Location dimension. Contains historical records for each warehouse or store location (SCD Type 2).",
+      "parents": [
+        "stg_locations"
+      ]
+    },
+    "dim_products": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_marts.dim_products",
+      "description": "Product dimension at variant grain. One record per sellable variant (SKU), with the corrected business category, brand, and reference measures (sale price, cost price, tax rates). Conformed dimension used by fct_sales.",
+      "parents": [
+        "int_products_categorized",
+        "stg_brands",
+        "stg_product_variants"
+      ]
+    },
+    "dim_suppliers": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_marts.dim_suppliers",
+      "description": "Supplier dimension. Contains historical records for each supplier (SCD Type 2), used by fct_purchases for supplier reliability analysis.",
+      "parents": [
+        "stg_suppliers"
+      ]
+    },
+    "fct_sales": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_marts.fct_sales",
+      "description": "Sales fact at order-item grain. One record per order item, with foreign keys to the dimensions and additive measures (quantity, prices, taxes).",
+      "parents": [
+        "dim_customers",
+        "dim_employees",
+        "dim_locations",
+        "dim_products",
+        "int_sales_enriched"
+      ]
+    },
+    "int_products_categorized": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_intermediate.int_products_categorized",
+      "description": "One record per product, with the category corrected via the seed_category_fix mapping (product type -> canonical category). Products whose type is not mapped fall into 'Não Classificado' with is_categorized = false.",
+      "parents": [
+        "seed_category_fix",
+        "stg_products"
+      ]
+    },
+    "int_purchases_enriched": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_intermediate.int_purchases_enriched",
+      "description": "One record per goods receipt item, enriched with purchase order, supplier (point-in-time SCD2), location (point-in-time SCD2), currency-converted amounts (BRL), and delay/lead time measures. Feeds fct_purchases.",
+      "parents": [
+        "dim_locations",
+        "dim_suppliers",
+        "stg_exchange_rates",
+        "stg_goods_receipt_items",
+        "stg_goods_receipts",
+        "stg_purchase_order_items",
+        "stg_purchase_orders"
+      ]
+    },
+    "int_returns_enriched": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_intermediate.int_returns_enriched",
+      "description": "One record per returned order item, enriched with its return header context (customer, location, status, reason, etc.). Reusable returns base grain that feeds the returns marts.",
+      "parents": [
+        "stg_order_items",
+        "stg_return_items",
+        "stg_returns"
+      ]
+    },
+    "int_sales_enriched": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_intermediate.int_sales_enriched",
+      "description": "One record per order item, enriched with its order header context (customer, salesperson, location, channel, status). Reusable sales base grain that feeds the sales marts.",
+      "parents": [
+        "stg_order_items",
+        "stg_orders",
+        "stg_payments"
+      ]
+    },
+    "stg_addresses": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_staging.stg_addresses",
+      "description": "Customer address information standardized from bronze.",
+      "parents": [
+        "bronze.addresses"
+      ]
+    },
+    "stg_brands": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_staging.stg_brands",
+      "description": "Product brands standardized from bronze.",
+      "parents": [
+        "bronze.brands"
+      ]
+    },
+    "stg_customers": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_staging.stg_customers",
+      "description": "Customer master data standardized from bronze.",
+      "parents": [
+        "bronze.customers"
+      ]
+    },
+    "stg_employees": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_staging.stg_employees",
+      "description": "Employee master data standardized from bronze.",
+      "parents": [
+        "bronze.employees"
+      ]
+    },
+    "stg_exchange_rates": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_staging.stg_exchange_rates",
+      "description": "Daily exchange rates standardized from bronze with forward fill for weekends and holidays.",
+      "parents": [
+        "bronze.raw_exchange_rates"
+      ]
+    },
+    "stg_goods_receipt_items": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_staging.stg_goods_receipt_items",
+      "description": "Goods receipt line items standardized from bronze.",
+      "parents": [
+        "bronze.goods_receipt_items"
+      ]
+    },
+    "stg_goods_receipts": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_staging.stg_goods_receipts",
+      "description": "Goods receipt transactions standardized from bronze.",
+      "parents": [
+        "bronze.goods_receipts"
+      ]
+    },
+    "stg_locations": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_staging.stg_locations",
+      "description": "Physical locations (e.g., stores, warehouses, distribution centers) standardized from bronze.",
+      "parents": [
+        "bronze.locations"
+      ]
+    },
+    "stg_order_items": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_staging.stg_order_items",
+      "description": "Order line items standardized from bronze.",
+      "parents": [
+        "bronze.order_items",
+        "stg_orders"
+      ]
+    },
+    "stg_orders": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_staging.stg_orders",
+      "description": "Sales order headers standardized from bronze.",
+      "parents": [
+        "bronze.orders"
+      ]
+    },
+    "stg_payments": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_staging.stg_payments",
+      "description": "Payment transactions standardized from bronze.",
+      "parents": [
+        "bronze.payments",
+        "stg_orders"
+      ]
+    },
+    "stg_product_variants": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_staging.stg_product_variants",
+      "description": "Product variants (SKUs, pricing, weight and tax rates) standardized from bronze.",
+      "parents": [
+        "bronze.product_variants"
+      ]
+    },
+    "stg_products": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_staging.stg_products",
+      "description": "Products catalog standardized from bronze layer.",
+      "parents": [
+        "bronze.products"
+      ]
+    },
+    "stg_purchase_order_items": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_staging.stg_purchase_order_items",
+      "description": "Purchase order items line-level details standardized from bronze.",
+      "parents": [
+        "bronze.purchase_order_items"
+      ]
+    },
+    "stg_purchase_orders": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_staging.stg_purchase_orders",
+      "description": "Purchase order headers standardized from bronze.",
+      "parents": [
+        "bronze.purchase_orders"
+      ]
+    },
+    "stg_return_items": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_staging.stg_return_items",
+      "description": "Return items line-level details standardized from bronze.",
+      "parents": [
+        "bronze.return_items"
+      ]
+    },
+    "stg_returns": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_staging.stg_returns",
+      "description": "Returns master data standardized from bronze.",
+      "parents": [
+        "bronze.returns"
+      ]
+    },
+    "stg_stock_levels": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_staging.stg_stock_levels",
+      "description": "Current stock levels by product and location standardized from bronze.",
+      "parents": [
+        "bronze.stock_levels"
+      ]
+    },
+    "stg_stock_movements": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_staging.stg_stock_movements",
+      "description": "Stock movement transactions standardized from bronze.",
+      "parents": [
+        "bronze.stock_movements"
+      ]
+    },
+    "stg_suppliers": {
+      "type": "model",
+      "relation": "develop.pinho_analytics_staging.stg_suppliers",
+      "description": "Suppliers and vendor information standardized from bronze.",
+      "parents": [
+        "bronze.suppliers"
+      ]
+    },
+    "seed_category_fix": {
+      "type": "seed",
+      "relation": "develop.pinho_analytics.seed_category_fix"
+    },
+    "snap_stock_levels": {
+      "type": "snapshot",
+      "relation": "develop.snapshots.snap_stock_levels",
+      "parents": [
+        "stg_stock_levels"
+      ]
+    },
+    "bronze.addresses": {
+      "type": "source",
+      "relation": "develop.bronze.addresses"
+    },
+    "bronze.brands": {
+      "type": "source",
+      "relation": "develop.bronze.brands"
+    },
+    "bronze.customers": {
+      "type": "source",
+      "relation": "develop.bronze.customers"
+    },
+    "bronze.employees": {
+      "type": "source",
+      "relation": "develop.bronze.employees"
+    },
+    "bronze.goods_receipt_items": {
+      "type": "source",
+      "relation": "develop.bronze.goods_receipt_items"
+    },
+    "bronze.goods_receipts": {
+      "type": "source",
+      "relation": "develop.bronze.goods_receipts"
+    },
+    "bronze.locations": {
+      "type": "source",
+      "relation": "develop.bronze.locations"
+    },
+    "bronze.order_items": {
+      "type": "source",
+      "relation": "develop.bronze.order_items"
+    },
+    "bronze.orders": {
+      "type": "source",
+      "relation": "develop.bronze.orders"
+    },
+    "bronze.payments": {
+      "type": "source",
+      "relation": "develop.bronze.payments"
+    },
+    "bronze.product_variants": {
+      "type": "source",
+      "relation": "develop.bronze.product_variants"
+    },
+    "bronze.products": {
+      "type": "source",
+      "relation": "develop.bronze.products"
+    },
+    "bronze.purchase_order_items": {
+      "type": "source",
+      "relation": "develop.bronze.purchase_order_items"
+    },
+    "bronze.purchase_orders": {
+      "type": "source",
+      "relation": "develop.bronze.purchase_orders"
+    },
+    "bronze.raw_exchange_rates": {
+      "type": "source",
+      "relation": "develop.bronze.raw_exchange_rates"
+    },
+    "bronze.return_items": {
+      "type": "source",
+      "relation": "develop.bronze.return_items"
+    },
+    "bronze.returns": {
+      "type": "source",
+      "relation": "develop.bronze.returns"
+    },
+    "bronze.stock_levels": {
+      "type": "source",
+      "relation": "develop.bronze.stock_levels"
+    },
+    "bronze.stock_movements": {
+      "type": "source",
+      "relation": "develop.bronze.stock_movements"
+    },
+    "bronze.suppliers": {
+      "type": "source",
+      "relation": "develop.bronze.suppliers"
+    }
+  }
+}
