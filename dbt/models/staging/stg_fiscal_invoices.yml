@@ -35,6 +35,7 @@ models:
         description: Invoice issue timestamp.
         data_tests:
           - not_null
+          - no_future_dates
       - name: xml_storage_uri
         description: Storage URI for the NF-e XML file.
       - name: created_at

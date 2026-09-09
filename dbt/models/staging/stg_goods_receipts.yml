@@ -33,6 +33,7 @@ models:
         description: Receipt timestamp.
         data_tests:
           - not_null
+          - no_future_dates
       - name: notes
         description: Free-text notes recorded at time of receipt.
       - name: created_at
