@@ -48,8 +48,9 @@ status as purchase_order_status,
         total,
 
 -- Timestamps (Cruciais para os testes de cálculo de intervalo da macro!)
-case when placed_at <= current_timestamp() then cast(placed_at as timestamp) end as placed_at,
-case when expected_delivery_at <= current_timestamp() then cast(expected_delivery_at as timestamp) end as expected_delivery_at,
+cast(placed_at as timestamp) as placed_at,
+-- expected_delivery_at is a planned/scheduled date and is legitimately forward-looking — never future-date filtered
+cast(expected_delivery_at as timestamp) as expected_delivery_at,
 cast(created_at as timestamp) as created_at,
 cast(updated_at as timestamp) as updated_at,
 
@@ -62,4 +63,6 @@ from cleaned_required
 
 )
 
+-- Exclude POs with a future placed_at — mock data contains future-dated rows that should not reach marts
 select * from renamed
+where {{ filter_future_dated('placed_at') }}
