@@ -48,6 +48,7 @@ models:
         description: Stock movement timestamp.
         data_tests:
           - not_null
+          - no_future_dates
       - name: notes
         description: Free-text notes recorded for the movement.
       - name: created_at
