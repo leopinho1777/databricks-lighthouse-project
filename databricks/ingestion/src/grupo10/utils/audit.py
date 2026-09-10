@@ -1,10 +1,12 @@
+"""Audit log for ingestion runs: one Delta row per table run (status, duration, row count, error)."""
+
 from datetime import datetime, timezone
 from typing import Optional
 
 from pyspark.sql import SparkSession
 from pyspark.sql.types import DoubleType, LongType, StringType, StructField, StructType, TimestampType
 
-# DDL (data definition language) para garantir idempotência  na criação da tabela de auditoria
+# DDL (data definition language) that creates the audit table idempotently
 AUDIT_TABLE_DDL = """
 CREATE TABLE IF NOT EXISTS {audit_table} (
     table_name      STRING    NOT NULL COMMENT 'Source table that was ingested',
@@ -18,12 +20,12 @@ USING DELTA
 COMMENT 'Audit log for SQL Server ingestion runs'
 """
 
-#Garante que a tabela de auditoria exista
+#Ensures the audit table exists
 def ensure_audit_table(spark: SparkSession, audit_table: str) -> None:
     """Creates the audit Delta table if it does not already exist."""
     spark.sql(AUDIT_TABLE_DDL.format(audit_table=audit_table))
 
-#Registra ingestão na tabela de auditoria
+#Writes an ingestion record to the audit table
 def write_audit_record(
     spark: SparkSession,
     table_name: str,
@@ -46,7 +48,7 @@ def write_audit_record(
         audit_table:      Fully qualified Delta table name for the audit log.
     """
     
-    #Definição do schema do dataframe PySpark de cada registro de ingestão
+    #PySpark schema of each ingestion record
     schema = StructType(
         [
             StructField("table_name", StringType(), nullable=False),
@@ -58,16 +60,16 @@ def write_audit_record(
         ]
     )
 
-    #Popula a variável do registro com os dados
+    #Builds the record with the run data
     record = (
         table_name,
         status,
         row_count,
         round(duration_seconds, 3),
         error_message,
-        datetime.now(timezone.utc).replace(tzinfo=None),  # Spark TIMESTAMP é tz-naive (o fuso do horário é um só )
+        datetime.now(timezone.utc).replace(tzinfo=None),  # Spark TIMESTAMP is tz-naive (stored as naive UTC)
     )
 
-    #Grava o registro de ingestão na tabela de auditoria
+    #Appends the ingestion record to the audit table
     df = spark.createDataFrame([record], schema=schema)
     df.write.format("delta").mode("append").saveAsTable(audit_table)

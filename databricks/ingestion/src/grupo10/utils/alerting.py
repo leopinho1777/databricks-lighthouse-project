@@ -1,10 +1,12 @@
+"""Daily run history and consecutive-failure streaks, used to alert only after repeated failures."""
+
 from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 from pyspark.sql import SparkSession, functions as F
 from pyspark.sql.types import DateType, StringType, StructField, StructType, TimestampType
 
-# DDL para garantir idempotência na criação da tabela de histórico de execuções
+# DDL that creates the run-history table idempotently
 RUN_HISTORY_TABLE_DDL = """
 CREATE TABLE IF NOT EXISTS {run_history_table} (
     task_name   STRING    NOT NULL COMMENT 'Task being tracked for consecutive-failure alerting',

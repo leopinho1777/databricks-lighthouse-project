@@ -1,3 +1,9 @@
+"""Incremental ingestion from SQL Server into the Bronze layer (Delta tables).
+
+Picks the load strategy by primary key shape: watermark pagination for single keys,
+full reload + MERGE for composite keys. Progress is tracked in a control table.
+"""
+
 import uuid
 from datetime import datetime
 from typing import Union
@@ -6,10 +12,10 @@ from delta.tables import DeltaTable
 import logging
 from pyspark.sql import SparkSession
 
-# Instancia o logger referenciando o nome do módulo
+# Module-level logger, named after the module
 logger = logging.getLogger(__name__)
 
-# Constantes do módulo
+# Module constants
 DEFAULT_LINES_PER_BATCH = 500
 DEFAULT_INCREMENTAL_KEY = "id"
 CONTROL_TABLE_DDL = """
@@ -23,14 +29,13 @@ COMMENT 'Incremental ingestion control state'
 """
 
 
-# Garante que as tabelas que controle existam
 def ensure_control_table(spark: SparkSession, control_table: str) -> None:
     """Creates the control Delta table if it does not already exist."""
     spark.sql(CONTROL_TABLE_DDL.format(control_table=control_table))
     logger.info(f"Control table ready: {control_table}")
 
 
-# Garante que idempotência da colunas das tabelas
+# Ensures the operational metadata columns exist (idempotent)
 def ensure_metadata_columns(spark: SparkSession, target_table: str) -> None:
     """Adds operational metadata columns to an existing Delta table if they are missing."""
     if not spark.catalog.tableExists(target_table):
@@ -47,7 +52,7 @@ def ensure_metadata_columns(spark: SparkSession, target_table: str) -> None:
             logger.info(f"Added column '{col_name}' to '{target_table}'")
 
 
-# Obtém o último id ingerido da tabela previamente
+# Gets the last id already ingested for the table
 def get_last_processed_id(spark: SparkSession, control_table: str, target_table_name: str) -> int:
     """Retrieves the last processed ID for a given table."""
     if not spark.catalog.tableExists(control_table):
@@ -65,7 +70,7 @@ def get_last_processed_id(spark: SparkSession, control_table: str, target_table_
     return last_id
 
 
-# identifica qual o id máximo atual da tabela alvo
+# Finds the current maximum id in the source table
 def get_source_max_id(
     spark: SparkSession,
     url: str,
@@ -92,7 +97,7 @@ def get_source_max_id(
     return max_id
 
 
-# Atualiza a tabela de controle
+# Updates the control table
 def update_control_table(spark: SparkSession, control_table: str, target_table_name: str, new_max_id: int):
     """Updates the control table with the new processed ID via Merge."""
     update_data = [(target_table_name, new_max_id, datetime.now())]
@@ -105,7 +110,7 @@ def update_control_table(spark: SparkSession, control_table: str, target_table_n
     logger.debug(f"Control table updated: '{target_table_name}' → last_processed_id={new_max_id}")
 
 
-# Função interna para atualizar/inserir (upsert) na tabela delta
+# Internal helper: upsert into a Delta table
 def _merge_into_delta(
     spark: SparkSession,
     df: DataFrame,
@@ -156,12 +161,12 @@ def run_incremental_ingestion(
         "user": user,
         "password": password,
         "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
-        "encrypt": "true", #True é o padrão atual do JDBC, mas declarar é uma boa prática
+        "encrypt": "true",
         "trustServerCertificate": "true",
         "loginTimeout": "30",
     }
 
-    #Caso tenha mais de uma chave, carrega tabela inteira
+    #Composite key: reload the whole table
     if not use_incremental:
         logger.info(f"Full reload for '{table_name}' | composite pk={pk_cols}")
         df_source = spark.read.format("jdbc").options(**{**jdbc_base_opts, "dbtable": table_name}).load()
@@ -180,7 +185,7 @@ def run_incremental_ingestion(
         logger.info(f"Full reload complete for '{table_name}' | rows={row_count}")
         return row_count
 
-    #Caso tenha somente chame primária, carrega incrementalmente
+    #Single primary key: load incrementally
     absolute_max_id = get_source_max_id(spark, url, user, password, table_name, incremental_key)
     if absolute_max_id == -1:
         logger.info(f"No rows found in source for '{table_name}', skipping")
