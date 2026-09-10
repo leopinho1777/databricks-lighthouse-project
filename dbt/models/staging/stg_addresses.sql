@@ -51,7 +51,7 @@ renamed as (
         trim(district) as district,
         trim(city) as city,
 
-        -- Geopolitics (Padronizando para maiúsculas e sem espaços)
+        -- Geopolitics (uppercased, whitespace trimmed)
         upper(trim(state)) as state,
         upper(trim(country)) as country,
 

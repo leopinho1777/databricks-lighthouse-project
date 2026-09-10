@@ -23,7 +23,7 @@ primary_address as (
     from {{ ref('dim_customer_addresses') }}
     where is_primary = true
       and is_current = true
-    -- Garante 1 endereço por cliente mesmo se houver mais de um "primary"
+    -- Guarantees one address per customer even if more than one is flagged "primary"
     qualify row_number() over (partition by customer_id order by address_id) = 1
 
 ),
@@ -52,13 +52,13 @@ enriched as (
 final as (
 
     select
-        -- Chave substituta (grão: cliente)
+        -- Surrogate key (grain: customer)
         {{ dbt_utils.generate_surrogate_key(['customer_id']) }} as customer_sk,
 
-        -- Chave natural
+        -- Natural key
         customer_id,
 
-        -- Atributos do cliente
+        -- Customer attributes
         person_type,
         legal_name,
         trade_name,
@@ -66,7 +66,7 @@ final as (
         state_registration,
         is_active,
 
-        -- Geografia do endereço principal
+        -- Primary address geography
         city,
         state,
         country

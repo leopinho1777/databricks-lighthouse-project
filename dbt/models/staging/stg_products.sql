@@ -39,7 +39,7 @@ renamed as (
         trim(name) as product_name,
         coalesce(trim(description), 'Sem descrição informada') as description,
         
-        -- Fiscal & Units (Limpeza inicial de string)
+        -- Fiscal & Units (initial string cleanup)
         trim(ncm_code) as ncm_code,
         lower(trim(unit_of_measure)) as unit_of_measure,
 

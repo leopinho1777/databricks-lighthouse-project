@@ -44,7 +44,7 @@ renamed as (
         trim(district) as district,
         trim(city) as city,
 
-        -- Geopolitics (Padronizando igual a stg_addresses)
+        -- Geopolitics (standardized the same way as stg_addresses)
         upper(trim(state)) as state,
         upper(trim(country)) as country,
 

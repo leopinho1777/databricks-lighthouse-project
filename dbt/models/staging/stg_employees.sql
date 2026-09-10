@@ -40,7 +40,7 @@ renamed as (
         role as employee_role,
         is_active as is_active_employee,
 
-        -- Dates (Tipagem explícita de data para análise de tempo de empresa)
+        -- Dates (explicit date typing for tenure analysis)
         cast(hire_date as date) as hire_date,
         cast(termination_date as date) as termination_date,
 
@@ -48,7 +48,7 @@ renamed as (
         cast(created_at as timestamp) as created_at,
         cast(updated_at as timestamp) as updated_at,
 
-        -- Metadata (Garantindo a linhagem com o critério de desempate)
+        -- Metadata (keeps lineage with the tie-breaker criterion)
         cast(_ingested_at as timestamp) as _ingested_at,
         _source_origin,
         _batch_id

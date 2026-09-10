@@ -24,27 +24,27 @@ calendary as (
     select distinct
         month_start
     from {{ ref('dim_calendary') }}
-    -- Filtramos para não criar linhas de meses futuros no BI
+    -- Filter out future months to avoid empty rows in the BI
     where month_start <= trunc(current_date(), 'MM')
-      and year > 1900 -- Remove a data dummy (1900-01-01)[cite: 8]
+      and year > 1900 and year > 1900 -- Removes the dummy date (1900-01-01)
 
 ),
 
 customer_first_purchase as (
 
-    -- Descobrimos quando a "vida" do cliente começou para não criar meses zerados antes dele existir
+    -- Find when each customer's "lifetime" starts, so no zero-filled months exist before it
     select 
         customer_id,
         min(trunc(cast(placed_at as date), 'MM')) as first_active_month
     from fct_sales
-    where order_status in ('paid', 'confirmed') -- Apenas receita válida
+    where order_status in ('paid', 'confirmed') -- Valid revenue only
     group by 1
 
 ),
 
 customer_spine as (
 
-    -- Criamos a matriz perfeita: Cliente x Todos os meses desde a sua primeira compra
+    -- Build the full grid: customer x every month since their first purchase
     select
         c.customer_id,
         c.person_type,
@@ -59,7 +59,7 @@ customer_spine as (
 
 sales_monthly_aggs as (
 
-    -- Agregamos as vendas reais do cliente mês a mês
+    -- Aggregate the customer's actual sales month by month
     select
         customer_id,
         trunc(cast(placed_at as date), 'MM') as active_month,
@@ -67,14 +67,14 @@ sales_monthly_aggs as (
         sum(line_total) as monthly_revenue,
         max(placed_at) as last_purchase_at
     from fct_sales
-    where order_status in ('paid', 'confirmed') -- Apenas receita válida[cite: 4]
+    where order_status in ('paid', 'confirmed') -- Valid revenue only
     group by 1, 2
 
 ),
 
 final as (
 
-    -- Unimos a matriz com as vendas reais. Onde não houver venda, o COALESCE coloca zero.
+    -- Join the grid with actual sales; COALESCE fills months with no sales with zero
     select
         {{ dbt_utils.generate_surrogate_key(['spine.customer_id', 'spine.reporting_month']) }} as customer_monthly_sk,
         spine.customer_id,
