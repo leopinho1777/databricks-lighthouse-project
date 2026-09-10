@@ -32,7 +32,7 @@ calendary as (
     from {{ ref('dim_calendary') }}
     -- Filter out future months to avoid empty rows in the BI
     where month_start <= trunc(current_date(), 'MM')
-      and year > 1900 and year > 1900 -- Removes the dummy date (1900-01-01)
+      and year > 1900 -- Removes the dummy date (1900-01-01)
 
 ),
 
