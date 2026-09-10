@@ -1,3 +1,6 @@
+-- Model: stg_products (staging)
+-- Purpose: Products catalog standardized from bronze layer.
+
 with source as (
 
     select * from {{ source('bronze', 'products') }}

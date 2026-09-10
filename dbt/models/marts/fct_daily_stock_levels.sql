@@ -1,3 +1,7 @@
+-- Model: fct_daily_stock_levels (marts)
+-- Purpose: Sparse daily stock fact built from stock level snapshots. One row per stock change day and
+--          product-location pair.
+
 {{
     config(
         materialized='incremental',

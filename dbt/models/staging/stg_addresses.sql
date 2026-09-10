@@ -1,3 +1,6 @@
+-- Model: stg_addresses (staging)
+-- Purpose: Customer address information standardized from bronze.
+
 with source as (
 
     select * from {{ source('bronze', 'addresses') }}

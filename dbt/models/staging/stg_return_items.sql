@@ -1,3 +1,6 @@
+-- Model: stg_return_items (staging)
+-- Purpose: Return items line-level details standardized from bronze.
+
 with source as (
 
     select * from {{ source('bronze', 'return_items') }}

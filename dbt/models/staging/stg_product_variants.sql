@@ -1,3 +1,6 @@
+-- Model: stg_product_variants (staging)
+-- Purpose: Product variants (SKUs, pricing, weight and tax rates) standardized from bronze.
+
 with source as (
 
     select * from {{ source('bronze', 'product_variants') }}

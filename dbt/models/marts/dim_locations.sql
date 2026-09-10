@@ -1,3 +1,7 @@
+-- Model: dim_locations (marts)
+-- Purpose: Location dimension. Contains historical records for each warehouse or store location (SCD
+--          Type 2).
+
 with locations as (
     select
         {{ dbt_utils.generate_surrogate_key(['location_id', 'updated_at']) }} as location_sk,

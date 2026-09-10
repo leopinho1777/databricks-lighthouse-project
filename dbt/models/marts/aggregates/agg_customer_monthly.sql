@@ -1,3 +1,9 @@
+-- Model: agg_customer_monthly (marts)
+-- Purpose: Monthly aggregate table at the customer grain (Customer x Month). Built using a date spine
+--          cross-join to ensure every month since the customer's first purchase is represented, even
+--          if they made no purchases (zero-filled). Ideal for cohort analysis, Monthly Recurring
+--          Revenue (MRR), and MoM retention charts.
+
 with fct_sales as (
 
     select

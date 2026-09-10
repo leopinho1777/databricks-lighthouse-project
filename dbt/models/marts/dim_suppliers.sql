@@ -1,3 +1,7 @@
+-- Model: dim_suppliers (marts)
+-- Purpose: Supplier dimension. Contains historical records for each supplier (SCD Type 2), used by
+--          fct_purchases for supplier reliability analysis.
+
 with source as (
 
     select * from {{ ref('stg_suppliers') }}

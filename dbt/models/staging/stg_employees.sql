@@ -1,3 +1,6 @@
+-- Model: stg_employees (staging)
+-- Purpose: Employee master data standardized from bronze.
+
 with source as (
 
     select * from {{ source('bronze', 'employees') }}

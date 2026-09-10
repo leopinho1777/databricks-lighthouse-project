@@ -1,3 +1,8 @@
+-- Model: fct_purchases (marts)
+-- Purpose: Purchases fact at goods-receipt-item grain. Foreign keys to supplier, location, employee,
+--          and product dimensions. Measures for supplier reliability (delay, lead time) and
+--          currency-converted amounts (BRL).
+
 with purchases as (
 
     select * from {{ ref('int_purchases_enriched') }}

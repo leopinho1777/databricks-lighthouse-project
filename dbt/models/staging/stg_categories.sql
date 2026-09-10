@@ -1,3 +1,6 @@
+-- Model: stg_categories (staging)
+-- Purpose: Product categories and taxonomy hierarchy standardized from bronze.
+
 with source as (
 
     select * from {{ source('bronze', 'categories') }}

@@ -1,3 +1,7 @@
+-- Model: stg_locations (staging)
+-- Purpose: Physical locations (e.g., stores, warehouses, distribution centers) standardized from
+--          bronze.
+
 with source as (
 
     select * from {{ source('bronze', 'locations') }}

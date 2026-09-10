@@ -1,3 +1,8 @@
+-- Model: agg_product_performance (marts)
+-- Purpose: Aggregate table tracking product performance at a monthly grain. Calculates Cost of Goods
+--          Sold (COGS) based on standard cost, and the true Contribution Margin after deducting
+--          returns, taxes, and costs.
+
 with fct_sales as (
 
     select * from {{ ref('fct_sales') }}

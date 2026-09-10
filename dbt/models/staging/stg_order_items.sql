@@ -1,3 +1,6 @@
+-- Model: stg_order_items (staging)
+-- Purpose: Order line items standardized from bronze.
+
 with source as (
 
     select * from {{ source('bronze', 'order_items') }}

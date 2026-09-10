@@ -1,3 +1,7 @@
+-- Model: dim_customers (marts)
+-- Purpose: Customer dimension — one record per customer, enriched with the primary address geography
+--          (city/state/country). Conformed dimension used by fct_sales.
+
 with customers as (
 
     select

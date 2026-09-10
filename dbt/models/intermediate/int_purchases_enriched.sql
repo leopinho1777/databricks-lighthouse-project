@@ -1,3 +1,8 @@
+-- Model: int_purchases_enriched (intermediate)
+-- Purpose: One record per goods receipt item, enriched with purchase order, supplier (point-in-time
+--          SCD2), location (point-in-time SCD2), currency-converted amounts (BRL), and delay/lead
+--          time measures. Feeds fct_purchases.
+
 with goods_receipt_items as (
 
     select

@@ -1,3 +1,8 @@
+-- Model: agg_sales_daily (marts)
+-- Purpose: Aggregate table with daily sales metrics by channel. Contains gross revenue, returned
+--          amounts, taxes applied to the residual amount, net revenue, and order volumes. Grain: 1
+--          row per Day (date_id) and Channel (channel).
+
 with fct_sales as (
 
     select * from {{ ref('fct_sales') }}
