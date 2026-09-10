@@ -1,3 +1,7 @@
+-- Test: test_fct_daily_stock_levels_matches_snapshot_7d
+-- Fails if, over the last 7 days, fct_daily_stock_levels is missing a snapshot row, carries
+-- different values (stock_level_id, quantities, valid_from), or has rows with no snapshot match.
+
 with expected_source as (
 
     select

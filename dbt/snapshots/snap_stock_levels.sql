@@ -1,3 +1,7 @@
+-- Snapshot: snap_stock_levels
+-- Purpose: SCD2 history of stg_stock_levels (timestamp strategy on updated_at, keyed on
+--          stock_level_id, hard deletes invalidated). Feeds fct_daily_stock_levels.
+
 {% snapshot snap_stock_levels %}
 
 {{

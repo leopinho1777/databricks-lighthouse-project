@@ -1,3 +1,7 @@
+-- Test: test_fct_daily_stock_levels_daily_count_parity_7d
+-- Fails if, on any of the last 7 days, the row count in fct_daily_stock_levels differs from
+-- the number of product/location pairs that changed in snap_stock_levels that day.
+
 with expected_source as (
 
     select
