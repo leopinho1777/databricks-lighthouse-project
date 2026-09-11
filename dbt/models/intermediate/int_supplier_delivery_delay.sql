@@ -1,3 +1,7 @@
+-- Model: int_supplier_delivery_delay (intermediate)
+-- Purpose: One record per goods receipt, holding the supplier delivery delay: the difference in days
+--          between received_at and expected_delivery_at.
+
 with goods_receipts as (
 
     select

@@ -40,6 +40,8 @@ models:
         description: Current status of the order.
       - name: placed_at
         description: Order placement timestamp.
+        data_tests:
+          - no_future_dates
       - name: subtotal
         description: Order subtotal before discounts.
       - name: discount_amount

@@ -1,3 +1,9 @@
+-- Model: agg_sales_regional_category_daily (marts)
+-- Purpose: Daily sales aggregation at the Region (State) and Product Category grain. Designed
+--          specifically to support geographical and categorical filtering in BI dashboards without
+--          hitting the detailed fact table. Excludes order counts to prevent fan-out
+--          (double-counting) issues for multi-category orders.
+
 with fct_sales as (
 
     select

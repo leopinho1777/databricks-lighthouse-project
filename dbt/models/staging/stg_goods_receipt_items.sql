@@ -1,3 +1,6 @@
+-- Model: stg_goods_receipt_items (staging)
+-- Purpose: Goods receipt line items standardized from bronze.
+
 with source as (
 
     select * from {{ source('bronze', 'goods_receipt_items') }}

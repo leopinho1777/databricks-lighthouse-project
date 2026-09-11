@@ -1,3 +1,7 @@
+-- Model: fct_sales (marts)
+-- Purpose: Sales fact at order-item grain. One record per order item, with foreign keys to the
+--          dimensions and additive measures (quantity, prices, taxes).
+
 with sales as (
 
     select * from {{ ref('int_sales_enriched') }}

@@ -10,9 +10,15 @@ models:
           - not_null
           - unique
       - name: return_id
-        description: Return parent identifier.
+        description: Return parent identifier. (Rows for future-dated returns are filtered out.)
         data_tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_returns')
+                field: return_id
+              config:
+                severity: warn
       - name: order_item_id
         description: Order item identifier associated with the return.
         data_tests:

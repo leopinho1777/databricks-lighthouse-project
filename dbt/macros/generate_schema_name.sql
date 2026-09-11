@@ -1,3 +1,8 @@
+-- Macro: generate_schema_name
+-- Purpose: Overrides dbt's default schema naming. In prod each layer uses its own name
+--          (staging, intermediate, marts); in dev the layer is appended to the developer's
+--          schema (e.g. <user>_analytics_staging) so each developer works in isolation.
+
 {% macro generate_schema_name(custom_schema_name, node) -%}
 
     {%- set default_schema = target.schema -%}

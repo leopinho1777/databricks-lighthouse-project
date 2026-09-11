@@ -63,4 +63,4 @@ from cleaned_required
 
 -- Exclude orders with future-placed_at dates — mock data contains future-dated rows that should not reach marts
 select * from renamed
-where placed_at <= current_timestamp()
+where {{ filter_future_dated('placed_at') }}

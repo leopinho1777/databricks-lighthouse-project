@@ -64,4 +64,6 @@ renamed as (
 
 )
 
+-- Exclude rows with a future created_at (closest available "returned at" event) — mock data contains future-dated rows that should not reach marts
 select * from renamed
+where {{ filter_future_dated('created_at') }}

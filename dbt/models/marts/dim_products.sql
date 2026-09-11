@@ -1,3 +1,8 @@
+-- Model: dim_products (marts)
+-- Purpose: Product dimension at variant grain. One record per sellable variant (SKU), with the
+--          corrected business category, brand, and reference measures (sale price, cost price, tax
+--          rates). Conformed dimension used by fct_sales.
+
 with variants as (
 
     select

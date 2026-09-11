@@ -1,3 +1,6 @@
+-- Model: stg_brands (staging)
+-- Purpose: Product brands standardized from bronze.
+
 with source as (
 
     select * from {{ source('bronze', 'brands') }}

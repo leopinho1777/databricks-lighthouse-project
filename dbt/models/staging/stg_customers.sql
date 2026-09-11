@@ -1,3 +1,6 @@
+-- Model: stg_customers (staging)
+-- Purpose: Customer master data standardized from bronze.
+
 with source as (
 
     select * from {{ source('bronze', 'customers') }}

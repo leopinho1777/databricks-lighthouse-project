@@ -1,3 +1,6 @@
+-- Model: stg_product_variants (staging)
+-- Purpose: Product variants (SKUs, pricing, weight and tax rates) standardized from bronze.
+
 with source as (
 
     select * from {{ source('bronze', 'product_variants') }}
@@ -44,7 +47,7 @@ renamed as (
         cast(cost_price as decimal(16, 2)) as cost_price,
         cast(weight_kg as decimal(10, 3)) as weight_kg,
 
-        -- Tax Rates (Ajustado para decimal(10, 4) para evitar overflow)
+        -- Tax Rates (cast to decimal(10, 4) to avoid overflow)
         cast(icms_rate as decimal(10, 4)) as icms_rate,
         cast(ipi_rate as decimal(10, 4)) as ipi_rate,
 

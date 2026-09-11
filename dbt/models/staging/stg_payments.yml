@@ -31,6 +31,8 @@ models:
         description: Number of payment installments.
       - name: paid_at
         description: Timestamp when the payment was confirmed.
+        data_tests:
+          - no_future_dates
       - name: created_at
         description: Record creation timestamp.
       - name: updated_at

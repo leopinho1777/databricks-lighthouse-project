@@ -1,3 +1,8 @@
+-- Macros: dedupe_latest, keep_required_rows, filter_valid_orders
+-- Purpose: Shared data quality helpers for staging models: keep the latest ingested version
+--          of each key, drop rows missing mandatory columns, and drop rows tied to orders
+--          that no longer exist in stg_orders.
+
 -- Keep latest valid ingestion
 {% macro dedupe_latest(
     relation_name, 
