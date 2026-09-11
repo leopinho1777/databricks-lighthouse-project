@@ -1,3 +1,7 @@
+-- Model: dim_employees (marts)
+-- Purpose: Employee dimension — one record per employee, with role and home location. Conformed
+--          dimension used by fct_sales (salesperson) and future purchase facts (buyer).
+
 with employees as (
 
     select

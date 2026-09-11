@@ -1,3 +1,8 @@
+-- Model: int_products_categorized (intermediate)
+-- Purpose: One record per product, with the category corrected via the seed_category_fix mapping
+--          (product type -> canonical category). Products whose type is not mapped fall into 'Não
+--          Classificado' with is_categorized = false.
+
 with products as (
 
     select

@@ -1,3 +1,6 @@
+-- Model: stg_exchange_rates (staging)
+-- Purpose: Daily exchange rates standardized from bronze with forward fill for weekends and holidays.
+
 with source as (
 
     select * from {{ source('bronze', 'raw_exchange_rates') }}

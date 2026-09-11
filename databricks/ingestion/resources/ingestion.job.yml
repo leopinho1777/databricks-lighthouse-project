@@ -1,11 +1,12 @@
 resources:
-  #Job de ingestão formado por 4 tasks, onde uma depende do sucesso da anterior
+  #Ingestion job with 4 tasks: setup runs first, then table ingestion and BCB exchange rates
+  #run in parallel; check_bcb_consecutive_failures runs only if the BCB task fails
   jobs:
     ingestion:
       name: SQL Server Ingestion
       tasks:
 
-        #Task setup - cria catalog, schema, tabelas de audit e control e disponibiliza lista de tabelas para ingestão
+        #Task setup - creates the catalog, schema, audit and control tables, and publishes the list of tables to ingest
         - task_key: setup
           notebook_task:
             notebook_path: ../src/sqlserver_ingest_setup.ipynb
@@ -15,12 +16,12 @@ resources:
               schema: "${var.schema}"
           environment_key: Default
 
-        #Task ingest_tables - ingestão através de for_each para cada tabela disponibilizada por 'setup'
+        #Task ingest_tables - runs a for_each ingestion over every table published by 'setup'
         - task_key: ingest_tables
           depends_on:
             - task_key: setup         
           for_each_task:
-            #Consome o nome da tabela vindo da task 'setup'
+            #Consumes the table list published by the 'setup' task
             inputs: "{{tasks.setup.values.tables}}"
             concurrency: 5
             task:
@@ -29,12 +30,12 @@ resources:
                 notebook_path: ../src/sqlserver_ingest.ipynb
                 source: WORKSPACE
                 base_parameters:
-                  #input contendo o nome e a(s) chave(s) da tabela
+                  #input holding the table name and its key column(s)
                   table_config: "{{input}}"
                   governance_config_path: "governance_config.json"
                   catalog: "${var.catalog}"
                   schema: "${var.schema}"
-        #Task apply_rbca - Fornece acesso de acordo com o role (role- based access control)
+        #Task ingest_bcb_exchange_rates - ingests the BCB USD/BRL exchange rate (series 10813); runs after 'setup'
         - task_key: ingest_bcb_exchange_rates
           depends_on:
             - task_key: setup
@@ -46,8 +47,8 @@ resources:
               schema: "${var.schema}"
           environment_key: Default
 
-        #Task check_bcb_consecutive_failures - só roda se ingest_bcb_exchange_rates falhar;
-        #falha de propósito na 3a falha consecutiva para acionar o email nativo de on_failure
+        #Task check_bcb_consecutive_failures - runs only if ingest_bcb_exchange_rates fails;
+        #fails on purpose on the 3rd consecutive failure to trigger the native on_failure email
         - task_key: check_bcb_consecutive_failures
           depends_on:
             - task_key: ingest_bcb_exchange_rates

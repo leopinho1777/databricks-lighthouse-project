@@ -1,3 +1,7 @@
+-- Model: int_sales_enriched (intermediate)
+-- Purpose: One record per order item, enriched with its order header context (customer, salesperson,
+--          location, channel, status). Reusable sales base grain that feeds the sales marts.
+
 with order_items as (
 
     select

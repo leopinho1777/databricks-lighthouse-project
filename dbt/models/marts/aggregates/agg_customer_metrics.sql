@@ -1,3 +1,9 @@
+-- Model: agg_customer_metrics (marts)
+-- Purpose: Aggregate table with historical customer metrics. Calculates gross and net Lifetime Value
+--          (LTV), first and last purchase dates, churn risk (segmented thresholds by person_type: 180
+--          days for PJ, 240 days for PF), and dynamic ABC Curve classification based on revenue
+--          concentration. Grain: 1 row per customer.
+
 with fct_sales as (
 
     select * from {{ ref('fct_sales') }}
@@ -15,7 +21,7 @@ customers as (
 
 returns as (
 
-    -- Prevenção de fan-out: agregando a devolução por item antes do JOIN
+    -- Fan-out prevention: aggregate returns per item before the JOIN
     select
         order_item_id,
         sum(refund_amount) as refund_amount

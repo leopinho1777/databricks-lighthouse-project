@@ -1,12 +1,14 @@
+"""Logging helper: named loggers with a consistent stdout format for the pipeline."""
+
 import logging
 import sys
 
-#Cria um logger customizado
+#Builds a custom logger
 def get_logger(name: str, level: int = logging.INFO) -> logging.Logger:
     """
-    Retorna um logger nomeado que envia mensagens formatadas para stdout
+    Returns a named logger that writes formatted messages to stdout.
 
-    Como usar:
+    Usage:
         from grupo10.utils.logger import get_logger
         logger = get_logger("sqlserver_ingest")
         logger.info("Starting extraction: customers")
@@ -14,7 +16,7 @@ def get_logger(name: str, level: int = logging.INFO) -> logging.Logger:
     """
     logger = logging.getLogger(name)
 
-    # Evitar que mais de um handler seja anexado ao logger em caso de sessões interativas
+    # Avoid attaching more than one handler to the logger in interactive sessions
     if not logger.handlers:
         handler = logging.StreamHandler(sys.stdout)
         handler.setFormatter(

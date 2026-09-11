@@ -1,3 +1,8 @@
+-- Model: int_purchases_enriched (intermediate)
+-- Purpose: One record per goods receipt item, enriched with purchase order, supplier (point-in-time
+--          SCD2), location (point-in-time SCD2), currency-converted amounts (BRL), and delay/lead
+--          time measures. Feeds fct_purchases.
+
 with goods_receipt_items as (
 
     select
@@ -60,7 +65,7 @@ exchange_rates as (
 
 ),
 
--- Grão: 1 item recebido
+-- Grain: one received item
 base as (
 
     select
@@ -97,7 +102,7 @@ base as (
 
 ),
 
--- Join direto: dim_suppliers não possui múltiplas versões reais por supplier_id
+-- Direct join: dim_suppliers has no real multiple versions per supplier_id
 supplier_at_purchase as (
 
     select
@@ -109,7 +114,7 @@ supplier_at_purchase as (
 
 ),
 
--- Join direto: dim_locations não possui múltiplas versões reais por location_id
+-- Direct join: dim_locations has no real multiple versions per location_id
 location_at_purchase as (
 
     select
@@ -121,7 +126,7 @@ location_at_purchase as (
 
 ),
 
--- Taxa de câmbio vigente na data do pedido
+-- Exchange rate in effect on the order date
 converted as (
 
     select
@@ -149,7 +154,7 @@ enriched as (
         b.purchase_order_item_id,
         b.purchase_order_id,
 
-        -- Chaves para dimensões
+        -- Keys for dimensions
         sp.supplier_sk,
         b.supplier_id,
         lp.location_sk,
@@ -157,7 +162,7 @@ enriched as (
         b.buyer_id as employee_id,
         b.product_variant_id,
 
-        -- Contexto
+        -- Context
         b.po_number,
         b.purchase_order_status,
         b.currency,
@@ -166,17 +171,17 @@ enriched as (
         b.received_by_employee_id,
         b.received_at,
 
-        -- Medidas de quantidade
+        -- Qutity measures
         b.quantity_ordered,
         b.quantity_received,
 
-        -- Medidas de valor (originais e convertidas)
+        -- Amount measures (original and converted)
         c.unit_cost,
         c.unit_cost_brl,
         c.line_total,
         c.line_total_brl,
 
-        -- Medidas de prazo
+        -- Lead time measures
         {{ days_between('b.placed_at', 'b.received_at') }} as lead_time_days,
         {{ days_between('b.expected_delivery_at', 'b.received_at') }} as delay_days
 

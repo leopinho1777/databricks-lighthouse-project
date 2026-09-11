@@ -1,3 +1,8 @@
+-- Model: agg_sales_daily (marts)
+-- Purpose: Aggregate table with daily sales metrics by channel. Contains gross revenue, returned
+--          amounts, taxes applied to the residual amount, net revenue, and order volumes. Grain: 1
+--          row per Day (date_id) and Channel (channel).
+
 with fct_sales as (
 
     select * from {{ ref('fct_sales') }}
@@ -6,7 +11,7 @@ with fct_sales as (
 
 returns as (
 
-    -- Prevenção de fan-out: agregando a devolução por item antes do JOIN
+    -- Fan-out prevention: aggregate returns per item before the JOIN
     select
         order_item_id,
         sum(refund_amount) as refund_amount

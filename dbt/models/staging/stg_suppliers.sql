@@ -1,3 +1,6 @@
+-- Model: stg_suppliers (staging)
+-- Purpose: Suppliers and vendor information standardized from bronze.
+
 with source as (
 
     select * from {{ source('bronze', 'suppliers') }}

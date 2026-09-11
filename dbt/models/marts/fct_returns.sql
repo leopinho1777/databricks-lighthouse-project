@@ -1,3 +1,8 @@
+-- Model: fct_returns (marts)
+-- Purpose: Returns fact at returned-item grain. One record per returned order item, cross-referenced
+--          to the original sale via order_item_id. Enables real net revenue (sales − returns) and
+--          return-rate analysis.
+
 with returns as (
 
     select * from {{ ref('int_returns_enriched') }}
