@@ -1,3 +1,8 @@
+-- Model: agg_sales_regional_orders_daily (marts)
+-- Purpose: Daily order count aggregation at the Region (State) and Channel grain. Built separately
+--          from the category aggregate to avoid fan-out (double-counting) of orders that contain
+--          items from multiple categories.
+
 with fct_sales as (
 
     select

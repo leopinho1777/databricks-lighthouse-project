@@ -10,9 +10,15 @@ models:
           - not_null
           - unique
       - name: purchase_order_id
-        description: Purchase order parent identifier.
+        description: Purchase order parent identifier. (Rows for future-dated purchase orders are filtered out.)
         data_tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_purchase_orders')
+                field: purchase_order_id
+              config:
+                severity: warn
       - name: product_variant_id
         description: Product variant identifier.
         data_tests:

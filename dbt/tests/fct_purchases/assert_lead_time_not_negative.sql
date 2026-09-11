@@ -1,3 +1,6 @@
+-- Test: assert_lead_time_not_negative
+-- Fails if any purchase has a negative lead time (received before it was ordered).
+
 select
     goods_receipt_item_id,
     po_number,

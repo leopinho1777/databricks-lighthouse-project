@@ -1,7 +1,10 @@
+-- Test: test_stg_stock_movements_reconciliation_7d
+-- Reconciles the last 7 days of stock movements against the daily stock snapshot.
+
 {{ config(severity='warn') }}
 
--- Base de movimentos dos ultimos 7 dias.
--- A quantidade e normalizada para absoluto e o sinal e reaplicado por movement_type mais adiante.
+-- Stock movements from the last 7 days.
+-- Quantity is normalized to its absolute value; the sign is reapplied by movement_type further down.
 with movement_base as (
 
     select
@@ -18,7 +21,7 @@ with movement_base as (
 
 ),
 
--- Delta diario esperado por produto/local a partir dos movimentos.
+-- Expected daily delta per product/location, derived from the movements.
 movement_daily as (
 
     select
@@ -37,7 +40,7 @@ movement_daily as (
 
 ),
 
--- Movimentos com quantidade zero devem ser revisados, mesmo sem impacto liquido no estoque.
+-- Zero-quantity movements must be reviewed, even with no net stock impact.
 zero_quantity_review as (
 
     select
@@ -60,8 +63,8 @@ zero_quantity_review as (
 
 ),
 
--- Snapshot diario bruto: pode haver mais de um registro no mesmo dia/chave.
--- Mantemos apenas o mais recente com row_number no proximo CTE.
+-- Raw daily snapshot: there may be more than one record per day/key.
+-- Only the most recent one is kept, via row_number in the next CTE.
 snapshot_daily_source as (
 
     select
@@ -80,7 +83,7 @@ snapshot_daily_source as (
 
 ),
 
--- Snapshot diario consolidado (ultimo registro do dia por produto/local).
+-- Consolidated daily snapshot (last record of the day per product/location).
 snapshot_daily as (
 
     select
@@ -94,7 +97,7 @@ snapshot_daily as (
 
 ),
 
--- Calcula saldo de abertura como o saldo de fechamento do dia anterior.
+-- Computes the opening balance as the previous day's closing balance.
 snapshot_with_opening as (
 
     select
@@ -111,13 +114,13 @@ snapshot_with_opening as (
 
 ),
 
--- Reconcilia movimentos e snapshot por full outer join para capturar pares faltantes.
--- Regras de categorizacao:
--- - movement_without_snapshot_net_zero: permitido (movimento liquido zero no dia)
--- - missing_snapshot_for_nonzero_movement: divergencia
--- - snapshot_without_movement: divergencia de processo
--- - missing_opening_snapshot: sem base para fechar conta no primeiro dia da serie
--- - value_mismatch: fechamento diferente do esperado
+-- Reconciles movements and snapshot with a full outer join to catch missing pairs.
+-- Categorization rules:
+-- - movement_without_snapshot_net_zero: allowed (zero net movement for the day)
+-- - missing_snapshot_for_nonzero_movement: discrepancy
+-- - snapshot_without_movement: process discrepancy
+-- - missing_opening_snapshot: no baseline to reconcile the first day of the series
+-- - value_mismatch: closing balance differs from the expected value
 recon_universe as (
 
     select
@@ -159,7 +162,7 @@ recon_universe as (
 
 ),
 
--- Mede a proporcao diaria de pares faltantes (unknown de pareamento).
+-- Measures the daily share of unmatched pairs.
 unknown_ratio_by_day as (
 
     select
@@ -170,7 +173,7 @@ unknown_ratio_by_day as (
 
 ),
 
--- Projecao final com campos de observabilidade para triagem.
+-- Final projection with observability fields for triage.
 final as (
 
     select
@@ -213,7 +216,7 @@ final as (
 
 )
 
--- O teste retorna apenas categorias que devem alertar/falhar a regra principal.
+-- The test returns only the categories that should warn/fail the main rule.
 select *
 from final
 where mismatch_category in (

@@ -1,3 +1,9 @@
+-- Model: dim_calendary (marts)
+-- Purpose: Calendar dimension built using dbt_utils.date_spine. Spans from 2020-01-01 up to the
+--          maximum ingestion date (or end of current year). The date range is contiguous by
+--          construction, with no gaps, so the table can be flagged as a date table in Power BI — a
+--          requirement for the Time Intelligence measures.
+
 {% set max_date_query %}
     select cast(date_add(greatest(max(updated_at), current_date()), 1) as date) as max_date
     from lh_nautical.bronze._ingestion_control

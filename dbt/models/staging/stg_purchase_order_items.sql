@@ -1,3 +1,6 @@
+-- Model: stg_purchase_order_items (staging)
+-- Purpose: Purchase order items line-level details standardized from bronze.
+
 with source as (
 
     select * from {{ source('bronze', 'purchase_order_items') }}

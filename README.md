@@ -1,175 +1,213 @@
 # README
 
-Repositório para entrega do projeto Lighthouse do Grupo 10 / TeslaVinci.
+Delivery repository for the Lighthouse project — Group 10 / TeslaVinci.
 
-Pipeline de ingestão incremental de um SQL Server para a camada Bronze do Databricks (Unity Catalog), com governança LGPD, mascaramento dinâmico, RBAC e orquestração via Databricks Workflow.
-
----
-
-## Estrutura do Projeto
-
-```
-databricks.yml              # Definição do Asset Bundle (targets dev/prod)
-databricks.local.yml        # Overrides locais (ex.: host por usuário)
-pyproject.toml              # Pacote Python e dependências
-resources/
-  ingestion.job.yml         # Job de ingestão (4 tasks)
-  grupo10_etl.pipeline.yml  # Pipeline DLT (camadas futuras)
-src/
-  tables_config.json        # 24 tabelas e suas chaves primárias
-  governance_config.json    # Colunas sensíveis por tabela (LGPD)
-  sqlserver_ingest_setup.ipynb  # Setup: catalog/schema, control/audit, taskValues
-  sqlserver_ingest.ipynb        # Ingestão unitária (ForEach por tabela)
-  governance_setup.ipynb        # Cria a UDF de mascaramento dinâmico
-  apply_rbca.ipynb              # Concede privilégios RBAC
-  drop_bronze_tables.ipynb      # Utilitário de reset da camada Bronze
-  grupo10/
-    ingest.py               # Lógica de extração/carga (incremental + MERGE)
-    utils/audit.py          # Tabela e registros de auditoria
-    utils/logger.py         # Logging do pipeline
-tests/                      # conftest (Spark/fixtures) + unit/
-fixtures/                   # Dados de teste
-```
+Incremental ingestion pipeline from SQL Server into the Bronze layer on Databricks (Unity Catalog), followed by dbt transformations into a star schema, with LGPD governance (dynamic masking and RBAC) and orchestration through Databricks Workflows.
 
 ---
 
-## Arquitetura
+## Project Structure
 
-* **Databricks Asset Bundle (`databricks.yml`)**: declara o projeto (`grupo10`), artefatos e *targets* (`dev` / `prod`).
-* **`pyproject.toml`**: pacote Python do projeto (`src/grupo10`) e dependências.
-* **`resources/`**: definição dos *jobs* e *pipelines* do Databricks.
-* **Destino**: catálogo `lh_nautical`, schema `bronze` (Unity Catalog), formato Delta Lake.
+```
+databricks/
+  ingestion/                            # Bundle "grupo10": SQL Server and BCB -> Bronze
+    databricks.yml                      # Bundle definition (dev/prod targets)
+    resources/
+      ingestion.job.yml                 # Ingestion job (4 tasks)
+    src/
+      tables_config.json                # 24 tables and their primary keys
+      governance_config.json            # Sensitive columns per table (LGPD)
+      sqlserver_ingest_setup.ipynb      # Setup task: catalog/schema, audit/control tables, table list
+      sqlserver_ingest.ipynb            # Ingests one table (one for_each iteration)
+      bcb_exchange_rates_ingest.ipynb   # BCB USD/BRL exchange rate ingestion
+      check_bcb_consecutive_failures.ipynb  # Alerts after consecutive BCB failures
+      governance_setup.ipynb            # Creates the dynamic masking UDF
+      apply_rbca.ipynb                  # Applies RBAC grants
+      grupo10/
+        ingest.py                       # Extract/load logic (incremental + MERGE)
+        utils/audit.py                  # Audit table and records
+        utils/alerting.py               # Run history and consecutive-failure streaks
+        utils/logger.py                 # Pipeline logging
+    tests/                              # pytest configuration (Databricks Connect)
+  transformation/                       # Bundle "transformation": runs dbt as a Databricks job
+  orchestration/                        # Bundle "orchestration": chains ingestion -> transformation
+dbt/                                    # dbt project (desafio_lh): staging -> intermediate -> marts
+docs/
+  dashboard_guide.md                    # Power BI executive dashboard guide
+pyproject.toml                          # Python dependencies (uv)
+databricks.local.yml                    # Local overrides (not versioned, see Prerequisites)
+```
 
-O job `ingestion` é composto por 4 tasks encadeadas (cada uma depende do sucesso da anterior):
+---
 
-governance_setup -> setup -> ingest_tables -> apply_rbac
+## Architecture
 
-## Estratégia de Ingestão
+* **Three Databricks Asset Bundles** under `databricks/`, each with its own `databricks.yml` and deployed separately: `ingestion` (bundle `grupo10`), `transformation` and `orchestration`.
+* **`pyproject.toml`** (repository root): Python dependencies, managed with uv.
+* **`resources/`** (in each bundle): Databricks job definitions.
+* **Destination**: `lh_nautical` catalog, `bronze` schema (Unity Catalog), Delta Lake format. In the `dev` target, ingestion writes to the `develop` catalog.
 
-A lógica está modularizada em `src/grupo10/ingest.py`. Para cada tabela, `run_incremental_ingestion()` escolhe a estratégia pela chave primária:
+### Ingestion job
 
-* **Chave simples** (ex.: `"id"`): incremental por watermark, acumulando via `mode("append")`.
-* **Chave composta** (ex.: `["product_variant_id", "location_id"]`): recarga completa via `_merge_into_delta()`.
+`databricks/ingestion/resources/ingestion.job.yml` defines 4 tasks:
 
-São **24 tabelas** mapeadas em `tables_config.json`, das quais 3 usam chave composta (`stock_levels`, `product_suppliers`, `variant_attribute_values`).
+```
+setup ──┬──> ingest_tables              (for_each: one run per table, concurrency 5)
+        └──> ingest_bcb_exchange_rates  ──(only if it fails)──> check_bcb_consecutive_failures
+```
 
-Todas as escritas são idempotentes (MERGE ou watermark), eliminando duplicatas em reexecuções. Duas tabelas internas sustentam a o controle de ingestão os dados para auditoria:
+* `setup` creates the catalog, schema, audit and control tables, and publishes the list of tables to ingest.
+* `ingest_tables` and `ingest_bcb_exchange_rates` run in parallel after `setup`.
+* `check_bcb_consecutive_failures` runs only when the BCB task fails, and fails on purpose on the 3rd consecutive failed day to trigger its on_failure email.
 
-| Tabela | Papel |
+`governance_setup.ipynb` and `apply_rbca.ipynb` are standalone notebooks: they are not part of the ingestion job.
+
+### Orchestration
+
+`databricks/orchestration/resources/orchestration_job.yml` defines the "LH Nautical Orchestration" job: it runs the ingestion job and then the transformation job (`dbt deps` + `dbt build`), each with up to 2 retries. Both jobs are referenced by `job_id`, so they must be deployed before the orchestration job can run.
+
+---
+
+## Ingestion Strategy
+
+The logic is modularized in `databricks/ingestion/src/grupo10/ingest.py`. For each table, `run_incremental_ingestion()` picks the strategy based on the primary key:
+
+* **Single key** (e.g. `"id"`): incremental by watermark, appended with `mode("append")`.
+* **Composite key** (e.g. `["product_variant_id", "location_id"]`): full reload through `_merge_into_delta()`.
+
+**24 tables** are mapped in `tables_config.json`, 3 of which use a composite key (`stock_levels`, `product_suppliers`, `variant_attribute_values`).
+
+All writes are idempotent (MERGE or watermark), which prevents duplicates on reruns. Internal tables support ingestion control, auditing and alerting:
+
+| Table | Role |
 | :--- | :--- |
-| **`_ingestion_control`** | Watermark por tabela; consultada no início e atualizada ao fim de cada execução. |
-| **`_ingestion_audit`** | Histórico de execuções: status, duração, contagem de linhas e erro. |
+| **`_ingestion_control`** | Watermark per table; read at the start and updated at the end of each run. |
+| **`_ingestion_audit`** | Run history: status, duration, row count and error. |
+| **`_alert_run_history`** | Daily outcome of the BCB task, used to count consecutive failures. |
 
-Em caso de falha, a exceção é relançada para que o Workflow marque a task como falha, permitindo reprocessamento seletivo da tabela afetada.
-
----
-
-## Governança e Segurança (LGPD)
-
-Mascaramento dinâmico via Unity Catalog: a função `regra_mascaramento` retorna o valor original para `admins` e `engenharia_dados`, e `████████ (RESTRITO LGPD)` para os demais. As colunas sensíveis são mapeadas em `governance_config.json`.
-
-Credenciais lidas via `dbutils.secrets.get()` (scope `sqlserver` no Databricks)
+On failure, the exception is re-raised so the Workflow marks the task as failed, allowing a selective rerun of the affected table.
 
 ---
 
-## Camada de Transformação de Dados (dbt)
+## Governance and Security (LGPD)
 
-A fase de transformação de dados é orquestrada via dbt (data build tool) sobre o Databricks, seguindo os princípios de engenharia de analytics modular e separação de responsabilidades em camadas. 
+Dynamic masking through Unity Catalog: the `regra_mascaramento` function returns the original value for `admins` and `engenharia_dados`, and `████████ (RESTRITO LGPD)` for everyone else. Sensitive columns are mapped in `governance_config.json`.
 
-## Arquitetura de Schemas e Isolamento de Ambiência
+Credentials are read with `dbutils.secrets.get()` (`sqlserver` scope in Databricks).
 
-Para garantir a qualidade dos testes e impedir que o trabalho individual de um desenvolvedor sobreponha o de outro, configuramos uma resolução dinâmica de schemas por meio de macro customizada (generate_schema_name):
-Ambiente de Desenvolvimento (Dev): Todas as camadas de cada desenvolvedor são isoladas em schemas individuais com o prefixo da sua credencial (<usuario>_<camada>), por exemplo: usuario_analytics_staging, usuario_analytics_intermediate e usuario_analytics_marts. 
-Sufixo e Padronização: Cada camada aplica automaticamente seu sufixo correspondente no Databricks.
+---
 
-## Estrutura dos Modelos
+## Data Transformation Layer (dbt)
 
-Atualmente, o projeto conta com modelos e testes compilados e validados, divididos entre as três camadas principais:
+The data transformation stage is orchestrated with dbt (data build tool) on Databricks, following modular analytics engineering principles and a clear separation of responsibilities between layers.
+
+## Schema Architecture and Environment Isolation
+
+To keep tests reliable and prevent one developer's work from overwriting another's, schemas are resolved dynamically by a custom macro (`generate_schema_name`):
+
+* **Development (dev):** every layer of each developer is isolated in individual schemas prefixed with the developer's credential (`<user>_analytics_<layer>`), for example: `user_analytics_staging`, `user_analytics_intermediate` and `user_analytics_marts`.
+* **Suffix and standardization:** each layer automatically applies its matching suffix in Databricks.
+
+## Model Structure
+
+The project has compiled and validated models and tests, split across three main layers:
+
+```
 models/
-├── staging/          # Limpeza, padronização e tipagem dos dados brutos
-├── intermediate/     # Regras de negócio, enriquecimento e relacionamentos complexos
-└── marts/            # Modelagem dimensional pronta para análise (Star Schema)
+├── staging/          # Cleaning, standardization and typing of raw data
+├── intermediate/     # Business rules, enrichment and complex relationships
+└── marts/            # Dimensional modeling ready for analysis (star schema)
+```
 
-## 1. Camada Staging
+### 1. Staging Layer
 
-Responsável pela limpeza técnica, padronização de nomenclatura, remoção de duplicatas e tipagem correta dos dados vindos da camada Bronze.
-Clientes e Localidades: stg_addresses, stg_customers, stg_employees, stg_locations
-Catálogo e Produtos: stg_brands, stg_categories, stg_products, stg_product_variants
-Vendas, Financeiro e Operações: stg_orders, stg_order_items, stg_payments, stg_fiscal_invoices, stg_returns, stg_return_items, stg_exchange_rates
-Suprimentos e Estoque: stg_suppliers, stg_purchase_orders, stg_purchase_order_items, stg_goods_receipts, stg_goods_receipt_items, stg_stock_levels, stg_stock_movements
+Responsible for technical cleaning, naming standardization, duplicate removal and correct typing of the data coming from the Bronze layer.
 
-## 2. Camada Intermediate
+* **Customers and locations:** stg_addresses, stg_customers, stg_employees, stg_locations
+* **Catalog and products:** stg_brands, stg_categories, stg_products, stg_product_variants
+* **Sales, finance and operations:** stg_orders, stg_order_items, stg_payments, stg_fiscal_invoices, stg_returns, stg_return_items, stg_exchange_rates
+* **Supply and inventory:** stg_suppliers, stg_purchase_orders, stg_purchase_order_items, stg_goods_receipts, stg_goods_receipt_items, stg_stock_levels, stg_stock_movements
 
-Responsável por centralizar regras de negócio intermediárias, cruzamento de entidades e cruzamento de métricas operacionais.
-int_products_categorized: Consolida produtos, variantes, marcas e hierarquia de categorias.
-int_sales_enriched: Enriquece transações de vendas combinando pedidos, itens, pagamentos e notas fiscais.
-int_supplier_delivery_delay: Calcula métricas e indicadores de atraso na entrega de pedidos de compras de fornecedores.
-int_purchases_enriched: Consolida e enriquece os pedidos de compras integrando dados de itens e recebimentos.
+### 2. Intermediate Layer
 
-## 3. Camada Marts
+Responsible for centralizing intermediate business rules, cross-entity joins and operational metrics.
 
-Contém os modelos dimensionais finais (Tabelas Fato e Dimensão) modelados no formato Star Schema, otimizados para consultas analíticas e ferramentas de BI. 
+* **int_products_categorized:** consolidates products, variants, brands and the category hierarchy.
+* **int_sales_enriched:** enriches sales transactions by combining orders, items, payments and invoices.
+* **int_returns_enriched:** enriches returned items with their return header context (customer, location, status, reason).
+* **int_supplier_delivery_delay:** calculates delivery delay metrics for supplier purchase orders.
+* **int_purchases_enriched:** consolidates and enriches purchase orders by integrating item and receipt data.
 
-## Tabelas Dimensão 
+### 3. Marts Layer
 
-dim_calendary: Dimensão temporal para análises de tendências e sazonalidade.
-dim_customers: Visão consolidada dos clientes e seus endereços.
-dim_employees: Cadastro e perfil de funcionários.
-dim_locations: Localizações físicas e filiais.
-dim_products: Dimensão completa do catálogo de produtos, atributos e categorias.
-dim_suppliers: Cadastro e atributos dos fornecedores.
+Contains the final dimensional models (fact and dimension tables) in a star schema, optimized for analytical queries and BI tools.
 
-## Tabelas Fato
+#### Dimension Tables
 
-fct_sales: Fato de vendas com granularidade de itens de pedidos, valores, descontos e métricas financeiras.
-fct_daily_stock_levels: Fato de acompanhamento diário dos níveis e movimentações de estoque.
-fct_purchases: Fato de compras e suprimentos consolidando métricas de pedidos de compras e recebimentos de fornecedores.
-fct_returns: Fato de devoluções, consolidando métricas sobre itens devolvidos, motivos e impacto financeiro/operacional das devoluções.
+* **dim_calendary:** date dimension for trend and seasonality analysis.
+* **dim_customers:** consolidated view of customers and their addresses.
+* **dim_customer_addresses:** customer address history (SCD Type 2).
+* **dim_employees:** employee records and profiles.
+* **dim_locations:** physical locations and branches.
+* **dim_products:** full product catalog dimension, with attributes and categories.
+* **dim_suppliers:** supplier records and attributes.
 
-## Como gerar a documentação do dbt
+#### Fact Tables
 
-Utilizando o comando dbt docs generate o dbt gera documentação completa de todo o processo de transformação.
-Em seguida, utilizando o comando dbt docs serve você será redirecionado para um site local em html com uma interface interativa contendo todas as informações do projeto.
+* **fct_sales:** sales fact at order-item grain, with amounts and financial metrics.
+* **fct_daily_stock_levels:** daily stock levels per product and location, built from stock level snapshots.
+* **fct_purchases:** purchases and supply fact, consolidating purchase order and supplier receipt metrics.
+* **fct_returns:** returns fact, consolidating metrics on returned items, reasons and the financial/operational impact of returns.
 
----
+#### Aggregate Tables
 
-## Agendamento
+Pre-aggregated tables in `marts/aggregates/`, built for direct BI consumption: agg_sales_daily, agg_sales_regional_category_daily, agg_sales_regional_orders_daily, agg_product_performance, agg_customer_metrics, agg_customer_monthly.
 
-`resources/ingestion.job.yml` agenda execução diária às **01:00 (America/Sao_Paulo)** via cron `0 0 1 * * ?`, com status `UNPAUSED`.
+## How to Generate the dbt Documentation
 
----
-
-## Pré-requisitos
-
-* **Databricks CLI** instalado e configurado.
-* **uv** (gerenciador de pacotes Python).
-* Acesso a um *workspace* Databricks com permissão para criar catálogos, schemas e *jobs*.
-
-Targets do bundle: `dev` (default, schema por usuário) e `prod`. Configurações locais/sensíveis ficam em `databricks.local.yml`, o qual deve ser criado manualmente ao clonar o repositório.
+Running `dbt docs generate` makes dbt generate the full documentation of the transformation process.
+Then `dbt docs serve` opens a local HTML site with an interactive interface containing all the project information.
 
 ---
 
-## Como Executar
+## Scheduling
+
+The orchestration job (`databricks/orchestration/resources/orchestration_job.yml`) runs daily at **01:00 (America/Sao_Paulo)** through the Quartz cron `0 0 1 * * ?`, with status `UNPAUSED`. It runs the ingestion job first and then the transformation job. The ingestion job has no schedule of its own.
+
+---
+
+## Prerequisites
+
+* **Databricks CLI** installed and configured.
+* **uv** (Python package manager).
+* Access to a Databricks workspace with permission to create catalogs, schemas and jobs.
+
+Bundle targets: `dev` (default) and `prod`. In `dev`, the transformation bundle writes to a per-user schema. Local/sensitive settings live in `databricks.local.yml` at the repository root, which must be created manually after cloning (it is not versioned); the ingestion and orchestration bundles include it.
+
+---
+
+## How to Run
 
 ```bash
-# 1. Instala dependências
+# 1. Install dependencies (repository root)
 uv sync --dev
 
-# 2. Autenticação
+# 2. Authenticate
 databricks auth login
 
-# 3. Exporta os segredos via scope do Databricks
+# 3. Store the SQL Server secrets in a Databricks secret scope
 databricks secrets create-scope sqlserver
-databricks secrets put-secret sqlserver username <valor>
-databricks secrets put-secret sqlserver password <valor>
-databricks secrets put-secret sqlserver host <valor>
-databricks secrets put-secret sqlserver port <valor>
-databricks secrets put-secret sqlserver db <valor>
+databricks secrets put-secret sqlserver username <value>
+databricks secrets put-secret sqlserver password <value>
+databricks secrets put-secret sqlserver host <value>
+databricks secrets put-secret sqlserver port <value>
+databricks secrets put-secret sqlserver db <value>
 
-# 4. Deploy
-databricks bundle deploy --target dev   # ou prod
+# 4. Deploy each bundle from its own folder (ingestion and transformation before orchestration)
+(cd databricks/ingestion && databricks bundle deploy --target dev)       # or --target prod
+(cd databricks/transformation && databricks bundle deploy --target dev)
+(cd databricks/orchestration && databricks bundle deploy --target dev)
 
-# 5. Executar ingestão manualmente
-databricks bundle run ingestion
-
+# 5. Run the ingestion manually
+(cd databricks/ingestion && databricks bundle run ingestion)
 ```

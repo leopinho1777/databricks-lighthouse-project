@@ -1,3 +1,7 @@
+-- Model: dim_customer_addresses (marts)
+-- Purpose: Customer address dimension with historical versions for address changes. Captures address
+--          history at the address-level and exposes current and prior versions for SCD2 reporting.
+
 with source as (
     select * from {{ ref('stg_addresses') }}
 ),

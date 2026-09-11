@@ -1,3 +1,7 @@
+-- Model: int_returns_enriched (intermediate)
+-- Purpose: One record per returned order item, enriched with its return header context (customer,
+--          location, status, reason, etc.). Reusable returns base grain that feeds the returns marts.
+
 with return_items as (
 
     select

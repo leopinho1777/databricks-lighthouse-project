@@ -1,4 +1,6 @@
--- Assert no future-dated orders in fct_sales (placed_at must be in the past or present)
+-- Test: assert_fct_sales_no_future_dates
+-- Fails if any order in fct_sales is placed in the future (placed_at later than now).
+
 select
     order_item_id,
     order_id,
