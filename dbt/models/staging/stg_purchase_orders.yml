@@ -35,8 +35,10 @@ models:
         description: Currency code used for the purchase order.
       - name: placed_at
         description: Purchase order placement timestamp.
+        data_tests:
+          - no_future_dates
       - name: expected_delivery_at
-        description: Expected delivery date for the purchase order.
+        description: Expected delivery date for the purchase order. Legitimately forward-looking — never future-date filtered.
       - name: subtotal
         description: Purchase order subtotal before taxes.
       - name: total

@@ -29,6 +29,8 @@ models:
           - not_null
       - name: updated_at
         description: Timestamp of the last stock level update.
+        data_tests:
+          - no_future_dates
       - name: _ingested_at
         description: Ingestion timestamp.
         data_tests:

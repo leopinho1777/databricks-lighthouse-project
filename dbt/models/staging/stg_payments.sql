@@ -61,4 +61,6 @@ valid_orders_only as (
 
 )
 
+-- Exclude rows with a future paid_at — mock data contains future-dated rows that should not reach marts
 select * from valid_orders_only
+where {{ filter_future_dated('paid_at') }}

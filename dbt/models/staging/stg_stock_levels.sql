@@ -54,4 +54,6 @@ renamed as (
 
 )
 
+-- Exclude rows with a future updated_at — mock data contains future-dated rows that should not reach the snapshot/marts
 select * from renamed
+where {{ filter_future_dated('updated_at') }}
