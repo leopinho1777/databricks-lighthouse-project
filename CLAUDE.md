@@ -25,6 +25,7 @@ databricks/
   transformation/  # Bundle "transformation": runs `dbt build` as a Databricks job task
   orchestration/   # Bundle "orchestration": top-level job that chains ingestion -> transformation
 dbt/                # dbt project ("desafio_lh"): staging -> intermediate -> marts (star schema)
+forecasting/        # Exploratory demand-forecasting workstream, not a committed dbt/Databricks bundle (see below)
 ```
 
 `databricks/orchestration` does **not** reference the other two bundles by include; it wires them together at the Databricks job level via hardcoded `job_id`s in `orchestration_job.yml` (`run_job_task`), so the ingestion and transformation jobs must already be deployed before the orchestration job can run.
@@ -121,6 +122,14 @@ Shared macros: `dedupe_latest()`, `keep_required_rows()`, and `filter_valid_orde
 `snapshots/snap_stock_levels.sql` (timestamp strategy on `stg_stock_levels`, keyed on `stock_level_id`) is the SCD2 history feeding `fct_daily_stock_levels`. `seeds/seed_category_fix.csv` is a manual lookup (by `product_type`) that `int_products_categorized` joins against to correct miscategorized/misspelled product types from the source system.
 
 Tests live in `dbt/tests/` as one directory per fact table (`fct_daily_stock_levels/`, `fct_purchases/`, `fct_returns/`) containing singular assertion SQL (e.g. no negative quantities, no future dates, 7-day reconciliation against source snapshots) in addition to schema tests declared in each model's `.yml`.
+
+## Demand forecasting workstream (`forecasting/`)
+
+Phase 1 (Baseline Model Definition) of the product x store demand-forecasting effort — exploratory only, not a committed dbt model or Databricks bundle. Connects to the dev marts via `forecasting/_shared/db_connection.py`, which reads credentials from the existing `~/.dbt/profiles.yml` dev profile (no secrets stored in-repo). Three stages, each with a script/SQL that produces it and a markdown writeup:
+
+- `01_data_exploration/` — inventories the transformation layer for forecasting readiness. Key conclusion: **no existing mart is at product x store x day grain** — `agg_product_performance` is product x month with no location; the regional aggregates group by customer state, not selling location.
+- `02_schema_design/` — proposes and prototypes `fact_demand_daily` (date x `product_variant_id` x `location_id`, dense/zero-filled), built in a disposable scratch schema (`<dev_schema>_forecasting_scratch`, e.g. `user_analytics_forecasting_scratch`), reconciled exactly against `fct_sales`. Weekly/monthly grains roll up from this table via SQL, never reprocessing `fct_sales`.
+- `03_granularity_baselines/` — full-catalog backtest of Seasonal Naive / Moving Average / SES at daily, weekly, and monthly grain (baselines only, no ML model). **Weekly is the recommended default grain**: daily is dominated by per-SKU sparsity (73% of observations are legitimately zero), monthly loses the peak-season signal Moving Average/SES need to react to. Seasonal Naive wins accuracy per-series at every grain but carries a structural growth-trend bias (the business grows ~15%/year, so "same period last year" systematically underforecasts) — Phase 3's real model needs an explicit trend component, not just seasonality.
 
 ## Code style
 
