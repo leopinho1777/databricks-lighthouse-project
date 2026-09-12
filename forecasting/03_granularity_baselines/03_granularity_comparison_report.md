@@ -1,5 +1,7 @@
 # Granularity Comparison Report — Demand Forecasting Phase 1
 
+> **Updated after develop merge on 2026-09-11.** Re-ran this backtest in full against the corrected `fact_demand_daily` (stock-levels future-date fix + mart full-refresh). **Result: the metrics below are unchanged — diffed byte-for-byte against the pre-fix committed CSVs, confirmed identical, not assumed.** This is expected: these baselines are computed solely from `qty_sold_net` (sales-derived), which was never on the affected side of the bug — confirmed unaffected by Deliverable 2's reconciliation check (`fct_sales` totals match exactly pre- and post-fix). The `is_stockout_day`/`is_demand_censored_flag` columns this fix actually touches aren't consumed anywhere in this backtest's math; their updated distributions are reported in `01_data_exploration_summary.md` §4 instead.
+
 Full-catalog backtest (every product x location series in `fact_demand_daily`, no sampling — per team decision) of Seasonal Naive, Moving Average, and Simple Exponential Smoothing (SES) at daily, weekly, and monthly grain. Produced by [`run_baselines.py`](run_baselines.py); raw numbers in [`output/metrics_by_granularity_baseline.csv`](output/metrics_by_granularity_baseline.csv) (per-series, aggregated) and [`output/portfolio_total_metrics.csv`](output/portfolio_total_metrics.csv) (whole-portfolio total). **Baselines only — no regression/ML model was built or tuned.**
 
 ## Method
