@@ -60,10 +60,14 @@ if __name__ == "__main__":
     # Whole-table reconciliation: total qty_sold_gross should equal fct_sales'
     # total valid-order quantity.
     total_prototype = query_df(f"select sum(qty_sold_gross) as n from {TABLE}").iloc[0]["n"]
+    # Match the prototype's own date bound (spine excludes the current/incomplete day,
+    # date_bounds.max_day = current_date() - 1) — otherwise this check compares against
+    # an unbounded fct_sales sum and falsely flags today's partial-day sales as missing.
     total_fct_sales = query_df(
         """
         select sum(quantity) as n from develop.eros_analytics_marts.fct_sales
         where order_status in ('paid', 'confirmed')
+          and date(placed_at) <= date_sub(current_date(), 1)
         """
     ).iloc[0]["n"]
     print(f"\nTotal qty_sold_gross (prototype): {total_prototype:,}")
