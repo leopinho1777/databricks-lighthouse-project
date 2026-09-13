@@ -1,0 +1,3 @@
+level,n_series,n_holdout_obs,required_min_obs_3x,required_max_obs_5x,ratio_actual_to_required_min,sufficient
+national,1009,365,3027,5045,0.121,False
+location,6054,365,18162,30270,0.02,False
