@@ -10,9 +10,15 @@ from pathlib import Path
 
 import yaml
 from databricks import sql
+from databricks.sql.experimental.oauth_persistence import OAuthPersistenceCache
 
 PROFILE_NAME = "desafio_lh"
 PROFILES_PATH = Path.home() / ".dbt" / "profiles.yml"
+
+# One in-memory OAuth cache per process: every connection opened by this module
+# reuses the same token, so the browser login happens once per run instead of
+# once per query.
+_OAUTH_CACHE = OAuthPersistenceCache()
 
 
 def _load_dev_profile() -> dict:
@@ -25,12 +31,21 @@ def _load_dev_profile() -> dict:
 def get_connection():
     """Return a databricks-sql-connector connection using the dbt dev profile."""
     profile = _load_dev_profile()
+    # OAuth profiles (Databricks Free Edition does not allow PATs) carry no
+    # token: fall back to the connector's browser-based OAuth flow.
+    if profile.get("token"):
+        auth = {"access_token": profile["token"]}
+    else:
+        auth = {
+            "auth_type": "databricks-oauth",
+            "experimental_oauth_persistence": _OAUTH_CACHE,
+        }
     return sql.connect(
         server_hostname=profile["host"],
         http_path=profile["http_path"],
-        access_token=profile["token"],
         catalog=profile["catalog"],
         schema=profile["schema"],
+        **auth,
     )
 
 
