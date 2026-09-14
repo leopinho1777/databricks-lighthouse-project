@@ -15,6 +15,7 @@ Exploratory workstream for Task 1.1 (forecasting unit/granularity), 1.2 (forecas
 9. [`07_hierarchical_reconciliation/stage3_comparison/stage3_comparison_report.md`](07_hierarchical_reconciliation/stage3_comparison/stage3_comparison_report.md) — direct Bottom-Up vs. Top-Down comparison at national and location level; Bottom-Up wins/ties at both, traced to a shared SBA seasonal-lag weakness rather than a genuine information-content trade-off.
 10. [`07_hierarchical_reconciliation/stage4_mint_feasibility/output/mint_feasibility_check.md`](07_hierarchical_reconciliation/stage4_mint_feasibility/output/mint_feasibility_check.md) — MinT feasibility gate: not feasible at either level (holdout periods 2-12% of the rule-of-thumb minimum, covariance matrices exactly singular); recommends Bottom-Up per Stage 3 instead.
 11. [`07_hierarchical_reconciliation/07_hierarchical_reconciliation_summary.md`](07_hierarchical_reconciliation/07_hierarchical_reconciliation_summary.md) — final summary tying Stages 1-4 back to the classification finding that motivated the workstream, with a carry-forward recommendation.
+12. [`08_decision_horizon_and_product_axis/08_decision_horizon_summary.md`](08_decision_horizon_and_product_axis/08_decision_horizon_summary.md) — ADI/CV² classification at monthly grain and along the product axis, error measured over the 15/30-day decision horizon instead of per day, and aggregate-then-disaggregate (category and `product_id`) vs. direct per-SKU forecasting; adds WAPE as the cross-level metric.
 
 ## Running it
 
@@ -56,6 +57,9 @@ uv run python forecasting/07_hierarchical_reconciliation/stage3_comparison/run_s
 
 # 10. Hierarchical reconciliation, Stage 4: MinT feasibility check
 uv run python forecasting/07_hierarchical_reconciliation/stage4_mint_feasibility/run_stage4_mint_feasibility.py
+
+# 11. Decision-horizon evaluation and product-axis aggregation tests
+uv run python forecasting/08_decision_horizon_and_product_axis/run_decision_horizon.py
 ```
 
 `_shared/db_connection.py` is the shared connection helper all stages use. Large intermediate query-result caches (`output/_*.parquet`) are gitignored — only the small summary CSVs that back the markdown reports are tracked.

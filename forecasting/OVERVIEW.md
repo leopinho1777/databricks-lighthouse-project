@@ -59,6 +59,11 @@ seven stages that might otherwise read as independent exercises:
    full Top-Down/Bottom-Up/MinT reconciliation comparison to decide how to
    combine that national signal with the location-level detail the business
    actually needs.
+8. **08** revisited two assumptions the earlier stages share — that daily grain
+   is the right place to measure error, and that location is *the* aggregation
+   axis — and found the demand-pattern picture only changes along the product
+   axis, while aggregating and disaggregating back costs more accuracy per SKU
+   than forecasting each series directly.
 
 ## Stage-by-stage summary
 
@@ -228,6 +233,36 @@ context document at
 - **Final recommendation:** carry **Bottom-Up** forward — it wins or ties at
   both hierarchy levels and needs no covariance estimation, unlike MinT.
 
+### 08 — Decision horizon & product axis ([`08_decision_horizon_summary.md`](08_decision_horizon_and_product_axis/08_decision_horizon_summary.md))
+
+**Tested:** ADI/CV² classification at monthly grain and at category x location;
+RMSE/Bias/WAPE over 15- and 30-day windows instead of per day; and direct
+per-SKU forecasting against disaggregating a category-level and a
+`product_id`-level forecast by historical shares. Moving Average and Seasonal
+Naive only — Croston/SBA needs the sequential state that lives in `05`. Reads
+`fct_sales` directly rather than `fact_demand_daily`, so gross instead of net
+quantity; the stage's own calibration checks put that gap at ~0.2%.
+
+**Validated:**
+- **Time aggregation never creates a Smooth segment; product aggregation does.**
+  0% Smooth at SKU x location at daily, weekly *and* monthly grain (median ADI
+  117.8 / 17.3 / 4.4 — still 3.3x the 1.32 threshold at the client's own
+  decision grain); 92.4% Smooth at category x location monthly. Closes `04`'s
+  open question about whether the threshold needed local recalibration.
+- **At SKU level the error exceeds the demand it predicts**: 129.6% WAPE over
+  15 days and 81.1% over 30, against 26.3% and 17.7% at category level.
+- **The disaggregation penalty grows with the degree of aggregation**, and is
+  already 32 WAPE points at the smallest possible step (the two variants of one
+  product): 81.1% -> 113.0% -> 142.2% over 30 days for the direct, `product_id`
+  and category paths. No intermediate level rescues Top-Down for this catalog.
+- **Independent convergence with `07`:** the same Bottom-Up verdict, reached on
+  the product axis with a decision-horizon evaluation rather than the location
+  axis with a per-day one.
+
+**Documented, not resolved:** no Croston/SBA in the comparison; static rather
+than forecasted disaggregation proportions, the weaker Top-Down variant
+(Athanasopoulos, Ahmed & Hyndman, 2009); one holdout year, as everywhere else.
+
 ## Cross-cutting methodology (applies across `03`-`07`)
 
 - **Same holdout every time:** 2020-2024 train / 2025 holdout, determined
@@ -317,6 +352,8 @@ forecasting/
     stage2_top_down/
     stage3_comparison/
     stage4_mint_feasibility/
+  08_decision_horizon_and_product_axis/  # monthly + product-axis classification, 15/30-day
+                                         # window evaluation, disaggregation-path comparison
 ```
 
 Each numbered stage directory follows the same shape: one `# %%`

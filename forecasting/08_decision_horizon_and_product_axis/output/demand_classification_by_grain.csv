@@ -1,0 +1,13 @@
+level,grain,pattern,n_series,adi_median,cv2_median,pct
+SKU x location,day,intermittent,5870,117.78947368421052,0.2758802513774105,97.0
+SKU x location,day,lumpy,184,133.66666666666666,0.53490234375,3.0
+SKU x location,week,intermittent,5684,17.3,0.28341504649196964,93.9
+SKU x location,week,lumpy,370,18.8,0.5504557291666669,6.1
+SKU x location,month,intermittent,4992,4.444444444444445,0.3076669821803367,82.5
+SKU x location,month,lumpy,1062,4.625,0.5805056808598722,17.5
+Category x location,week,smooth,34,1.0547112462006079,0.4627548535083287,51.5
+Category x location,week,erratic,26,1.0709876543209877,0.5133104686962553,39.4
+Category x location,week,lumpy,4,1.6878048780487804,0.6063675494800052,6.1
+Category x location,week,intermittent,2,1.6796116504854368,0.38238827852411855,3.0
+Category x location,month,smooth,61,1.0,0.3371738488345855,92.4
+Category x location,month,erratic,5,1.0526315789473684,0.5971012780747299,7.6
