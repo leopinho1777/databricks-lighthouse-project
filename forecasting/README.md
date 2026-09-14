@@ -16,6 +16,7 @@ Exploratory workstream for Task 1.1 (forecasting unit/granularity), 1.2 (forecas
 10. [`07_hierarchical_reconciliation/stage4_mint_feasibility/output/mint_feasibility_check.md`](07_hierarchical_reconciliation/stage4_mint_feasibility/output/mint_feasibility_check.md) — MinT feasibility gate: not feasible at either level (holdout periods 2-12% of the rule-of-thumb minimum, covariance matrices exactly singular); recommends Bottom-Up per Stage 3 instead.
 11. [`07_hierarchical_reconciliation/07_hierarchical_reconciliation_summary.md`](07_hierarchical_reconciliation/07_hierarchical_reconciliation_summary.md) — final summary tying Stages 1-4 back to the classification finding that motivated the workstream, with a carry-forward recommendation.
 12. [`08_decision_horizon_and_product_axis/08_decision_horizon_summary.md`](08_decision_horizon_and_product_axis/08_decision_horizon_summary.md) — ADI/CV² classification at monthly grain and along the product axis, error measured over the 15/30-day decision horizon instead of per day, and aggregate-then-disaggregate (category and `product_id`) vs. direct per-SKU forecasting; adds WAPE as the cross-level metric.
+13. [`09_baseline_close_out/09_baseline_close_out_summary.md`](09_baseline_close_out/09_baseline_close_out_summary.md) — closes Phase 1 (tasks 1.3/1.4/1.6/1.7/1.8): a genuine 91-day held-static Moving Average/Seasonal-Naive baseline (fixes `08`'s still-continuously-refreshed windows), scored across 4 rolling origins with a peak-season split, logged to the `/Shared/00_baseline` MLflow experiment.
 
 ## Running it
 
@@ -60,6 +61,12 @@ uv run python forecasting/07_hierarchical_reconciliation/stage4_mint_feasibility
 
 # 11. Decision-horizon evaluation and product-axis aggregation tests
 uv run python forecasting/08_decision_horizon_and_product_axis/run_decision_horizon.py
+
+# 12. Phase 1 close-out: genuine 91-day held-static baseline, walk-forward, peak-season split
+uv run python forecasting/09_baseline_close_out/run_genuine_baseline.py
+
+# 13. Log the corrected baseline to the /Shared/00_baseline MLflow experiment
+uv run python forecasting/09_baseline_close_out/log_baseline_to_mlflow.py
 ```
 
 `_shared/db_connection.py` is the shared connection helper all stages use. Large intermediate query-result caches (`output/_*.parquet`) are gitignored — only the small summary CSVs that back the markdown reports are tracked.
