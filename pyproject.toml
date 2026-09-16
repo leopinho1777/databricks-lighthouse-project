@@ -26,6 +26,12 @@ forecasting = [
     "numpy>=1.26.4",
     "pandas>=2.3.3",
     "mlflow-skinny>=2.17.0",
+    "linearmodels>=6.0",
+    "statsmodels>=0.14.0",
+    "scikit-learn>=1.5.0",
+    "holidays>=0.58",
+    "requests>=2.32.0",
+    "matplotlib>=3.9.0",
 ]
 
 [project.scripts]
