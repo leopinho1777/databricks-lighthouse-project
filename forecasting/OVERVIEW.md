@@ -263,6 +263,29 @@ quantity; the stage's own calibration checks put that gap at ~0.2%.
 than forecasted disaggregation proportions, the weaker Top-Down variant
 (Athanasopoulos, Ahmed & Hyndman, 2009); one holdout year, as everywhere else.
 
+## Phase 2 — Feature Engineering ([`10_feature_engineering/`](10_feature_engineering/))
+
+Separate from the granularity/baseline/classification workstream above:
+tasks 2.1-2.10 of the project task tracker, building and testing a pooled
+fixed-effects panel regression (product x location x ISO-week,
+`PanelOLS(entity_effects=True)` + a linear time-trend structural control) as
+a **measuring instrument** — its only job is isolating each candidate
+feature group's individual effect, not competing as a Stage 3 model
+candidate. Calendar, holidays, weather, economic, and marketing features
+were each added as one cumulative layer and evaluated against a >2%
+MAPE-improvement threshold; internal/inventory features were excluded
+before or during testing (target leakage, data unavailability, and an
+untestable-with-this-instrument stock-sparsity finding, respectively). An
+independent COVID-anomaly check and a weather/calendar VIF check ran
+alongside the cumulative chain. **Result: only calendar survives into the
+production feature set** — via an accuracy-ablation test, not its own
+threshold, since none of the five testable feature groups individually
+cleared 2%. Full narrative: [`00_feature_backlog.md`](10_feature_engineering/00_feature_backlog.md)
+(task-by-task, including two confounds caught mid-stream and corrected in
+place). Final output: [`10_frozen_feature_set.md`](10_feature_engineering/10_frozen_feature_set.md)
+— the fixed input for every Stage 3 (task 3.n) session. Logged to the
+`/Shared/01_feature_iteration` MLflow experiment.
+
 ## Cross-cutting methodology (applies across `03`-`07`)
 
 - **Same holdout every time:** 2020-2024 train / 2025 holdout, determined
@@ -354,6 +377,12 @@ forecasting/
     stage4_mint_feasibility/
   08_decision_horizon_and_product_axis/  # monthly + product-axis classification, 15/30-day
                                          # window evaluation, disaggregation-path comparison
+  09_baseline_close_out/                 # genuine 91-day held-static baseline, walk-forward,
+                                         # peak-season split; logs /Shared/00_baseline in MLflow
+  10_feature_engineering/                # Phase 2: pooled fixed-effects panel regression testing
+                                         # calendar/holidays/weather/economic/marketing/inventory
+                                         # cumulatively; see 00_feature_backlog.md and
+                                         # 10_frozen_feature_set.md (fixed input for Stage 3)
 ```
 
 Each numbered stage directory follows the same shape: one `# %%`

@@ -17,6 +17,7 @@ Exploratory workstream for Task 1.1 (forecasting unit/granularity), 1.2 (forecas
 11. [`07_hierarchical_reconciliation/07_hierarchical_reconciliation_summary.md`](07_hierarchical_reconciliation/07_hierarchical_reconciliation_summary.md) — final summary tying Stages 1-4 back to the classification finding that motivated the workstream, with a carry-forward recommendation.
 12. [`08_decision_horizon_and_product_axis/08_decision_horizon_summary.md`](08_decision_horizon_and_product_axis/08_decision_horizon_summary.md) — ADI/CV² classification at monthly grain and along the product axis, error measured over the 15/30-day decision horizon instead of per day, and aggregate-then-disaggregate (category and `product_id`) vs. direct per-SKU forecasting; adds WAPE as the cross-level metric.
 13. [`09_baseline_close_out/09_baseline_close_out_summary.md`](09_baseline_close_out/09_baseline_close_out_summary.md) — closes Phase 1 (tasks 1.3/1.4/1.6/1.7/1.8): a genuine 91-day held-static Moving Average/Seasonal-Naive baseline (fixes `08`'s still-continuously-refreshed windows), scored across 4 rolling origins with a peak-season split, logged to the `/Shared/00_baseline` MLflow experiment.
+14. [`10_feature_engineering/10_frozen_feature_set.md`](10_feature_engineering/10_frozen_feature_set.md) — Stage 2 (tasks 2.1-2.10): pooled fixed-effects panel regression (product x location x week, entity effects + linear trend control) testing calendar, holidays, weather, economic, marketing, and internal/inventory features one cumulative addition at a time against a >2% MAPE-improvement threshold, plus an independent COVID-anomaly check and a weather/calendar multicollinearity check. Only calendar survives into the production feature set (via an accuracy ablation, not its own threshold); everything else is either not kept, not testable with current data, or a structural control (`trend`) rather than a candidate feature — see [`00_feature_backlog.md`](10_feature_engineering/00_feature_backlog.md) for the full per-task narrative. Logged to the `/Shared/01_feature_iteration` MLflow experiment. This is the fixed input for every Stage 3 (task 3.n) session.
 
 ## Running it
 
@@ -67,6 +68,21 @@ uv run python forecasting/09_baseline_close_out/run_genuine_baseline.py
 
 # 13. Log the corrected baseline to the /Shared/00_baseline MLflow experiment
 uv run python forecasting/09_baseline_close_out/log_baseline_to_mlflow.py
+
+# 14. Stage 2 feature engineering (tasks 2.1-2.10) -- each script is independently
+# runnable and cumulative (calls the previous task's add_*_features() directly);
+# see 10_feature_engineering/00_feature_backlog.md for the full per-task order
+# and 10_feature_engineering/_shared/panel_regression.py for the shared
+# fixed-effects fitting logic every task calls.
+uv run python forecasting/10_feature_engineering/02_calendar/add_calendar_features.py
+uv run python forecasting/10_feature_engineering/03_holidays/add_holiday_features.py
+uv run python forecasting/10_feature_engineering/04_weather/add_weather_features.py
+uv run python forecasting/10_feature_engineering/05_economic/add_economic_features.py
+uv run python forecasting/10_feature_engineering/06_marketing/add_marketing_features.py
+uv run python forecasting/10_feature_engineering/07_internal_inventory/add_inventory_features.py
+uv run python forecasting/10_feature_engineering/08_covid_anomaly/analyze_covid_anomaly.py
+uv run python forecasting/10_feature_engineering/09_multicollinearity_check/check_multicollinearity.py
+uv run python forecasting/10_feature_engineering/run_ablation.py
 ```
 
 `_shared/db_connection.py` is the shared connection helper all stages use. Large intermediate query-result caches (`output/_*.parquet`) are gitignored — only the small summary CSVs that back the markdown reports are tracked.
