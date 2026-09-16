@@ -1,0 +1,58 @@
+# Pipeline batch de preparação do RAG: gera o corpus, fatia em chunks e
+# dispara a sincronização do índice vetorial. Roda sob demanda (§6.1 da spec):
+# depois de reprocessar a modelagem, depois de editar docs/*.md, e antes de
+# testar no notebook `04_chat_teste`.
+resources:
+  jobs:
+    rag_ingestion:
+      name: "LH Nautical RAG - Ingestion"
+
+      email_notifications:
+        on_failure:
+          - teslavinci2026@gmail.com
+
+      parameters:
+        - name: catalog
+          default: "${var.catalog}"
+        - name: schema_gold
+          default: "${var.schema_gold}"
+        - name: schema_rag
+          default: "${var.schema_rag}"
+
+      tasks:
+        - task_key: build_documents
+          environment_key: default
+          notebook_task:
+            notebook_path: ../notebooks/01_build_documents.py
+            source: WORKSPACE
+
+        - task_key: build_chunks
+          depends_on:
+            - task_key: build_documents
+          environment_key: default
+          notebook_task:
+            notebook_path: ../notebooks/02_build_chunks.py
+            source: WORKSPACE
+
+        - task_key: sync_index
+          depends_on:
+            - task_key: build_chunks
+          environment_key: default
+          notebook_task:
+            notebook_path: ../notebooks/03_sync_index.py
+            source: WORKSPACE
+
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "2"
+            dependencies:
+              # NOTA H6: a spec chama o SDK de "databricks-ai-search". Se o import
+              # falhar no workspace, o pacote equivalente é "databricks-vectorsearch"
+              # (from databricks.vector_search.client import VectorSearchClient).
+              - databricks-ai-search
+              - pyyaml>=6.0
+
+      max_concurrent_runs: 1
+      queue:
+        enabled: true
