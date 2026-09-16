@@ -1,0 +1,4 @@
+verdict=not_testable
+n_entities_with_any_stockout=3
+n_entities_total=6054
+reason=insufficient within-entity variation for a credible PanelOLS coefficient
