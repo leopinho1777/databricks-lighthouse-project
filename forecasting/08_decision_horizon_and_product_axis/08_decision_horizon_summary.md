@@ -24,7 +24,8 @@ beat forecasting each SKU directly. Produced by
 
   ## Method
 
-- **Source:** `fct_sales` in `develop.eva_analytics_marts`, filtered to
+- **Source:** `fct_sales` in the shared prod marts (`lh_nautical.marts` — see
+  `../README.md`'s "Data source convention"), filtered to
   `order_status IN ('paid','confirmed')` and densified against `dim_calendary`.
   Unlike `03`-`07`, this stage does not read `02`'s `fact_demand_daily`
   prototype, so it has no dependency on another developer's scratch schema —

@@ -40,7 +40,7 @@ from add_economic_features import add_economic_features
 from add_holiday_features import add_holiday_features
 from add_weather_features import WEATHER_END_DATE, add_weather_features
 
-from _shared.panel_regression import fit_and_evaluate, init_mlflow_experiment, load_weekly_panel, query_df
+from _shared.panel_regression import PROD_STAGING, fit_and_evaluate, init_mlflow_experiment, load_weekly_panel, query_df
 
 OUTPUT_DIR = Path(__file__).parent / "output"
 OUTPUT_DIR.mkdir(exist_ok=True)
@@ -62,9 +62,9 @@ def load_discount_weekly() -> pd.DataFrame:
         orders = pd.read_parquet(cache_path)
     else:
         orders = query_df(
-            """
+            f"""
             select location_id, placed_at, discount_amount, subtotal
-            from develop.eros_analytics_staging.stg_orders
+            from {PROD_STAGING}.stg_orders
             where status in ('paid', 'confirmed')
             """
         )
@@ -156,7 +156,7 @@ def log_run(mlflow, run: dict, feature_cols: list[str], cumulative_features: str
                 "task_ids": "2.6",
                 "grain": "product_variant_id x location_id (SKU x Store) x ISO week",
                 "source": "forecasting/10_feature_engineering/06_marketing",
-                "data_source": "develop.eros_analytics_staging.stg_orders (discount_amount)",
+                "data_source": f"{PROD_STAGING}.stg_orders (discount_amount)",
                 "formula": "+".join(["entity_fe"] + feature_cols),
             }
         )

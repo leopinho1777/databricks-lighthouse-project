@@ -31,7 +31,7 @@ import holidays
 import pandas as pd
 from add_calendar_features import add_calendar_features
 
-from _shared.panel_regression import fit_and_evaluate, init_mlflow_experiment, load_weekly_panel
+from _shared.panel_regression import MARTS_SCRATCH, fit_and_evaluate, init_mlflow_experiment, load_weekly_panel
 
 OUTPUT_DIR = Path(__file__).parent / "output"
 OUTPUT_DIR.mkdir(exist_ok=True)
@@ -108,7 +108,7 @@ def log_run(mlflow, run: dict, feature_cols: list[str], cumulative_features: str
                 "task_ids": "2.3",
                 "grain": "product_variant_id x location_id (SKU x Store) x ISO week",
                 "source": "forecasting/10_feature_engineering/03_holidays",
-                "data_source": "develop.eros_analytics_forecasting_scratch.fact_demand_daily",
+                "data_source": MARTS_SCRATCH,
                 "formula": "+".join(["entity_fe"] + feature_cols),
             }
         )

@@ -27,7 +27,7 @@ from add_calendar_features import add_calendar_features
 from add_holiday_features import add_holiday_features
 from state_capital_coordinates import STATE_CAPITAL_COORDINATES
 
-from _shared.panel_regression import fit_and_evaluate, init_mlflow_experiment, load_weekly_panel, query_df
+from _shared.panel_regression import MARTS_SCRATCH, PROD_MARTS, fit_and_evaluate, init_mlflow_experiment, load_weekly_panel, query_df
 
 OUTPUT_DIR = Path(__file__).parent / "output"
 OUTPUT_DIR.mkdir(exist_ok=True)
@@ -89,7 +89,7 @@ def load_weather_by_location() -> pd.DataFrame:
     )
 
     locations = query_df(
-        "select location_id, state_code from develop.eros_analytics_marts.dim_locations"
+        f"select location_id, state_code from {PROD_MARTS}.dim_locations"
     )
     locations["location_id"] = locations["location_id"].astype(str)
 
@@ -129,7 +129,7 @@ def log_run(mlflow, run: dict, feature_cols: list[str], cumulative_features: str
                 "task_ids": "2.4",
                 "grain": "product_variant_id x location_id (SKU x Store) x ISO week",
                 "source": "forecasting/10_feature_engineering/04_weather",
-                "data_source": "develop.eros_analytics_forecasting_scratch.fact_demand_daily + Open-Meteo archive API",
+                "data_source": f"{MARTS_SCRATCH} + Open-Meteo archive API",
                 "formula": "+".join(["entity_fe"] + feature_cols),
             }
         )

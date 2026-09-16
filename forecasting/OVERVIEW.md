@@ -19,11 +19,16 @@ forecasting, and how to make the two coherent). Everything here is
 - No ML/regression model is built anywhere in this workstream — only
   statistical baselines (Seasonal Naive, Moving Average, SES) and classical
   intermittent-demand methods (Croston, SBA, ADIDA).
-- `fact_demand_daily` (`develop.eros_analytics_forecasting_scratch.fact_demand_daily`)
-  is a disposable scratch table, not a committed dbt model — rebuildable at
-  will, not something downstream jobs depend on.
-- All scripts connect to the live Databricks dev warehouse via the existing
+- `fact_demand_daily` is a disposable scratch table, not a committed dbt
+  model — rebuildable at will, not something downstream jobs depend on. It
+  lives in each developer's own dev schema (`<catalog>.<dev_schema>_forecasting_scratch.fact_demand_daily`,
+  via `_shared/db_connection.py`'s `get_scratch_schema()`), not a shared or
+  hardcoded schema — see `README.md`'s "Data source convention".
+- All scripts connect to the live Databricks warehouse via the existing
   `~/.dbt/profiles.yml` dev profile; nothing secret is stored in this repo.
+  Stable reference data (marts/staging) is read from the shared prod catalog
+  regardless of whose profile is connected, so numbers stay comparable across
+  developers.
 - Large per-row query results are cached as gitignored `output/_*.parquet`
   files; only small summary CSVs that back the markdown reports are tracked
   in git.

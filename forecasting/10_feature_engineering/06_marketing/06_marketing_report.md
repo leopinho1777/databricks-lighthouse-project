@@ -20,11 +20,12 @@
 - **Scoped to `stg_orders.discount_amount` only**, per the team decision made
   before this stage started: no campaign/promotion table or marketing-spend
   data exists anywhere in this project.
-- Queried directly from `develop.eros_analytics_staging.stg_orders`
-  (`status in ('paid', 'confirmed')`, matching the "valid revenue"
-  convention `fact_demand_daily`/`agg_sales_daily` already use) — **no dbt
-  model changes**, consistent with this workstream's established
-  "exploratory, not a committed dbt model" convention.
+- Queried directly from the shared prod catalog's `stg_orders`
+  (`lh_nautical.staging.stg_orders`, `status in ('paid', 'confirmed')`,
+  matching the "valid revenue" convention `fact_demand_daily`/
+  `agg_sales_daily` already use) — **no dbt model changes**, consistent with
+  this workstream's established "exploratory, not a committed dbt model"
+  convention.
 - **Aggregated to (location, week), not (product, location, week)**: an
   order's `discount_amount` is order-level, not line-item-level, and
   allocating it across an order's line items would need an arbitrary

@@ -24,14 +24,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "03_granularity_baselines"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _shared.db_connection import query_df  # noqa: E402
+from _shared.db_connection import PROD_MARTS, query_df  # noqa: E402
 from run_baselines import compute_metrics  # noqa: E402  (reused verbatim, see 03/04/05/06/07 for the same convention)
 from walk_forward import make_periodic_cutoffs  # noqa: E402
 
 OUTPUT_DIR = Path(__file__).parent / "output"
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-MARTS = "develop.eva_analytics_marts"  # same source as 08
+MARTS = PROD_MARTS  # same source as 08
 KEYS = ["product_variant_id", "location_id"]
 MA_WINDOW = 28
 HORIZON_DAYS = 91  # the agreed ~3-month horizon (task 1.2)

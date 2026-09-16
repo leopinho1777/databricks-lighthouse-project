@@ -2,7 +2,7 @@
 
 > **Updated after develop merge on 2026-09-11.** `develop` now includes the future-date filtering fix (`filter_future_dated()` macro, applied to `stg_stock_levels`/`stg_stock_movements`/etc.), and `fct_daily_stock_levels` has been rebuilt (`--full-refresh`) against the corrected snapshot. §1 and §4 below are refreshed with the real post-fix numbers — everything else (sales data, the 2020-2021 anomaly check) was unaffected by this fix and is unchanged. See the "Updated" callouts inline for what changed and what didn't.
 
-Explores the live dev marts (`develop.eros_analytics_marts`, via `~/.dbt/profiles.yml`) to ground Task 1.1/1.2/1.5 in real evidence rather than assumptions about the transformation layer. Numbers below were produced by [`explore_marts.py`](explore_marts.py); raw query outputs are in [`output/`](output/). Re-run the script after any dbt rebuild to refresh these numbers.
+Explores the stable prod marts (`lh_nautical.marts`, via `~/.dbt/profiles.yml` — see `../README.md`'s "Data source convention") to ground Task 1.1/1.2/1.5 in real evidence rather than assumptions about the transformation layer. Numbers below were produced by [`explore_marts.py`](explore_marts.py); raw query outputs are in [`output/`](output/). Re-run the script after any dbt rebuild to refresh these numbers.
 
 ## 1. Table inventory
 

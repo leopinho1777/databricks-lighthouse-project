@@ -16,11 +16,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import numpy as np
 import pandas as pd
 
-from _shared.db_connection import query_df
+from _shared.db_connection import get_scratch_schema, query_df
 
 OUTPUT_DIR = Path(__file__).parent / "output"
 OUTPUT_DIR.mkdir(exist_ok=True)
-MARTS_SCRATCH = "develop.eros_analytics_forecasting_scratch.fact_demand_daily"
+MARTS_SCRATCH = f"{get_scratch_schema()}.fact_demand_daily"
 # Reuse 03's cached daily parquet if it's already been materialized, instead
 # of re-querying Databricks for the same data. Copied into this stage's own
 # output/ (not read from 03/output/ directly) to keep each stage's output/

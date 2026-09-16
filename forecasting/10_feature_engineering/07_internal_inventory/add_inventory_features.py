@@ -151,7 +151,7 @@ def log_run(mlflow, run: dict, feature_cols: list[str], cumulative_features: str
                 "task_ids": "2.7",
                 "grain": "product_variant_id x location_id (SKU x Store) x ISO week",
                 "source": "forecasting/10_feature_engineering/07_internal_inventory",
-                "data_source": "develop.eros_analytics_forecasting_scratch.fact_demand_daily",
+                "data_source": MARTS_SCRATCH,
                 "formula": "+".join(["entity_fe"] + feature_cols),
             }
         )

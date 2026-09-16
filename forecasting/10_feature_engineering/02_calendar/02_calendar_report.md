@@ -23,8 +23,9 @@
 
 ## Method
 
-- Panel: `develop.eros_analytics_forecasting_scratch.fact_demand_daily` rolled
-  up to product×location×ISO-week (6,054 entities, 262 weeks), target
+- Panel: `fact_demand_daily` (each developer's own scratch copy — see
+  `../../README.md`'s "Data source convention") rolled up to
+  product×location×ISO-week (6,054 entities, 262 weeks), target
   `log1p(qty_sold_net)`.
 - Estimator: `linearmodels.PanelOLS(entity_effects=True)`, entity = the
   `(product_variant_id, location_id)` pair, clustered SEs by entity.

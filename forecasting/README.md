@@ -21,7 +21,7 @@ Exploratory workstream for Task 1.1 (forecasting unit/granularity), 1.2 (forecas
 
 ## Running it
 
-All scripts connect to the live Databricks dev warehouse using credentials already configured in `~/.dbt/profiles.yml` (the same profile `dbt build` uses) — nothing secret is stored in this repo. Requires the `forecasting` dependency group:
+All scripts connect to the live Databricks warehouse using credentials already configured in `~/.dbt/profiles.yml` (the same profile `dbt build` uses) — nothing secret is stored in this repo. Requires the `forecasting` dependency group:
 
 ```bash
 uv sync --group forecasting
@@ -86,3 +86,12 @@ uv run python forecasting/10_feature_engineering/run_ablation.py
 ```
 
 `_shared/db_connection.py` is the shared connection helper all stages use. Large intermediate query-result caches (`output/_*.parquet`) are gitignored — only the small summary CSVs that back the markdown reports are tracked.
+
+## Data source convention
+
+Every script's Databricks connection auths as *whoever* is running it (via their own `~/.dbt/profiles.yml` dev profile), but that used to be paired with catalog/schema names hardcoded to one specific developer's scratch schema — meaning the connection auth and the query targets silently disagreed about whose data was being read. Fixed by splitting reads and writes:
+
+- **Stable reference data** (`dim_*`, `fct_*`, `stg_*`) is read from the shared prod catalog — `_shared.db_connection.PROD_MARTS` (`lh_nautical.marts`) / `PROD_STAGING` (`lh_nautical.staging`). Every developer reads the same numbers, so results stay comparable across the team without each person re-deriving the same source data into their own dev schema.
+- **Disposable scratch/experimental tables** (`fact_demand_daily` and every `10_feature_engineering/` intermediate) are written to each developer's own dev schema via `_shared.db_connection.get_scratch_schema()` (`<catalog>.<dev_schema>_forecasting_scratch`, derived from the same dev profile the connection already auths with) — never to a hardcoded teammate's schema. Run `02_schema_design/build_prototype.py` once per developer to materialize your own copy of `fact_demand_daily` before running `03` onward.
+
+This is a deliberate middle ground between "only read/write one shared dev schema" (breaks the moment that schema's owner rebuilds or revokes access) and "everyone reads/writes fully isolated per-developer copies of everything" (forces redundant full-reload builds and risks the per-developer copies drifting apart). Production is never written to by this workstream — see `../CLAUDE.md`'s note that `forecasting/` is exploratory only, not a committed dbt model.

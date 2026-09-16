@@ -17,7 +17,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from _shared.db_connection import _load_dev_profile  # noqa: E402
+from _shared.db_connection import PROD_MARTS, _load_dev_profile  # noqa: E402
 
 OUTPUT_DIR = Path(__file__).parent / "output"
 EXPERIMENT_PATH = "/Shared/00_baseline"
@@ -54,7 +54,7 @@ for name in overall.index:
                 "task_ids": "1.3" if name == "seasonal_naive" else "1.4",
                 "grain": "product_variant_id x location_id (SKU x Store)",
                 "source": "forecasting/09_baseline_close_out (fixes 03/08's continuously-refreshed horizon bug)",
-                "data_source": "develop.eva_analytics_marts.fct_sales",
+                "data_source": f"{PROD_MARTS}.fct_sales",
             }
         )
         mlflow.log_params(

@@ -23,7 +23,7 @@ recommendation, this run covers the **full catalog**, not a subset.
 ## Method
 
 - **Grain:** daily, same as `03`/`04`, same source table
-  (`develop.eros_analytics_forecasting_scratch.fact_demand_daily`).
+  (`fact_demand_daily`, each developer's own scratch copy — see `../README.md`'s "Data source convention").
 - **History window, per series:** left-trimmed to each series' own first day
   with `qty_sold_net > 0`, identical rationale and trimming logic as `04`
   (avoids counting a later-launched product's pre-launch zero-fill).

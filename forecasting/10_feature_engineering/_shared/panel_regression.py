@@ -34,8 +34,14 @@ _spec = importlib.util.spec_from_file_location("forecasting_shared_db_connection
 _db_connection = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_db_connection)
 query_df = _db_connection.query_df
+PROD_MARTS = _db_connection.PROD_MARTS
+PROD_STAGING = _db_connection.PROD_STAGING
 
-MARTS_SCRATCH = "develop.eros_analytics_forecasting_scratch.fact_demand_daily"
+# This developer's own scratch schema -- see _shared/db_connection.py's data
+# source convention. Read-only reference data (dim_locations, stg_orders,
+# etc.) used by downstream feature tasks is read from PROD_MARTS/PROD_STAGING
+# instead, never from this scratch schema.
+MARTS_SCRATCH = f"{_db_connection.get_scratch_schema()}.fact_demand_daily"
 KEYS = ["product_variant_id", "location_id"]
 
 # %% [markdown]

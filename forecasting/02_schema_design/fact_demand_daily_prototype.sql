@@ -1,8 +1,10 @@
 -- Exploratory prototype for `fact_demand_daily`, described in 02_ideal_schema_proposal.md.
--- NOT a dbt model. Lives in a dedicated scratch schema, disposable/rebuildable at will.
+-- NOT a dbt model. Lives in each developer's own scratch schema, disposable/rebuildable at will.
+-- {marts}/{scratch_schema} are filled in by build_prototype.py -- see
+-- _shared/db_connection.py's data source convention (PROD_MARTS, get_scratch_schema()).
 -- Run via: uv run python forecasting/02_schema_design/build_prototype.py
 
-create or replace table develop.eros_analytics_forecasting_scratch.fact_demand_daily as
+create or replace table {scratch_schema}.fact_demand_daily as
 
 -- Every (product, location) pair that has ever transacted or held a stock record.
 -- In the current dev data this equals the full dim_products x dim_locations cross
@@ -11,10 +13,10 @@ create or replace table develop.eros_analytics_forecasting_scratch.fact_demand_d
 -- (e.g. a newly onboarded product that hasn't sold everywhere yet).
 with pairs as (
     select distinct product_variant_id, location_id
-    from develop.eros_analytics_marts.fct_sales
+    from {marts}.fct_sales
     union
     select distinct product_variant_id, location_id
-    from develop.eros_analytics_marts.fct_daily_stock_levels
+    from {marts}.fct_daily_stock_levels
 ),
 
 -- Dense daily spine bounded to the actual sales history, excluding the
@@ -23,13 +25,13 @@ date_bounds as (
     select
         min(date(placed_at)) as min_day,
         date_sub(current_date(), 1) as max_day
-    from develop.eros_analytics_marts.fct_sales
+    from {marts}.fct_sales
 ),
 
 spine as (
     select p.product_variant_id, p.location_id, c.date_id, c.date_day
     from pairs p
-    cross join develop.eros_analytics_marts.dim_calendary c
+    cross join {marts}.dim_calendary c
     cross join date_bounds b
     where c.date_day between b.min_day and b.max_day
 ),
@@ -44,7 +46,7 @@ sales_daily as (
         date_id,
         sum(quantity) as qty_sold_gross,
         sum(line_total) as revenue_gross
-    from develop.eros_analytics_marts.fct_sales
+    from {marts}.fct_sales
     where order_status in ('paid', 'confirmed')
     group by 1, 2, 3
 ),
@@ -59,8 +61,8 @@ returns_by_original_sale as (
         s.date_id,
         sum(r.quantity) as qty_returned,
         sum(r.refund_amount) as refund_amount
-    from develop.eros_analytics_marts.fct_returns r
-    inner join develop.eros_analytics_marts.fct_sales s
+    from {marts}.fct_returns r
+    inner join {marts}.fct_sales s
         on r.order_item_id = s.order_item_id
     group by 1, 2, 3
 ),
@@ -72,7 +74,7 @@ returns_by_original_sale as (
 -- once real location history exists.
 locations_current as (
     select location_id, location_type
-    from develop.eros_analytics_marts.dim_locations
+    from {marts}.dim_locations
     qualify row_number() over (partition by location_id order by updated_at desc) = 1
 ),
 
@@ -88,7 +90,7 @@ stock_history as (
         location_id,
         stock_level_day,
         physical_quantity_on_hand
-    from develop.eros_analytics_marts.fct_daily_stock_levels
+    from {marts}.fct_daily_stock_levels
     where stock_level_day <= current_date()
 ),
 

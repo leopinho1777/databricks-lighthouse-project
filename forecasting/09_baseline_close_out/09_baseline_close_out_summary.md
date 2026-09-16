@@ -29,8 +29,9 @@ logging (1.8).
   (`freq` accepts any pandas offset, so it works at daily or weekly grain).
   Nothing like this existed anywhere in the repo before.
 - **`run_genuine_baseline.py`** — same data source, grain, and Moving
-  Average(28d)/Seasonal-Naive methods as `08` (`develop.eva_analytics_marts.fct_sales`,
-  `product_variant_id x location_id`), but the Moving Average level is computed
+  Average(28d)/Seasonal-Naive methods as `08` (`fct_sales` in the shared prod
+  marts, `lh_nautical.marts.fct_sales` — see `../README.md`'s "Data source
+  convention", `product_variant_id x location_id`), but the Moving Average level is computed
   **once per cutoff**, from the 28 days immediately before it, and held flat
   for the full 91-day horizon. Scored across 4 rolling origins spanning 2025
   (task 1.6) rather than one holdout. Also adds the peak-season metric split

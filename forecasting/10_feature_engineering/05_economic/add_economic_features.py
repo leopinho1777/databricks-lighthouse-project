@@ -27,7 +27,7 @@ from add_calendar_features import add_calendar_features
 from add_holiday_features import add_holiday_features
 from add_weather_features import add_weather_features, WEATHER_END_DATE, WEATHER_START_DATE
 
-from _shared.panel_regression import fit_and_evaluate, init_mlflow_experiment, load_weekly_panel
+from _shared.panel_regression import MARTS_SCRATCH, fit_and_evaluate, init_mlflow_experiment, load_weekly_panel
 
 OUTPUT_DIR = Path(__file__).parent / "output"
 OUTPUT_DIR.mkdir(exist_ok=True)
@@ -112,7 +112,7 @@ def log_run(mlflow, run: dict, feature_cols: list[str], cumulative_features: str
                 "task_ids": "2.5",
                 "grain": "product_variant_id x location_id (SKU x Store) x ISO week",
                 "source": "forecasting/10_feature_engineering/05_economic",
-                "data_source": "develop.eros_analytics_forecasting_scratch.fact_demand_daily + BCB SGS API",
+                "data_source": f"{MARTS_SCRATCH} + BCB SGS API",
                 "formula": "+".join(["entity_fe"] + feature_cols),
             }
         )
