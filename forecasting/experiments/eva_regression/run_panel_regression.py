@@ -69,7 +69,16 @@ HORIZON_DAYS = 91
 # to, which is the entire point of a shared experiment: one screen ranking
 # every candidate model instead of one drawer per person.
 EXPERIMENT = "/Shared/02_model_comparison"
-RUN_NAME = "panel_regression_fe_trend_month"
+
+# Duan's smearing estimator, off by default so the uncorrected run stays on
+# record as the thing that motivated it. Fitting on log1p(y) and predicting
+# expm1(x'b) estimates the conditional MEDIAN, not the mean: the first full
+# run under-forecast total demand by ~71%. Smearing multiplies the prediction
+# by the average exponentiated training residual, the standard non-parametric
+# correction (Duan 1983) -- it assumes the residual distribution is the same
+# out of sample, which is why it is tested rather than assumed.
+APPLY_SMEARING = os.environ.get("SMEARING", "0") == "1"
+RUN_NAME = "panel_regression_fe_trend_month" + ("_smearing" if APPLY_SMEARING else "")
 MONTH_COLS = [f"month_{m}" for m in range(2, 13)]  # January is the reference level
 EXOG_COLS = [*MONTH_COLS, "trend"]
 
@@ -156,7 +165,14 @@ def forecast_window(panel: pd.DataFrame, cutoff: pd.Timestamp) -> pd.DataFrame:
 
     merged = predicted.merge(effects, on="entity", how="left")
     merged["estimated_effects"] = merged["estimated_effects"].fillna(0.0)
-    merged["qty_week"] = np.expm1(merged["predictions"] + merged["estimated_effects"]).clip(lower=0)
+    log_pred = merged["predictions"] + merged["estimated_effects"]
+    if APPLY_SMEARING:
+        # E[y] = exp(x'b) * E[exp(residual)] - 1, with the expectation estimated
+        # by the training residuals themselves rather than assumed lognormal.
+        smearing = float(np.mean(np.exp(result.resids)))
+        merged["qty_week"] = (np.exp(log_pred) * smearing - 1).clip(lower=0)
+    else:
+        merged["qty_week"] = np.expm1(log_pred).clip(lower=0)
 
     # Prorate each week by how many of its days actually fall inside the window.
     week_end = (merged["period"] + pd.Timedelta(days=6)).clip(upper=window_end)
@@ -202,6 +218,15 @@ def actuals_for_window(cutoff: pd.Timestamp) -> pd.DataFrame:
 # %%
 def log_to_mlflow(portfolio: pd.DataFrame, summary: pd.DataFrame, comparison: pd.DataFrame, n_series: int) -> None:
     import mlflow
+
+    # Point the SDK at the same workspace `db_connection.py` authenticates
+    # against. Without this, `databricks-cli` auth resolves whichever profile
+    # happens to be default in ~/.databrickscfg -- which on this machine is a
+    # different workspace entirely, and the run would land there silently.
+    profile = _db._load_dev_profile()
+    os.environ["DATABRICKS_HOST"] = f"https://{profile['host']}"
+    if profile.get("token"):
+        os.environ["DATABRICKS_TOKEN"] = profile["token"]
 
     mlflow.set_tracking_uri("databricks")
     mlflow.set_experiment(EXPERIMENT)
@@ -284,11 +309,13 @@ if __name__ == "__main__":
     print(get_library_versions(["linearmodels", "pandas", "numpy"]))
 
     if not SAMPLE_ENTITIES:
-        window_totals.to_csv(OUTPUT_DIR / "window_totals.csv", index=False)
-        results["portfolio"].to_csv(OUTPUT_DIR / "portfolio_metrics.csv", index=False)
-        results["per_series"].to_csv(OUTPUT_DIR / "per_series_metrics.csv", index=False)
-        comparison.to_csv(OUTPUT_DIR / "baseline_comparison.csv", index=False)
-        by_category["portfolio"].to_csv(OUTPUT_DIR / "portfolio_metrics_category.csv", index=False)
+        # Prefixed by run name so the corrected run does not overwrite the
+        # uncorrected one -- both are evidence, and the pair is the finding.
+        window_totals.to_csv(OUTPUT_DIR / f"{RUN_NAME}_window_totals.csv", index=False)
+        results["portfolio"].to_csv(OUTPUT_DIR / f"{RUN_NAME}_portfolio_metrics.csv", index=False)
+        results["per_series"].to_csv(OUTPUT_DIR / f"{RUN_NAME}_per_series_metrics.csv", index=False)
+        comparison.to_csv(OUTPUT_DIR / f"{RUN_NAME}_baseline_comparison.csv", index=False)
+        by_category["portfolio"].to_csv(OUTPUT_DIR / f"{RUN_NAME}_portfolio_metrics_category.csv", index=False)
         print(f"\nSaved to {OUTPUT_DIR}")
 
         # Logged only on a full run: a 200-series smoke test is not a result
