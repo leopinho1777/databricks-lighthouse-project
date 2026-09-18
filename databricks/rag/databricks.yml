@@ -27,6 +27,9 @@ variables:
     description: "SQL Warehouse usado apenas para gravar rag.query_logs"
     lookup:
       warehouse: "Serverless Starter Warehouse"
+  dev_schema:
+    description: "Não usado por este bundle, declarado só por compatibilidade com o databricks.local.yml compartilhado entre os bundles"
+    default: ""
 
 targets:
   dev:
@@ -34,10 +37,9 @@ targets:
     default: true
     variables:
       catalog: develop
-      # Schema dos marts do dbt neste workspace de dev (verificado via Fase 0).
-      # Convenção geral seria ${workspace.current_user.short_name}_analytics_marts,
-      # mas os marts aqui foram materializados como gabriel_analytics_marts.
-      schema_gold: gabriel_analytics_marts
+      # Segue o mesmo padrão do bundle transformation: cada dev roda o deploy
+      # direto nos próprios marts, sem precisar de --var nem grant no schema alheio.
+      schema_gold: ${workspace.current_user.short_name}_analytics_marts
       schema_rag: ${workspace.current_user.short_name}_rag
 
   prod:
