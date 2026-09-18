@@ -1,0 +1,54 @@
+# Fonte única de nomes, modelos e parâmetros do RAG.
+# O que varia por ambiente (catalog / schema_gold / schema_rag) é sobrescrito
+# em runtime pelo bundle (parâmetros do job) -- ver README.
+
+# HIPÓTESE H5: confirmar nomes reais no workspace (Fase 0 do roadmap).
+catalog: lh_nautical
+schema_gold: marts        # dbt marts do projeto (dim_*, fct_*). Em dev: <user>_analytics_marts
+schema_rag: rag
+
+# HIPÓTESE H1/H2: mapeamento lógico -> tabela real do DW. AJUSTAR ao DW real.
+tables:
+  fct_forecast:  fct_forecast       # H2: saída da modelagem (produto x loja x mês). A materializar.
+  fct_sales:     fct_sales          # histórico de vendas
+  dim_product:   dim_products
+  dim_store:     dim_locations      # H1: "loja" mapeada para dim_locations
+  dim_dc:        dim_locations      # H1: CD também vive em dim_locations (por tipo)
+  model_metrics: model_evaluation   # H11: métricas por modelo candidato. A materializar.
+
+rag_tables:
+  documents:       documents
+  chunks:          chunks
+  index:           chunks_index
+  logs:            query_logs
+  eval_questions:  eval_questions
+  eval_results:    eval_results
+
+vector_search:
+  endpoint_name: lh_nautical_vs
+  endpoint_type: STANDARD
+  pipeline_type: TRIGGERED
+  # HIPÓTESE H6: confirmar na aba Serving.
+  # Fallback: databricks-gte-large-en (EXIGE recriar o índice -- pior em pt-BR).
+  embedding_model: databricks-qwen3-embedding-0-6b
+
+llm:
+  # HIPÓTESE H6. Ordem de fallback: maverick -> llama-3-3-70b -> claude-haiku-4-5.
+  endpoint: databricks-llama-4-maverick
+  temperature: 0
+  max_tokens: 800
+  # seed: 42        # o endpoint databricks-llama-4-maverick REJEITA 'seed'
+  #                 (400 unknown field). Determinismo total não é possível neste
+  #                 endpoint MoE; temperature=0 dá respostas "quase" iguais.
+
+retrieval:
+  num_results: 10            # K da busca no índice
+  final_k: 5                 # chunks efetivamente enviados ao LLM
+  query_type: HYBRID
+  relative_score_threshold: 0.6
+  max_chunks_per_doc: 2
+
+chunking:
+  target_chars: 3200
+  max_chars: 4000
+  overlap_chars: 480
