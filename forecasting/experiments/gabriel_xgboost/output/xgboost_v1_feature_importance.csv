@@ -1,0 +1,13 @@
+feature,importance
+month,0.6468174
+trend,0.09952397
+product_variant_id,0.09714813
+demand_category,0.035226554
+day_of_week,0.026911104
+location_id,0.021349436
+trailing_qty_91d,0.013387577
+nonzero_days_trailing_91d,0.013318473
+same_period_last_year_qty,0.013224169
+rolling_std_28d,0.011836335
+trailing_qty_28d,0.010732395
+trailing_qty_7d,0.010524441
