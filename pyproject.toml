@@ -32,6 +32,8 @@ forecasting = [
     "holidays>=0.58",
     "requests>=2.32.0",
     "matplotlib>=3.9.0",
+    "prophet>=1.1.6",
+    "cmdstanpy>=1.2.0",
 ]
 
 [project.scripts]
