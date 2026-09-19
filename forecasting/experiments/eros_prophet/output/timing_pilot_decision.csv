@@ -1,0 +1,2 @@
+mean_fit_seconds,median_fit_seconds,max_fit_seconds,n_pilot_series,n_timed,n_cold_start,n_errored,lumpy_fit_seconds_std,extrapolated_one_run_config_seconds,extrapolated_one_run_config_hours,extrapolated_5_run_session_hours,threshold_seconds_per_run_config,threshold_seconds_per_fit,pilot_cutoff,decision
+0.15825475024019867,0.15685090000624768,0.2407406999845989,209,209,0,0,0.004092887478209095,3832.297031816651,1.064526953282403,5.3226347664120155,5400,0.22299306243805747,2025-09-30,full_catalog
