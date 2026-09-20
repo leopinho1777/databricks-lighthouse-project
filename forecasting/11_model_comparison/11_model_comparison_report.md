@@ -44,6 +44,10 @@ structurally uninformative on this catalog), although the task tracker's wording
 | XGBoost (1 config) | `gabriel_xgboost` | raw counts | exact 91 days | Hyperopt, 30 evals on an earlier fold |
 | FE panel regression (2 configs) | `eva_regression` | log1p | exact 91 days (weekly fit prorated by day) | none (Stage 2 specification) |
 
+A sixth configuration, a Prophet + XGBoost ensemble (task 3.6), was scoped out before this report:
+neither Prophet nor XGBoost individually beat the baseline well enough on its own to justify combining
+them, so no ensemble run was committed.
+
 Task 3.1 is covered by the FE panel regression (log-linear with entity fixed effects), not by a scikit-learn
 `LinearRegression`. The main table shows the champion, the lowest-mean-WAPE configuration of each family, and
 both panel-regression variants (the uncorrected run is the reference for the smearing correction). Every
