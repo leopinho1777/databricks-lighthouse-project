@@ -1,0 +1,11 @@
+full_mape=0.959410
+calendar_contribution_pct=0.439208%
+calendar_mape_without=0.963624
+holidays_contribution_pct=-0.003831%
+holidays_mape_without=0.959373
+weather_contribution_pct=-0.016103%
+weather_mape_without=0.959255
+economic_contribution_pct=0.023590%
+economic_mape_without=0.959636
+marketing_contribution_pct=0.001593%
+marketing_mape_without=0.959425

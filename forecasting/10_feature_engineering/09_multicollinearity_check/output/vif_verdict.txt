@@ -1,0 +1,10 @@
+vif_high_threshold=5.0
+triggered_ridge_fallback=False
+weather_vif_full_formula:
+temp_mean     1.551195
+precip_sum    1.457325
+wind_max      1.192884
+weather_vif_calendar_only:
+temp_mean     1.493232
+precip_sum    1.447521
+wind_max      1.172412

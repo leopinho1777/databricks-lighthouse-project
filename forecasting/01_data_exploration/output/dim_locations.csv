@@ -1,0 +1,7 @@
+location_id,location_name,location_type,is_active,updated_at
+1,Loja Leão,store,True,2025-06-30 05:43:31+00:00
+2,Armazém Camargo,warehouse,True,2026-03-27 21:14:09+00:00
+3,Armazém Siqueira,warehouse,True,2023-05-11 21:16:33+00:00
+4,Armazém Novaes,warehouse,True,2026-12-08 18:39:04+00:00
+5,Loja Oliveira,store,True,2021-06-13 20:33:43+00:00
+6,Loja Mendonça,store,True,2023-02-01 18:27:07+00:00

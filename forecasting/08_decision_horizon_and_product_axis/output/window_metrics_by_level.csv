@@ -1,0 +1,13 @@
+level,window_days,method,rmse_series,bias_series,wape_pct,rmse_portfolio
+SKU x location,1,moving_average,0.606,0.0,197.165,107.261
+SKU x location,1,seasonal_naive,0.839,0.009,183.56,135.688
+SKU x location,15,moving_average,2.191,0.005,129.586,799.251
+SKU x location,15,seasonal_naive,3.202,0.13,165.07,961.912
+SKU x location,30,moving_average,2.452,0.009,81.057,1346.767
+SKU x location,30,seasonal_naive,4.498,0.26,149.461,1826.633
+Category x location,1,moving_average,6.658,0.024,94.326,107.261
+Category x location,1,seasonal_naive,8.928,0.794,112.88,135.688
+Category x location,15,moving_average,26.8,0.435,26.29,799.251
+Category x location,15,seasonal_naive,36.296,11.919,35.676,961.912
+Category x location,30,moving_average,35.469,0.87,17.731,1346.767
+Category x location,30,seasonal_naive,53.818,23.838,26.967,1826.633

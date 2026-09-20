@@ -1,0 +1,10 @@
+window_days,path,rmse_series,bias_series,wape_pct,rmse_portfolio
+1,C_via_product,0.603,0.0,197.143,107.261
+1,B_via_category,0.597,0.0,197.126,107.261
+1,A_direct_per_sku,0.606,0.0,197.165,107.261
+15,C_via_product,2.299,0.005,148.396,799.251
+15,B_via_category,2.331,0.005,166.384,799.251
+15,A_direct_per_sku,2.191,0.005,129.586,799.251
+30,C_via_product,2.996,0.009,112.966,1346.767
+30,B_via_category,3.317,0.009,142.222,1346.767
+30,A_direct_per_sku,2.452,0.009,81.057,1346.767

@@ -1,0 +1,57 @@
+# Databricks Asset Bundle do sistema RAG do projeto LH Nautical.
+# Mesmo padrão dos bundles ingestion/transformation: targets dev/prod,
+# variáveis de catálogo/schema e include do override local por máquina.
+# Ver https://docs.databricks.com/dev-tools/bundles/index.html
+bundle:
+  name: rag
+  uuid: 7c0f5e2a-3b41-4d9e-9a6c-1f8e2d4b6a10
+
+include:
+  - resources/rag_ingestion.job.yml
+  - resources/rag_app.app.yml
+  - ../../databricks.local.yml
+
+# Sincroniza notebooks, pacote python, config e corpus curado para o workspace.
+sync:
+  paths:
+    - .
+
+variables:
+  catalog:
+    description: "Catálogo do Unity Catalog (HIPÓTESE H5)"
+  schema_gold:
+    description: "Schema com as tabelas gold / marts do DW (HIPÓTESE H1/H5)"
+  schema_rag:
+    description: "Schema isolado do RAG"
+    default: "rag"
+  warehouse_id:
+    description: "SQL Warehouse usado apenas para gravar rag.query_logs"
+    lookup:
+      warehouse: "Serverless Starter Warehouse"
+  dev_schema:
+    description: "Não usado por este bundle, declarado só por compatibilidade com o databricks.local.yml compartilhado entre os bundles"
+    default: ""
+
+targets:
+  dev:
+    mode: development
+    default: true
+    variables:
+      catalog: develop
+      # Segue o mesmo padrão do bundle transformation: cada dev roda o deploy
+      # direto nos próprios marts, sem precisar de --var nem grant no schema alheio.
+      schema_gold: ${workspace.current_user.short_name}_analytics_marts
+      schema_rag: ${workspace.current_user.short_name}_rag
+
+  prod:
+    mode: production
+    workspace:
+      host: https://dbc-fc67e327-d40e.cloud.databricks.com/
+      root_path: /Workspace/Users/teslavinci2026@gmail.com/.bundle/${bundle.name}/${bundle.target}
+    variables:
+      catalog: lh_nautical
+      schema_gold: marts
+      schema_rag: rag
+    permissions:
+      - user_name: teslavinci2026@gmail.com
+        level: CAN_MANAGE

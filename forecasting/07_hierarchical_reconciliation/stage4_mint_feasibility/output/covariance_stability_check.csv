@@ -1,0 +1,3 @@
+level,n_series,n_obs,max_possible_rank_from_n_obs,effective_rank,n_singular_zero_eigenvalues,pct_series_with_zero_eigenvalue,largest_eigenvalue,smallest_nonzero_eigenvalue,condition_number,numerically_stable
+national,1009,365,364,364,645,63.9,40.613183281045856,0.4101320047849105,99.0246623214519,False
+location,6054,365,364,364,5690,94.0,16.329501765707903,0.6800631359136659,24.011743768127047,False

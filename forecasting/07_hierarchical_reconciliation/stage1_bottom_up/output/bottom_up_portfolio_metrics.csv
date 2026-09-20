@@ -1,0 +1,2 @@
+level,n_total_rows,n_forecastable_rows,pct_forecastable,n_mape_rows_nonzero_actual,pct_excluded_from_mape_zero_actual,rmse,bias,mape,smape
+whole_catalog_portfolio,365,365,100.0,365,0.0,174.2736277797618,-8.703425589886658,0.6908072028622387,0.46363760027374834
