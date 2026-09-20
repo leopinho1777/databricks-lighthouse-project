@@ -28,14 +28,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "05_croston_sba"))
 import numpy as np
 import pandas as pd
 
-from _shared.db_connection import query_df
+from _shared.db_connection import get_scratch_schema, query_df
 from run_baselines import most_recent_complete_year, compute_metrics
 from classify_demand_patterns import compute_series_stats, classify_category, ADI_THRESHOLD, CV2_THRESHOLD
 from run_croston_sba import croston_sba, ALPHA
 
 OUTPUT_DIR = Path(__file__).parent / "output"
 OUTPUT_DIR.mkdir(exist_ok=True)
-MARTS_SCRATCH = "develop.eros_analytics_forecasting_scratch.fact_demand_daily"
+MARTS_SCRATCH = f"{get_scratch_schema()}.fact_demand_daily"
 UPSTREAM_WEEKLY_CACHE = Path(__file__).resolve().parents[1] / "03_granularity_baselines" / "output" / "_fact_demand_weekly.parquet"
 DAILY_SBA_FORECASTS = Path(__file__).resolve().parents[1] / "05_croston_sba" / "output" / "_croston_sba_forecasts.parquet"
 DAILY_CLASSIFICATION_CSV = Path(__file__).resolve().parents[1] / "04_demand_classification" / "output" / "demand_classification.csv"

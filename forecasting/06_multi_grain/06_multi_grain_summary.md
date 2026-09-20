@@ -139,15 +139,11 @@ recommendation is not "use ADIDA wherever it numerically wins."
   produced each series' value) are the committed per-series output that
   stage is gated on. Given the finding above, `method_chosen` will read
   `daily_sba` for the overwhelming majority of series and `adida` only for
-  the small tail where it's genuinely better — this is expected and correct
-  given the numbers, not a bug in the selection logic.
+  the small tail where it's genuinely better — this is the expected outcome
+  given the numbers, and follows directly from the selection rule.
 
-## Checkpoint
+## Hand-off
 
-Stopping here per the project's step-by-step review requirement (same
-convention as `01`-`05` and the hierarchical-reconciliation plan). This
-closes out the classification → Croston/SBA → ADIDA workstream referenced by
-the reconciliation plan's Section 3.5 prerequisite — `07_hierarchical_reconciliation/stage1_bottom_up/`
-is now unblocked, pending review of the findings above (in particular, that
-ADIDA's own per-series recommendation is "mostly noise, use `05`'s daily SBA
-by default").
+This closes the classification → Croston/SBA → ADIDA workstream. ADIDA's own per-series
+recommendation is "mostly noise, use `05`'s daily SBA by default"; the recommended-forecast
+cache this stage writes is the input to `07_hierarchical_reconciliation/stage1_bottom_up/`.

@@ -90,11 +90,8 @@ landing on exact zero, sMAPE saturates near its analytic maximum again
 (median 197.9%) and MAPE stays pinned near 90%. **RMSE and Bias remain the
 metrics to trust** when Stage 3 compares Bottom-Up against Top-Down.
 
-## Checkpoint
+## Hand-off
 
-Stopping here per the project's step-by-step review requirement (same
-convention as `01`-`06` and the hierarchical-reconciliation plan itself).
-Stage 2 (Top-Down) is designed in the plan but not yet implemented — pending
-review of the findings above, in particular the sparsity-reference-point
-caveat (94%/99% here vs. 73% in Phase 1) and the near-independent-error RMSE
-scaling, both of which should carry into Stage 3's comparison discussion.
+Two findings carry into the Top-Down stage and the Bottom-Up vs. Top-Down comparison: the
+sparsity-reference-point caveat (94%/99% here vs. 73% in Phase 1) and the near-independent-error
+RMSE scaling.

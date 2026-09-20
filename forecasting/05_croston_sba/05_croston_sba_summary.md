@@ -23,7 +23,7 @@ recommendation, this run covers the **full catalog**, not a subset.
 ## Method
 
 - **Grain:** daily, same as `03`/`04`, same source table
-  (`develop.eros_analytics_forecasting_scratch.fact_demand_daily`).
+  (`fact_demand_daily`, each developer's own scratch copy — see `../README.md`'s "Data source convention").
 - **History window, per series:** left-trimmed to each series' own first day
   with `qty_sold_net > 0`, identical rationale and trimming logic as `04`
   (avoids counting a later-launched product's pre-launch zero-fill).
@@ -138,11 +138,9 @@ both segments see the same qualitative correction.
   caveat forward rather than expecting those two metrics to look good even if
   ADIDA produces a genuine improvement.
 
-## Checkpoint
+## Hand-off
 
-Stopping here per the project's step-by-step review requirement (same
-convention as `01`-`04` and the hierarchical-reconciliation plan). Step C
-(`06_multi_grain`, ADIDA test + weekly-grain reclassification) is designed
-per the task brief but not yet implemented — pending review of the findings
-above, in particular the per-series-vs-portfolio RMSE divergence and the
-sMAPE/MAPE metric-artifact finding.
+Two findings carry forward: the per-series-vs-portfolio RMSE divergence (SBA wins per series
+and loses at the portfolio total) and the sMAPE/MAPE metric artifact, which makes RMSE and
+Bias the metrics used in every later stage. `06_multi_grain` tests ADIDA and repeats the
+classification at weekly grain.

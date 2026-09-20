@@ -1,9 +1,10 @@
 # %% [markdown]
 # # Transformation layer exploration — demand forecasting Phase 1 / Task 1.1-1.5
 #
-# Runs every check backing `01_data_exploration_summary.md` against the live dev
-# marts (`develop.eros_analytics_marts`). Re-run this after any dbt rebuild to
-# refresh the numbers behind the summary doc — it does not write the doc itself.
+# Runs every check backing `01_data_exploration_summary.md` against the stable
+# prod marts (`PROD_MARTS`, see `_shared/db_connection.py`'s data source
+# convention). Re-run this after any dbt rebuild to refresh the numbers behind
+# the summary doc — it does not write the doc itself.
 
 # %%
 import sys
@@ -12,11 +13,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import pandas as pd
-from _shared.db_connection import query_df
+from _shared.db_connection import PROD_MARTS, query_df
 
 OUTPUT_DIR = Path(__file__).parent / "output"
 OUTPUT_DIR.mkdir(exist_ok=True)
-MARTS = "develop.eros_analytics_marts"
+MARTS = PROD_MARTS
 
 # %% [markdown]
 # ## 1. Table inventory: row counts, date range, null rates, duplicates

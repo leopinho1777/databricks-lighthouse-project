@@ -8,9 +8,10 @@
 # this script produces the numbers behind it.
 #
 # Reads `fct_sales` directly rather than `02`'s `fact_demand_daily` prototype,
-# so it has no dependency on another developer's scratch schema. That means
-# gross quantity here versus net there — the calibration checks printed at the
-# end quantify the difference (~0.2%).
+# so it has no dependency on another developer's scratch schema -- reads the
+# stable prod marts instead (see `_shared/db_connection.py`'s data source
+# convention). That means gross quantity here versus net there — the
+# calibration checks printed at the end quantify the difference (~0.2%).
 
 # %%
 import sys
@@ -20,12 +21,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import pandas as pd
 
-from _shared.db_connection import query_df
+from _shared.db_connection import PROD_MARTS, query_df
 
 OUTPUT_DIR = Path(__file__).parent / "output"
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-MARTS = "develop.eva_analytics_marts"
+MARTS = PROD_MARTS
 HOLDOUT_START, HOLDOUT_END = "2025-01-01", "2025-12-31"  # same holdout as 03-07
 ADI_THRESHOLD, CV2_THRESHOLD = 1.32, 0.49                # Syntetos & Boylan (2005), as in 04
 MA_WINDOW = 28                                           # same moving average as 03

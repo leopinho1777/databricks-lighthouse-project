@@ -1,0 +1,2 @@
+pct_weeks_with_any_censored_day=0.01
+NOTE: is_demand_censored_flag is target leakage (derived from same-day qty_sold_gross) and was NOT used as a regression feature -- see script header comment.

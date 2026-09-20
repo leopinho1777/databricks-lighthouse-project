@@ -77,8 +77,8 @@ still high, but the only method here that isn't fully saturated near the
 metric's ceiling). The classification correctly routes to SBA per the stated
 rule (no Smooth/Erratic segment to justify Moving Average), but this
 bias/RMSE trade-off is worth carrying into any future revisit of the routing
-rule itself — not acted on here, since the routing decision was fixed before
-running the backtest.
+rule itself — not acted on here, since the routing decision is set before
+the backtest runs.
 
 ### Why the bias gap: SBA can't keep up with the national demand's seasonal cycle
 
@@ -162,11 +162,8 @@ bias was negative (-0.0012 to -0.0019, slight over-forecast) — opposite
 signs. Full side-by-side belongs in Stage 3, not here, but it's visible
 already in these two stages' numbers independently.
 
-## Checkpoint
+## Hand-off
 
-Stopping here per the project's step-by-step review requirement (same
-convention as every prior stage). Stage 3 (direct Bottom-Up vs. Top-Down
-comparison, national and location level) is designed in the plan but not yet
-implemented — pending review of the findings above, in particular the
-CV²-improves-but-ADI-doesn't national reclassification result and the
+Two findings carry into the direct Bottom-Up vs. Top-Down comparison (national and location
+level): the CV²-improves-but-ADI-doesn't national reclassification result and the
 location-level RMSE-floor caveat.

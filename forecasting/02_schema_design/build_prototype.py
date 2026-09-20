@@ -2,7 +2,10 @@
 # # Build the `fact_demand_daily` prototype
 #
 # Executes `fact_demand_daily_prototype.sql` against the live dev warehouse and
-# runs a few sanity checks against known `fct_sales` totals.
+# runs a few sanity checks against known `fct_sales` totals. Reads from the
+# stable prod marts (`PROD_MARTS`); writes to this developer's own scratch
+# schema (`get_scratch_schema()`) -- see `_shared/db_connection.py`'s data
+# source convention.
 
 # %%
 import sys
@@ -10,15 +13,23 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from _shared.db_connection import query_df, run_query
+from _shared.db_connection import PROD_MARTS, get_scratch_schema, query_df, run_query
 
 SQL_PATH = Path(__file__).parent / "fact_demand_daily_prototype.sql"
-TABLE = "develop.eros_analytics_forecasting_scratch.fact_demand_daily"
+MARTS = PROD_MARTS
+SCRATCH_SCHEMA = get_scratch_schema()
+TABLE = f"{SCRATCH_SCHEMA}.fact_demand_daily"
 
 # %%
 if __name__ == "__main__":
-    sql = SQL_PATH.read_text(encoding="utf-8")
-    print("Building fact_demand_daily prototype...")
+    # Unlike the shared team schema this replaces, a new developer's own
+    # scratch schema doesn't exist yet on first run -- create it (idempotent)
+    # before writing to it.
+    print(f"Ensuring scratch schema {SCRATCH_SCHEMA} exists...")
+    run_query(f"create schema if not exists {SCRATCH_SCHEMA}")
+
+    sql = SQL_PATH.read_text(encoding="utf-8").format(marts=MARTS, scratch_schema=SCRATCH_SCHEMA)
+    print(f"Building fact_demand_daily prototype in {TABLE}...")
     run_query(sql)
 
     row_count = query_df(f"select count(*) as n from {TABLE}")
@@ -45,7 +56,7 @@ if __name__ == "__main__":
 
     manual_val = query_df(
         f"""
-        select sum(quantity) as qty from develop.eros_analytics_marts.fct_sales
+        select sum(quantity) as qty from {MARTS}.fct_sales
         where product_variant_id = '{pid}' and location_id = '{lid}' and date_id = {did}
           and order_status in ('paid', 'confirmed')
         """
@@ -64,8 +75,8 @@ if __name__ == "__main__":
     # date_bounds.max_day = current_date() - 1) — otherwise this check compares against
     # an unbounded fct_sales sum and falsely flags today's partial-day sales as missing.
     total_fct_sales = query_df(
-        """
-        select sum(quantity) as n from develop.eros_analytics_marts.fct_sales
+        f"""
+        select sum(quantity) as n from {MARTS}.fct_sales
         where order_status in ('paid', 'confirmed')
           and date(placed_at) <= date_sub(current_date(), 1)
         """

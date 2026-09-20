@@ -76,7 +76,7 @@ infinite, not 99.0 or 24.0.
 
 ## What would need to change for MinT to become viable
 
-- **More holdout history is the direct fix but is not realistic soon**:
+- **More holdout history is the direct remedy but is not realistic soon**:
   reaching the 3x-5x range needs ~7.3-12.8 more years of daily history at
   national grain, ~48.8-81.9 more years at location grain. Location grain's
   requirement is fundamentally out of reach for a catalog this granular —
@@ -94,8 +94,7 @@ infinite, not 99.0 or 24.0.
   reconciliation context document's Section 2.3 description); a shrinkage or
   diagonal variant remains a legitimate, lower-data-requirement option for a
   future phase and is not ruled out by this result — it just wasn't what was
-  gated here, and would be a different (smaller) scope of work than "MinT as
-  originally scoped."
+  gated here, and would be a different (smaller) scope of work than the full-covariance MinT tested here.
 
 ## Recommendation
 
@@ -105,8 +104,8 @@ implement MinT.** Proceed with the better of Top-Down/Bottom-Up from Stage
 national level (80.4% of products, portfolio RMSE 3.7% lower) and tying at
 location level (59.8%/40.2%, pooled RMSE identical to 4 decimals).
 
-## Checkpoint
+## Hand-off
 
-This closes the staged execution plan (Stages 1-4). See the final
+This closes the four reconciliation stages. See the final
 deliverable summary for how this ties back to the classification finding
 that motivated the whole workstream.

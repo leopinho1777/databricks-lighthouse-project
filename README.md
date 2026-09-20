@@ -32,6 +32,12 @@ databricks/
   transformation/                       # Bundle "transformation": runs dbt as a Databricks job
   orchestration/                        # Bundle "orchestration": chains ingestion -> transformation
 dbt/                                    # dbt project (desafio_lh): staging -> intermediate -> marts
+forecasting/                            # Demand-forecasting analysis (not deployed): baselines, features, models
+  README.md / OVERVIEW.md               # Run order and stage-by-stage narrative
+  01_..09_*/                            # Phase 1: exploration, baselines, classification, reconciliation
+  10_feature_engineering/               # Stage 2: feature tests and the frozen feature set
+  experiments/                          # Stage 3: shared protocol + five model experiments
+  11_model_comparison/                  # Stage 3 close-out: final side-by-side comparison
 docs/
   dashboard_guide.md                    # Power BI executive dashboard guide
 pyproject.toml                          # Python dependencies (uv)
@@ -167,6 +173,27 @@ Pre-aggregated tables in `marts/aggregates/`, built for direct BI consumption: a
 
 Running `dbt docs generate` makes dbt generate the full documentation of the transformation process.
 Then `dbt docs serve` opens a local HTML site with an interactive interface containing all the project information.
+
+---
+
+## Demand Forecasting
+
+`forecasting/` holds the demand-forecasting analysis built on the marts. It is analysis code, not part of the
+ingestion, transformation or orchestration bundles, and nothing in it runs on a schedule. It works in three phases:
+
+* **Baselines and segmented methods (`01`-`09`):** forecasting unit, horizon and split; Seasonal Naive / Moving Average / SES at several grains; demand-pattern classification (the catalog is 96.8% Intermittent and 3.2% Lumpy); Croston/SBA and ADIDA; hierarchical reconciliation; and a 91-day held-static baseline scored over four rolling origins, which is the champion later models are compared with (`seasonal_naive_genuine_91d_v2`, logged to the `/Shared/00_baseline` MLflow experiment).
+* **Feature engineering (`10_feature_engineering/`):** tests calendar, holiday, weather, economic, marketing and inventory features with a pooled fixed-effects panel regression. Only calendar earns a place in the frozen feature set, on top of a mandatory trend control (`/Shared/01_feature_iteration`).
+* **Model comparison (`experiments/`, `11_model_comparison/`):** a fixed-effects panel regression, Random Forest, XGBoost, Prophet and SARIMA, all scored under one protocol (`experiments/_shared/evaluate.py`) and compared in a final report (`/Shared/02_model_comparison`).
+
+**Result:** no model beats the seasonal-naive champion in three or more of the four windows. XGBoost is the best trained model, and every model sits at 77-132% WAPE at product x location level, because 25-59% of series sell nothing in a 91-day window and the annual cycle is already what the champion encodes. Forecasts are usable at category x location level (11-39% WAPE). Details and caveats: [`forecasting/11_model_comparison/11_model_comparison_report.md`](forecasting/11_model_comparison/11_model_comparison_report.md).
+
+To run it (dependency group `forecasting`, dev profile from `~/.dbt/profiles.yml`; see [`forecasting/README.md`](forecasting/README.md) for every stage and [`forecasting/experiments/README.md`](forecasting/experiments/README.md) for the model experiments):
+
+```bash
+uv sync --dev --group forecasting
+uv run python forecasting/02_schema_design/build_prototype.py              # fact_demand_daily in your scratch schema
+uv run python forecasting/11_model_comparison/build_comparison.py          # final comparison from the committed experiment outputs
+```
 
 ---
 

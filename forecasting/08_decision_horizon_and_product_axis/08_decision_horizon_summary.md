@@ -24,7 +24,8 @@ beat forecasting each SKU directly. Produced by
 
   ## Method
 
-- **Source:** `fct_sales` in `develop.eva_analytics_marts`, filtered to
+- **Source:** `fct_sales` in the shared prod marts (`lh_nautical.marts` — see
+  `../README.md`'s "Data source convention"), filtered to
   `order_status IN ('paid','confirmed')` and densified against `dim_calendary`.
   Unlike `03`-`07`, this stage does not read `02`'s `fact_demand_daily`
   prototype, so it has no dependency on another developer's scratch schema —
@@ -44,7 +45,11 @@ beat forecasting each SKU directly. Produced by
   including the left-trim to each series' own first non-zero period.
 - **Window evaluation:** non-overlapping buckets of 15 and 30 days within the
   holdout; actuals and forecasts are summed inside each bucket before the error
-  is computed. The final incomplete bucket of the year is dropped.
+  is computed. The final incomplete bucket of the year is dropped. The Moving
+  Average is recomputed every day, so each bucket sums one-step-ahead forecasts
+  rather than one forecast held over the window; the evaluation of a single
+  forecast held static for 91 days is in `09_baseline_close_out`, and its WAPE is
+  not comparable with the figures here.
 - **Metrics:** RMSE and Bias as in `03`-`07`, plus **WAPE** (total absolute
   error ÷ total demand). WAPE is added because it is the only metric here that
   is comparable **across levels** — a category series is ~92x larger than a SKU

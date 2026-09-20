@@ -8,30 +8,40 @@ happened and why" one.
 
 ## Scope and constraints
 
-Exploratory workstream for the demand-forecasting Action Plan's Task 1.1
+Demand-forecasting analysis for the Action Plan's Task 1.1
 (forecasting unit/granularity), 1.2 (forecast horizon), and 1.5
-(train/val/test split), later extended into a segmented-treatment phase
-(classify by demand pattern, apply intermittent-demand methods) and a
+(train/val/test split), extended into a segmented-treatment phase
+(classify by demand pattern, apply intermittent-demand methods), a
 hierarchical-reconciliation phase (product-level vs. product×location
-forecasting, and how to make the two coherent). Everything here is
-**exploratory and prototype-only**:
+forecasting, and how to make the two coherent), a feature-engineering stage
+(which covariates carry signal), and a model-comparison stage (which model
+family forecasts best). Everything here is **analysis code, not a deployed
+pipeline**:
 
-- No ML/regression model is built anywhere in this workstream — only
-  statistical baselines (Seasonal Naive, Moving Average, SES) and classical
-  intermittent-demand methods (Croston, SBA, ADIDA).
-- `fact_demand_daily` (`develop.eros_analytics_forecasting_scratch.fact_demand_daily`)
-  is a disposable scratch table, not a committed dbt model — rebuildable at
-  will, not something downstream jobs depend on.
-- All scripts connect to the live Databricks dev warehouse via the existing
+- Phase 1 (`01`–`09`) uses only statistical baselines (Seasonal Naive, Moving
+  Average, SES) and classical intermittent-demand methods (Croston, SBA,
+  ADIDA). Stage 2 (`10`) fits a fixed-effects panel regression as a measuring
+  instrument for candidate features. Stage 3 (`experiments/`, `11`) fits and
+  compares five model families (panel regression, Random Forest, XGBoost,
+  Prophet, SARIMA). None of them is deployed.
+- `fact_demand_daily` is a disposable scratch table, not a committed dbt
+  model — rebuildable at will, not something downstream jobs depend on. It
+  lives in each developer's own dev schema (`<catalog>.<dev_schema>_forecasting_scratch.fact_demand_daily`,
+  via `_shared/db_connection.py`'s `get_scratch_schema()`), not a shared or
+  hardcoded schema — see `README.md`'s "Data source convention".
+- All scripts connect to the live Databricks warehouse via the existing
   `~/.dbt/profiles.yml` dev profile; nothing secret is stored in this repo.
+  Stable reference data (marts/staging) is read from the shared prod catalog
+  regardless of whose profile is connected, so numbers stay comparable across
+  developers.
 - Large per-row query results are cached as gitignored `output/_*.parquet`
   files; only small summary CSVs that back the markdown reports are tracked
   in git.
 
 ## The narrative arc
 
-Each stage's finding motivated the next — this is the throughline connecting
-seven stages that might otherwise read as independent exercises:
+Each stage's finding motivates the next — this is the throughline connecting
+eleven stages that might otherwise read as independent exercises:
 
 1. **01** grounded the forecasting unit in real data and surfaced that
    warehouses sell almost as much as stores do — an open question for the
@@ -64,6 +74,14 @@ seven stages that might otherwise read as independent exercises:
    axis — and found the demand-pattern picture only changes along the product
    axis, while aggregating and disaggregating back costs more accuracy per SKU
    than forecasting each series directly.
+9. **09** defined the baseline every model is measured against: a forecast
+   made once at a cutoff and held static for the 91-day horizon, scored over
+   four rolling origins, where Seasonal Naive beats Moving Average.
+10. **10** tested which covariates carry signal and froze the feature set:
+    only calendar earns a place, on top of a mandatory trend control.
+11. **Stage 3** fit five model families on that set and compared them with the
+    champion: none beats it convincingly, and the reasons trace back to the
+    demand pattern `04` classified and the seasonality `03` documented.
 
 ## Stage-by-stage summary
 
@@ -85,11 +103,11 @@ censored-demand check.
 - **No 2020-2021 COVID-era anomaly** — this is mock data with a smooth
   ~14-17% YoY growth trend, not a real-world disruption. No correction logic
   needed.
-- A stock-levels future-dating bug (77% of rows dated into 2027) was found,
-  fixed upstream, and reverified at 0% post-fix. The *separate*, unrelated
-  problem — stock history is too sparse (~1.2 snapshots per product×location
-  pair) to support a confident censored-demand read — remains open; it was
-  never a future-dating issue and the fix didn't touch it.
+- The source emits future-dated stock snapshots (77% of raw rows, dated into
+  2027); `filter_future_dated()` removes them in staging, so
+  `fct_daily_stock_levels` is 0% future-dated. Independently of that, stock
+  history is too sparse (~1.2 snapshots per product×location pair) to
+  support a confident censored-demand read, and that limitation remains open.
 
 ### 02 — Schema design ([`02_ideal_schema_proposal.md`](02_schema_design/02_ideal_schema_proposal.md))
 
@@ -193,10 +211,9 @@ benchmarked against `05`'s native daily SBA.
 
 Tests whether *location*-aggregation (rather than `06`'s time-aggregation)
 changes the demand-pattern picture, then runs a full Top-Down / Bottom-Up /
-MinT reconciliation comparison. Gated behind `05`/`06` existing with real
-committed output (a deliberate hard block, not an oversight — see the
-context document at
-[`.claude/context_hierarchical_reconciliation_plan.md`](../.claude/context_hierarchical_reconciliation_plan.md)).
+MinT reconciliation comparison. It depends on `05`/`06` having real committed
+output (the recommended per-series forecast cache that `06` produces), which is
+a hard prerequisite.
 
 - **Stage 1 — Bottom-Up** ([report](07_hierarchical_reconciliation/stage1_bottom_up/stage1_bottom_up_report.md)):
   sums `06`'s recommended per-series forecast across all 6 locations.
@@ -263,6 +280,100 @@ quantity; the stage's own calibration checks put that gap at ~0.2%.
 than forecasted disaggregation proportions, the weaker Top-Down variant
 (Athanasopoulos, Ahmed & Hyndman, 2009); one holdout year, as everywhere else.
 
+### 09 — Baseline close-out ([`09_baseline_close_out_summary.md`](09_baseline_close_out/09_baseline_close_out_summary.md))
+
+**Defined:** the baseline for every later model — a Moving Average (28d) and a
+Seasonal Naive forecast made once at each cutoff and held static for the ~91-day
+horizon (tasks 1.2/1.3/1.4), scored over four rolling origins spanning 2025
+(task 1.6) with a peak-season split (task 1.7) and logged to `/Shared/00_baseline`
+(task 1.8).
+
+**Validated:**
+- **Seasonal Naive beats Moving Average at the 91-day horizon** in all four
+  windows (WAPE 78.8–88.1% against 107.7–134.9%), the opposite of `03`'s
+  1-week-horizon ranking: "same period last year" encodes the seasonal cycle a
+  flat trailing average cannot anticipate. Seasonal Naive is the champion the
+  Stage 3 models are compared against.
+- **The forecast has to be held static.** A forecast recomputed as time passes
+  sees real actuals from inside the window it is scored on; `08`'s 15/30-day
+  WAPE is a re-bucketed one-step-ahead figure and is not comparable with the
+  91-day numbers.
+
+**Documented, not resolved:** bias is positive at every window (neither
+baseline has a trend); only four origins; the baseline's WAPE counts only
+series with sales in the window, a coverage difference from the Stage 3
+scoring.
+
+## Stage 2 — Feature Engineering ([`10_feature_engineering/`](10_feature_engineering/))
+
+Separate from the granularity/baseline/classification workstream above:
+tasks 2.1-2.10 of the project task tracker, building and testing a pooled
+fixed-effects panel regression (product x location x ISO-week,
+`PanelOLS(entity_effects=True)` + a linear time-trend structural control) as
+a **measuring instrument** — its only job is isolating each candidate
+feature group's individual effect, not competing as a Stage 3 model
+candidate. Calendar, holidays, weather, economic, and marketing features
+were each added as one cumulative layer and evaluated against a >2%
+MAPE-improvement threshold; internal/inventory features were excluded
+before or during testing (target leakage, data unavailability, and an
+untestable-with-this-instrument stock-sparsity finding, respectively). An
+independent COVID-anomaly check and a weather/calendar VIF check ran
+alongside the cumulative chain. **Result: only calendar survives into the
+production feature set** — via an accuracy-ablation test, not its own
+threshold, since none of the five testable feature groups individually
+cleared 2%. Full narrative: [`00_feature_backlog.md`](10_feature_engineering/00_feature_backlog.md)
+(task-by-task, including the trend-control and scale-confound sensitivity
+checks). Final output: [`10_frozen_feature_set.md`](10_feature_engineering/10_frozen_feature_set.md)
+— the fixed input for every Stage 3 (task 3.n) session. Logged to the
+`/Shared/01_feature_iteration` MLflow experiment.
+
+## Stage 3 — Model comparison ([`experiments/`](experiments/README.md), [`11_model_comparison/`](11_model_comparison/11_model_comparison_report.md))
+
+Five model families are fit and scored under one protocol (`experiments/_shared/evaluate.py`): total demand over
+a 91-day window per (`product_variant_id`, `location_id`), the four rolling origins of `09` (2024-12-31,
+2025-04-01, 2025-07-01, 2025-09-30), training only on data up to each cutoff, compared with the
+`seasonal_naive_genuine_91d_v2` champion in `/Shared/00_baseline`. Each model may fit at whatever grain suits it;
+only the scoring is shared. Everything is logged to `/Shared/02_model_comparison`, and each experiment has its own
+`README.md` (design, how to run, results, limitations).
+
+**The experiments** (portfolio WAPE at SKU × location; the champion scores 78.8 / 84.4 / 88.1 / 79.9 %):
+
+- **Fixed-effects panel regression** ([`eva_regression/`](experiments/eva_regression/README.md), task 3.1): the
+  Stage 2 specification refit per window. Uncorrected it under-forecasts total demand by ~71% (the log1p target
+  yields a conditional median); with Duan's smearing it wins 2024-12-31 (78.1%) but over-corrects the low
+  season (131.7% on 2025-07-01). Category × location WAPE reaches 11.4% in its best window.
+- **Random Forest** ([`eros_randomforest/`](experiments/eros_randomforest/README.md), task 3.2): five
+  configurations, 0 of 20 windows beaten. Depth is the dominant lever (`depth10` is best, 87.9–107.0%); a depth
+  cap forces the forest to generalize across entities instead of memorizing them through raw ID codes.
+- **XGBoost** ([`gabriel_xgboost/`](experiments/gabriel_xgboost/README.md), task 3.3): one global model on raw
+  counts, tuned with Hyperopt on an earlier fold. The only model to beat the champion in a window (2024-12-31,
+  77.1%), with the lowest per-series RMSE and bias, but 104.8% / 124.6% on the two low-season windows. It is fit
+  once and applied at all four cutoffs, not refit per window, and 64.7% of its importance sits on `month`.
+- **Prophet** ([`eros_prophet/`](experiments/eros_prophet/README.md), task 3.4): one model per series, five
+  configurations, 0 of 20 beaten. Holidays add nothing (within 0.22 pp of the no-holiday run); a rigid trend is
+  best on the two off-peak windows; multiplicative seasonality is unstable on a log1p target.
+- **SARIMA** ([`pinho_sarima/`](experiments/pinho_sarima/README.md), task 3.5): a benchmark, 0 of 8 beaten.
+  `d=0` with a trend term beats `d=1` on all four windows because first differencing over-differences a series
+  that is already stationary around a trend.
+
+**Final comparison** ([`11_model_comparison/`](11_model_comparison/11_model_comparison_report.md), task 3.7): every
+committed configuration re-scored side by side from its `*_window_totals.csv`, no refit, logged as
+`final_comparison_3_7`.
+
+- **No trained model beats the champion convincingly.** None wins 3 of 4 windows; XGBoost and the panel
+  regression with smearing each win one (by 1.8 pp and 0.8 pp, inside the noise of four windows).
+- **Best of what was tested, not good:** the champion on portfolio WAPE (mean 82.8%); XGBoost v1 is the best
+  trained model (lowest per-series RMSE and bias, level with the champion on the peak-season windows, category
+  level 24.6%). At SKU × location every model sits at 77–132% WAPE; only category × location is usable (11–39%).
+- **The data explains it:** 25–59% of series sell nothing in a 91-day window, a Poisson noise floor alone is
+  27–45% WAPE, the annual cycle is already encoded by seasonal naive, and Stage 2 found no external signal. The
+  log1p-target models forecast the median and under-forecast totals by 61–68%; only XGBoost (raw counts) and Duan
+  smearing avoid that.
+- **Open caveats:** the committed baseline WAPE counts only series with sales in the window while models are
+  scored on all 6,054 series, so the ranking depends on how the two are aligned; weekly-grain models have shifted
+  windows; XGBoost is not refit per window. The report states these rather than claiming the ranking is
+  convention-proof.
+
 ## Cross-cutting methodology (applies across `03`-`07`)
 
 - **Same holdout every time:** 2020-2024 train / 2025 holdout, determined
@@ -291,9 +402,8 @@ than forecasted disaggregation proportions, the weaker Top-Down variant
   `croston_sba()`; `07` reused all of the above plus `06`'s recommended
   forecast cache. No forecasting logic was rewritten at any stage — this is
   a deliberate project convention, not an oversight of code duplication.
-- **Checkpoint discipline:** every stage stops and reports before the next
-  one starts, matching the plan's own explicit review requirement — visible
-  in every stage report's closing "Checkpoint" section.
+- **Hand-offs:** most stage reports close with a hand-off or checkpoint section
+  that states the verdict and what the next stage takes from it.
 - **Tracked vs. gitignored outputs:** every stage keeps large per-row query
   results and per-series/per-day forecast values in gitignored
   `output/_*.parquet` caches, and only small summary CSVs (the ones backing
@@ -312,26 +422,43 @@ than forecasted disaggregation proportions, the weaker Top-Down variant
   Top-Down at both hierarchy levels with today's base methods.
 - MinT is not viable with current data maturity, quantifiably so (not "might
   be risky" — the covariance matrices are exactly singular).
+- At a genuine 91-day horizon Seasonal Naive is the strongest reference
+  (79–88% WAPE at SKU × location), and none of the five Stage 3 model families
+  beats it in more than one window (`experiments/`, `11`).
+- Calendar is the only feature with measurable value and growth needs an
+  explicit trend control; holidays, weather, economic indicators and marketing
+  add about nothing (`10`), which a separate Prophet run without holidays
+  reproduces.
+- Forecasts become usable only when SKUs are aggregated: category × location
+  reaches 11–39% WAPE for the two mean-targeting models, while SKU × location
+  error is about the size of the demand (77–132%) for every model (`11`).
 
 **Still open, explicitly not resolved by this workstream:**
 - Whether warehouse-attributed sales should count toward "product × store"
   demand at all (`01`) — a business/data-semantics decision, not a modeling
   one.
 - Stock-history sparsity (`01`), which keeps `is_stockout_day`/
-  `is_demand_censored_flag` unreliable — unrelated to and unresolved by the
-  future-dating fix that was applied.
+  `is_demand_censored_flag` unreliable — independent of the future-date
+  filtering in staging.
 - `fact_demand_daily`'s global (not per-product) zero-fill start date (`02`)
   — worked around via left-trimming in every downstream calculation, but the
   underlying table was never rebuilt.
-- Seasonal Naive's (`03`) and SBA's (`07`) shared structural weakness:
-  neither has an explicit trend or seasonality component, so both
-  systematically mis-forecast around this catalog's ~15%/year growth trend
-  and its Jan-Apr/Oct-Dec seasonal cycle. This is flagged as the most
-  promising lever for a future phase — more so than switching between
-  Top-Down/Bottom-Up/MinT.
+- Seasonal Naive (`03`) and SBA (`07`) have no explicit trend, so both
+  under-forecast against this catalog's ~15%/year growth. The Stage 3 models
+  with an explicit trend and season (panel regression, Random Forest, XGBoost,
+  Prophet, SARIMA) did not beat Seasonal Naive, so the growth bias is real but
+  not a sufficient explanation on its own. A trend-adjusted Seasonal Naive is
+  the cheap reference that has not been tested.
 - A shrinkage or diagonal-covariance MinT variant (`07`, Stage 4) — a
   smaller, different scope of work than the full-sample-covariance approach
   that was gated out, and not itself tested.
+- The scoring-convention difference between the baseline (series with sales
+  only) and the Stage 3 models (all series), which makes the champion ranking
+  depend on how the two are aligned (`11`).
+- XGBoost is fit once and not refit per window; a per-cutoff refit and a
+  `month` ablation are untested (`experiments/gabriel_xgboost/README.md`).
+- Croston/SBA and ADIDA (`05`/`06`) are not scored under the 91-day Stage 3
+  protocol.
 
 ## Directory map
 
@@ -354,6 +481,17 @@ forecasting/
     stage4_mint_feasibility/
   08_decision_horizon_and_product_axis/  # monthly + product-axis classification, 15/30-day
                                          # window evaluation, disaggregation-path comparison
+  09_baseline_close_out/                 # genuine 91-day held-static baseline, walk-forward,
+                                         # peak-season split; logs /Shared/00_baseline in MLflow
+  10_feature_engineering/                # Phase 2: pooled fixed-effects panel regression testing
+                                         # calendar/holidays/weather/economic/marketing/inventory
+                                         # cumulatively; see 00_feature_backlog.md and
+                                         # 10_frozen_feature_set.md (fixed input for Stage 3)
+  experiments/                           # Stage 3: shared protocol (_shared/evaluate.py) + one folder per model
+                                         # (eva_regression, eros_randomforest, gabriel_xgboost, eros_prophet,
+                                         # pinho_sarima), each with its own README.md
+  11_model_comparison/                   # Stage 3 close-out (task 3.7): all experiments scored side by side
+                                         # vs. the seasonal-naive champion; feeds the 3.8 champion decision
 ```
 
 Each numbered stage directory follows the same shape: one `# %%`
