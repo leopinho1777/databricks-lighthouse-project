@@ -42,8 +42,10 @@
 # `TUNE_CUTOFF` vs `TEST_CUTOFFS`.
 #
 # Scored against the Stage 3 protocol (`experiments/_shared/evaluate.py`):
-# refit per rolling-origin cutoff, one-shot 91-day-total prediction per
-# series, compare against the `seasonal_naive_genuine_91d_v2` champion.
+# one final model, fit once on all history whose 91-day target ends by the first
+# official cutoff, applied at each rolling-origin cutoff (features rebuilt from
+# data up to that cutoff), one-shot 91-day-total prediction per series, compared
+# against the `seasonal_naive_genuine_91d_v2` champion. It is not refit per cutoff.
 # MAPE/sMAPE are excluded from all reporting, per `05_croston_sba`'s finding
 # that they're structurally uninformative on this catalog.
 
@@ -79,7 +81,7 @@ query_df = _db_connection.query_df
 OUTPUT_DIR = Path(__file__).parent / "output"
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-MARTS = "develop.eva_analytics_marts"  # same source as 08/09, see forecasting/README.md's data-source convention
+MARTS = _db_connection.PROD_MARTS  # shared prod marts, see forecasting/README.md's data-source convention
 KEYS = ["product_variant_id", "location_id"]
 HORIZON_DAYS = 91
 EXPERIMENT_PATH = "/Shared/02_model_comparison"
@@ -510,4 +512,4 @@ if __name__ == "__main__":
         print("\nTop features by importance:")
         print(importances.to_string())
 
-    print(f"\nLogged under {EXPERIMENT_PATH}. See notes.md for the running log.")
+    print(f"\nLogged under {EXPERIMENT_PATH}. See README.md for the results.")
