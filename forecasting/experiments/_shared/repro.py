@@ -1,12 +1,11 @@
 # %%
-"""Shared reproducibility helpers for Stage 3 model-comparison sessions.
+"""Shared reproducibility helpers for Stage 3 model-comparison experiments.
 
-First written for `eros_randomforest` (task 3.2) -- centralized here rather
-than inline in one experiment script so every later `experiments/<name>_<model>/`
-session reuses the same mechanism instead of each reimplementing (or skipping)
-data-snapshot/library-version tagging slightly differently, the same drift
-Stage 2 avoided by centralizing `compute_metrics()`/`most_recent_complete_year()`
-in `panel_regression.py`.
+Every `experiments/<name>_<model>/` script tags its MLflow runs with the data
+snapshot (Delta version and timestamp of the input table) and the installed
+library versions through these helpers, so the tagging is identical across
+experiments, the same way Stage 2 shares `compute_metrics()` and
+`most_recent_complete_year()` through `panel_regression.py`.
 """
 
 import importlib.util

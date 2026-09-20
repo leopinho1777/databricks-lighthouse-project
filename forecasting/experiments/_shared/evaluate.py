@@ -1,7 +1,7 @@
 # %%
 """Shared evaluation for Stage 3 model comparison — the team protocol in code.
 
-Agreed convention (Slack, after review with Eros):
+Team-agreed protocol:
 
 - **Target:** total demand over a 91-day window per (product_variant_id,
   location_id). Each model is free to fit at whatever grain suits it — weekly,
@@ -11,7 +11,9 @@ Agreed convention (Slack, after review with Eros):
 - **Windows:** the same 4 rolling origins the Phase 1 close-out used
   (`09_baseline_close_out/walk_forward.py`), imported rather than re-derived:
   2024-12-31, 2025-04-01, 2025-07-01, 2025-09-30. Non-overlapping, 91 days.
-- **Training:** data up to the cutoff only, refit per window.
+- **Training:** data up to the cutoff only, refit per window where the model
+  allows it (see `experiments/README.md`, "Conventions that affect how numbers
+  compare").
 - **Baseline to beat:** the `seasonal_naive_genuine_91d_v2` run in
   `/Shared/00_baseline`, which beats the moving average in all four windows.
 - **Metrics:** RMSE and bias per series across the four windows, plus
@@ -21,6 +23,12 @@ Agreed convention (Slack, after review with Eros):
 
 Bias sign follows the Phase 1 close-out: `actual - forecast`, so a positive
 bias means under-forecasting (the failure mode that causes stockouts).
+
+Coverage note: the committed baseline's WAPE counts only series with sales in
+the window, while `evaluate()` scores every series in `window_totals`, so a
+model is also charged for forecast placed on series that sold nothing. See
+`11_model_comparison/11_model_comparison_report.md` for what that does to the
+comparison.
 """
 
 import importlib.util
