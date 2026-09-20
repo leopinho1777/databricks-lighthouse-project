@@ -7,14 +7,15 @@
 # subsample: `compare_to_baseline()` needs the same-catalog `actual_total` the baseline was
 # computed against, so a partial-catalog run would trip its drift check by construction.
 #
-# Trend handling is SARIMA-specific per `10_frozen_feature_set.md`: growth goes through
-# non-seasonal differencing (`d=1`), not a `trend` regressor the way RF/XGBoost use it.
-# Annual seasonality goes through seasonal differencing (`D=1, s=52` at weekly grain) --
-# the frozen-feature-set doc's explicit, non-optional instruction for this model class.
+# Trend handling is SARIMA-specific (`10_frozen_feature_set.md` §2): growth goes through the
+# model's own machinery, not a `trend` regressor the way RF/XGBoost use it. Two variants run:
+# non-seasonal differencing (`d=1`) and `d=0` with a constant trend term (`sarima_d0_trend`,
+# the better of the two). Annual seasonality goes through seasonal differencing
+# (`D=1, s=52` at weekly grain).
 # `month_2`..`month_12` dummies still enter as `exog` alongside that differencing -- they
 # capture a different thing (deterministic calendar shape) than `D=1` does (stochastic
 # year-over-year seasonal drift a fixed dummy can't adapt to), so both are kept, not
-# either/or. See `notes.md` for the full order-selection reasoning and running log.
+# either/or. See `README.md` for the full order-selection reasoning.
 #
 # Scored against the Stage 3 protocol (`experiments/_shared/evaluate.py`): refit per
 # rolling-origin cutoff, sum weekly forecasts into a 91-day window total per series,
@@ -57,7 +58,7 @@ TRAIN_END = pd.Timestamp("2024-12-31")  # fixed, matches run_genuine_baseline.py
 
 MONTH_COLS = [f"month_{m}" for m in range(2, 13)]
 SEASONAL_PERIOD = 52  # weekly grain -> annual seasonality
-MAXITER = 50  # bounds per-fit optimizer cost across a 24,216-fit run; see notes.md's timed-pilot section
+MAXITER = 50  # bounds per-fit optimizer cost across a 24,216-fit run; see README.md's timed-pilot section
 
 # %% [markdown]
 # ## 0. Optional smoke-test knob
@@ -148,7 +149,7 @@ def _setup(sample_entities: int = 0) -> None:
     0.84x, i.e. slightly worse than serial -- because SARIMAX.fit()'s scipy.optimize loop
     doesn't release the GIL enough for this per-fit problem size) spawns worker processes
     that reconstruct this module by re-running its top-level code -- a standard requirement
-    of Python's "spawn" multiprocessing start method, not a bug. Anything at bare module
+    of Python's "spawn" multiprocessing start method. Anything at bare module
     level (imports, constants, function defs) is cheap and safe to repeat per worker.
     Anything with a side effect -- especially `load_weekly_panel()`'s warehouse query --
     must NOT be at bare module level, or every worker process independently re-runs it on
@@ -227,7 +228,7 @@ def diagnose_orders(panel_df: pd.DataFrame, segments_df: pd.DataFrame) -> None:
     # explicitly account for a deterministic trend; "ct" (constant + linear trend) is the
     # more appropriate test given this project's own twice-confirmed ~14-17%/year growth
     # (03_granularity_baselines; 10_feature_engineering's own `trend` coefficient, t~32-50) --
-    # a naive "c"-only reading could be misleading here.
+    # a "c"-only reading would understate that here.
     print("Portfolio-aggregate ADF, levels (log1p):")
     for label, reg in (("c (constant only)", "c"), ("ct (constant + trend)", "ct")):
         stat, p, lags, *_ = adfuller(log_portfolio, regression=reg)
@@ -275,7 +276,7 @@ def diagnose_orders(panel_df: pd.DataFrame, segments_df: pd.DataFrame) -> None:
             n_error += 1
             print(f"  {key} [{row['category']}, total_qty={row['total_qty']:.0f}]: ADF errored -- {str(exc)[:100]}")
     print(f"\nSummary: {n_reject}/{len(sample)} reject H0 (stationary at levels), {n_fail}/{len(sample)} fail to reject (favor differencing), {n_error} errored.")
-    print("\nTranscribe these findings into notes.md; this diagnostic is not re-run per production execution.")
+    print("\nThese findings are recorded in README.md; this diagnostic is not re-run per production execution.")
 
 
 # %% [markdown]
@@ -638,19 +639,18 @@ def run_pilot(n_series: int, order: tuple = (1, 1, 1), seasonal_order: tuple = (
     # anything it's conservative: each cutoff's real batch (6,054 tasks) amortizes
     # per-worker startup overhead better than this 100-task pilot does.
     print(f"Extrapolated full-run wall-clock (already reflects n_jobs=-1 parallelism): ~{per_fit * total_fits / 60:.1f} min")
-    print("Record this estimate and the go/no-go decision in notes.md before running the full RUNS loop.")
+    print("Use this estimate to decide whether to run the full RUNS loop.")
 
 
 # %% [markdown]
 # ## 7. Runs -- task 3.5 is a benchmark, not a tuning exercise, so this stays small
 #
 # Two configs, not a search: `--diagnose`'s ADF results (portfolio aggregate + 20 stratified
-# per-series checks, all 20/20) robustly contradicted this module's original `d=1` design
-# assumption -- diff(1)'s ACF showed the classic over-differencing signature. Rather than
-# unilaterally overriding the frozen-feature-set doc's "handle growth via differencing"
-# instruction, both the originally-planned config and the diagnostic-informed alternative are
-# run and logged, and the comparison against `seasonal_naive_genuine_91d_v2` decides between
-# them -- see notes.md for the full reasoning and the decision this produced.
+# per-series checks, all 20/20) show the log1p series are stationary around a trend, and
+# diff(1)'s ACF shows the classic over-differencing signature. Growth handled by first
+# differencing (`d=1`) and growth handled by `d=0` plus a trend term are therefore both run
+# and logged, and the comparison against `seasonal_naive_genuine_91d_v2` decides between
+# them -- see README.md for the reasoning and the result.
 
 # %%
 RUNS = {
@@ -693,4 +693,4 @@ if __name__ == "__main__":
     for run_name, cfg in selected.items():
         log_run(cfg["order"], cfg["seasonal_order"], run_name, mlflow, data_version, lib_versions, cfg.get("trend"))
 
-    print(f"\n{list(selected)} logged under {EXPERIMENT_PATH}. See notes.md for the running log.")
+    print(f"\n{list(selected)} logged under {EXPERIMENT_PATH}. See README.md for the results.")
