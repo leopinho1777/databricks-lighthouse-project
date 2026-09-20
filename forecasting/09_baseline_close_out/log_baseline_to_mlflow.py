@@ -1,10 +1,9 @@
 # %% [markdown]
-# # Task 1.8 — Log the corrected baseline as 'Experiment 0' in MLflow
+# # Task 1.8 — Log the baseline as 'Experiment 0' in MLflow
 #
-# No MLflow usage existed anywhere in this repo before this stage (checked via
-# repo-wide grep). Logs the genuine 91-day, held-static baseline numbers from
-# `run_genuine_baseline.py` -- not `03`'s or `08`'s numbers, since those
-# understate the real 3-month-ahead error (see
+# Logs the 91-day, held-static baseline numbers from `run_genuine_baseline.py`
+# to the `/Shared/00_baseline` experiment. `03`'s and `08`'s numbers are
+# one-step-ahead errors and are not comparable with a 91-day forecast (see
 # `09_baseline_close_out_summary.md`).
 
 # %%
@@ -38,7 +37,7 @@ mlflow.set_tracking_uri("databricks")
 mlflow.set_experiment(EXPERIMENT_PATH)
 
 # %% [markdown]
-# ## 2. Log the corrected Moving Average and Seasonal Naive runs
+# ## 2. Log the Moving Average and Seasonal Naive runs
 
 # %%
 overall = pd.read_csv(OUTPUT_DIR / "genuine_baseline_metrics_overall.csv").set_index("baseline")
@@ -53,7 +52,7 @@ for name in overall.index:
                 "phase": "1_baseline_model_definition",
                 "task_ids": "1.3" if name == "seasonal_naive" else "1.4",
                 "grain": "product_variant_id x location_id (SKU x Store)",
-                "source": "forecasting/09_baseline_close_out (fixes 03/08's continuously-refreshed horizon bug)",
+                "source": "forecasting/09_baseline_close_out (91-day held-static baseline)",
                 "data_source": f"{PROD_MARTS}.fct_sales",
             }
         )

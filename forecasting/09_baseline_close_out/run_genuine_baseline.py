@@ -1,18 +1,16 @@
 # %% [markdown]
-# # Task 1.3/1.4/1.6/1.7/1.8 close-out — genuine 3-month-ahead baseline
+# # Task 1.3/1.4/1.6/1.7/1.8 close-out — 3-month-ahead baseline, held static
 #
-# Closes the gap `08_decision_horizon_and_product_axis` left open: its 15/30-day
-# windows still let the Moving Average forecast see real actuals from inside the
-# window it's scored against (the trailing-28-day average is recomputed every
-# day). This stage computes that level **once per cutoff**, holds it flat for
-# the full agreed ~91-day (3-month) horizon, and scores it across multiple
-# rolling origins (task 1.6) instead of one holdout — see
-# `09_baseline_close_out_summary.md` for the write-up and the before/after
-# comparison numbers.
+# Computes the Moving Average level **once per cutoff**, holds it flat for the
+# full agreed ~91-day (3-month) horizon, and scores it across multiple rolling
+# origins (task 1.6), so the forecast never sees demand from inside the window
+# it is scored on (a level recomputed every day would, as in `08`'s 15/30-day
+# windows). Seasonal Naive is scored the same way. See
+# `09_baseline_close_out_summary.md` for the write-up.
 #
-# Same data source, grain, and Moving Average(28d)/Seasonal-Naive methods as
-# `08`, so the only thing that changes is the forecast update cadence and the
-# use of multiple origins instead of one.
+# Data source and grain: `fct_sales` in the shared prod marts at
+# product_variant_id x location_id, with Moving Average (28d) and Seasonal
+# Naive as the two baselines.
 
 # %%
 import sys
@@ -48,9 +46,9 @@ vendas AS (
 # %% [markdown]
 # ## 1. Peak season, derived independently from this data source's train period
 #
-# Same method as `forecasting_redo/03_metrics_1.7/metrics.py`: average monthly
-# total per calendar month over the train years only (no validation-year
-# leakage), flagged "peak" where above the overall monthly average.
+# Method: average monthly total per calendar month over the train years only
+# (no validation-year leakage), flagged "peak" where above the overall monthly
+# average.
 
 # %%
 monthly_totals = query_df(f"""
@@ -80,9 +78,9 @@ print(f"Walk-forward cutoffs ({len(cutoffs)}): {[c.date() for c in cutoffs]}")
 # ## 3. Forecast functions
 #
 # Moving Average: level computed once per cutoff from the 28 days immediately
-# before it, held flat for the whole horizon -- the fix. Seasonal Naive: joins
-# on the real calendar date one year earlier, same as `08` -- already correct,
-# included here so both mandated baselines (1.3, 1.4) are covered.
+# before it and held flat for the whole horizon, so it never sees demand from
+# inside the window it is scored on. Seasonal Naive: joins on the real calendar
+# date one year earlier. Together they cover both mandated baselines (1.3, 1.4).
 
 
 # %%
