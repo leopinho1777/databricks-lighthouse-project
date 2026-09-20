@@ -83,7 +83,7 @@ locations_current as (
 -- in the current data this is functionally a single stale point-in-time
 -- snapshot per pair, not a real time series, and the resulting
 -- is_demand_censored_flag below should be treated as unreliable until the
--- source stock data has real density and its future-dated rows are fixed.
+-- source stock data has real density.
 stock_history as (
     select
         product_variant_id,

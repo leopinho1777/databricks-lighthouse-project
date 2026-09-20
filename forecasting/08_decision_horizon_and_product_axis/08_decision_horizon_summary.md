@@ -45,7 +45,11 @@ beat forecasting each SKU directly. Produced by
   including the left-trim to each series' own first non-zero period.
 - **Window evaluation:** non-overlapping buckets of 15 and 30 days within the
   holdout; actuals and forecasts are summed inside each bucket before the error
-  is computed. The final incomplete bucket of the year is dropped.
+  is computed. The final incomplete bucket of the year is dropped. The Moving
+  Average is recomputed every day, so each bucket sums one-step-ahead forecasts
+  rather than one forecast held over the window; the evaluation of a single
+  forecast held static for 91 days is in `09_baseline_close_out`, and its WAPE is
+  not comparable with the figures here.
 - **Metrics:** RMSE and Bias as in `03`-`07`, plus **WAPE** (total absolute
   error ÷ total demand). WAPE is added because it is the only metric here that
   is comparable **across levels** — a category series is ~92x larger than a SKU

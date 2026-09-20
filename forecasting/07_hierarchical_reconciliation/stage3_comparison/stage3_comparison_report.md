@@ -144,10 +144,7 @@ methods' textbook information trade-offs.
   modeling the Jan-Apr/Oct-Dec vs. May-Sep cycle) is a more promising lever
   for improving *either* approach than switching between them.
 
-## Checkpoint
+## Hand-off
 
-Stopping here per the project's step-by-step review requirement (same
-convention as every prior stage). Stage 4 (MinT feasibility) is designed in
-the plan but not yet implemented — pending review of the findings above, in
-particular the "shared-weakness, not information trade-off" reframing of
-why Bottom-Up wins here.
+The "shared-weakness, not information trade-off" reading of why Bottom-Up wins here carries
+into the MinT feasibility check (`../stage4_mint_feasibility/`).
