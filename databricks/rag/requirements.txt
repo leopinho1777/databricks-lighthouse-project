@@ -1,0 +1,5 @@
+streamlit
+databricks-ai-search
+databricks-sdk[openai]>=0.60.0
+openai
+pyyaml>=6.0
