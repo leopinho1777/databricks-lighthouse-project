@@ -8,6 +8,7 @@ A interface `similarity_search(...)` é equivalente.
 """
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 
 COLUNAS = [
@@ -35,8 +36,27 @@ class Retriever:
         # import tardio: mantém o pacote importável fora do Databricks (testes)
         from databricks.ai_search.client import AISearchClient  # type: ignore
 
-        client = AISearchClient()  # auto-detecta o PAT do contexto (notebook/job)
+        client = self._build_client(AISearchClient)
         self._index = client.get_index(index_name=cfg.index_name)
+
+    @staticmethod
+    def _build_client(client_cls):
+        """Cria o AISearchClient: service principal do App se houver, senão auto-detect."""
+        # No Databricks App a identidade chega por env vars; o auto-detect do cliente
+        # só entende notebook/job (mlflow.utils.databricks_utils).
+        host = os.getenv("DATABRICKS_HOST")
+        client_id = os.getenv("DATABRICKS_CLIENT_ID")
+        client_secret = os.getenv("DATABRICKS_CLIENT_SECRET")
+        if host and client_id and client_secret:
+            # DATABRICKS_HOST no App vem sem esquema; o cliente monta a URL do token direto
+            if not host.startswith("http"):
+                host = "https://" + host
+            return client_cls(
+                workspace_url=host,
+                service_principal_client_id=client_id,
+                service_principal_client_secret=client_secret,
+            )
+        return client_cls()  # notebook/job: auto-detecta o PAT do contexto
 
     def search(self, pergunta: str, filtros: dict | None = None) -> list[Chunk]:
         res = self._index.similarity_search(

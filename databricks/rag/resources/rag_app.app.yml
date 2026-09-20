@@ -1,0 +1,42 @@
+# Chat Streamlit do RAG em Databricks Apps.
+# source_code_path aponta para a raiz do bundle: o app precisa de src/ e config/ além de app/.
+# O app roda com a identidade do próprio service principal (sem secrets no código).
+resources:
+  apps:
+    lh_nautical_rag:
+      name: lh-nautical-rag
+      description: "Chat do RAG do projeto LH Nautical"
+      source_code_path: ..
+
+      config:
+        command: ["streamlit", "run", "app/app.py"]
+        env:
+          - name: RAG_CONFIG
+            value: config/rag_config.yaml
+          - name: RAG_CATALOG
+            value: ${var.catalog}
+          - name: RAG_SCHEMA_GOLD
+            value: ${var.schema_gold}
+          - name: RAG_SCHEMA_RAG
+            value: ${var.schema_rag}
+          # ID do warehouse injetado a partir do recurso "warehouse" abaixo
+          - name: RAG_WAREHOUSE_ID
+            value_from: warehouse
+
+      resources:
+        # Warehouse usado só para gravar rag.query_logs
+        - name: warehouse
+          sql_warehouse:
+            id: ${var.warehouse_id}
+            permission: CAN_USE
+        # LLM chamado pelo Generator
+        - name: llm
+          serving_endpoint:
+            name: databricks-llama-4-maverick
+            permission: CAN_QUERY
+        # Escrita do log de perguntas
+        - name: query_logs
+          uc_securable:
+            securable_full_name: ${var.catalog}.${var.schema_rag}.query_logs
+            securable_type: TABLE
+            permission: MODIFY

@@ -1,0 +1,12 @@
+# Tema fixo (claro) do chat: evita que o Streamlit siga o tema escuro do navegador/SO
+# e misture componentes nativos escuros com o CSS do app.py.
+[theme]
+base = "light"
+primaryColor = "#0E7490"
+backgroundColor = "#F4F7FA"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#14283C"
+font = "sans serif"
+
+[client]
+toolbarMode = "minimal"

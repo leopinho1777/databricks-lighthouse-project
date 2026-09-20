@@ -8,6 +8,7 @@ bundle:
 
 include:
   - resources/rag_ingestion.job.yml
+  - resources/rag_app.app.yml
   - ../../databricks.local.yml
 
 # Sincroniza notebooks, pacote python, config e corpus curado para o workspace.
