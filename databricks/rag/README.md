@@ -155,7 +155,7 @@ Same metadata columns as `documents`, plus `chunk_id` (`<doc_id>#<n>`, PK), `chu
 
 `log_id`, `ts`, `pergunta`, `chunk_ids[]`, `scores[]`, `n_chunks_recuperados`, `n_chunks_usados`, `modelo_llm`, `modelo_embedding`, `resposta`, `recusou`, `latencia_retrieval_ms`, `latencia_llm_ms`, `erro`.
 
-The stored `resposta` is the raw model output, including the `Fontes:` block (the UI strips it from what the user sees — see [§6](#6-serving-layer--databricks-app)).
+The stored `resposta` is the raw model output, including the `Fontes:` block (the UI moves it out of the answer text into a collapsible *Fontes* card — see [§6](#6-serving-layer--databricks-app)).
 
 ### `eval_questions` / `eval_results` — golden set and run history
 
@@ -361,7 +361,7 @@ Reference measurements on the dev workspace (Serverless, Free Edition): retrieva
 - Persona *Teslinha* (🤖), styled with a nautical navy/teal theme injected as static CSS (large hero header on the empty state, compact header afterwards, card-style example buttons); the user's display name is derived from the `X-Forwarded-Preferred-Username` header set by the Databricks Apps proxy.
 - Three example questions are offered as buttons before the first message.
 - **Each question is independent.** The on-screen transcript is kept in `st.session_state` for readability only; it is never included in the prompt (see [decision log](#13-design-decision-log)).
-- The `Fontes:` block is removed from the displayed answer by a regular expression, but the *unmodified* answer, with citations, is what gets logged — so source attribution stays auditable without cluttering the executive view.
+- The `Fontes:` block is separated from the answer text by a regular expression and shown in a collapsible *Fontes* card (closed by default, with an expand arrow) that lists only the file names of the sources the model cited (e.g. `arquitetura.md`, never the full path); the loading indicator lives inside the answer card only. The *unmodified* answer is what gets logged, so attribution stays auditable while the answer text stays clean. Refusals carry no sources, so no card is shown.
 - Failures (retrieval, LLM, network) surface as a friendly message; the technical error is written to `query_logs.erro`.
 - Config, retriever, generator and logger are created once per process with `st.cache_resource`.
 
@@ -576,7 +576,7 @@ LIMIT  20;
 
 | # | Category | Input | Expected behaviour | What to check |
 |---|---|---|---|---|
-| 1 | Factual — prose | *Como funciona a arquitetura de ingestão do projeto?* | Portuguese answer ≤ 6 sentences describing the setup/ingest tasks, watermark vs. MERGE strategies and metadata columns | Logged `resposta` ends with a `Fontes:` block citing `docs/arquitetura.md`; the UI does not display that block |
+| 1 | Factual — prose | *Como funciona a arquitetura de ingestão do projeto?* | Portuguese answer ≤ 6 sentences describing the setup/ingest tasks, watermark vs. MERGE strategies and metadata columns | The *Fontes* card under the answer (closed by default) lists `docs/arquitetura.md`; the logged `resposta` ends with the same `Fontes:` block |
 | 2 | Factual — rationale | *Por que o RAG não usa Text-to-SQL?* | Cites numeric-integrity, evaluation, warehouse-load and question-coverage arguments | Source is `docs/decisoes_tecnicas.md`; `decisao_tecnica:decisoes_tecnicas.md#3` should be among the retrieved chunks |
 | 3 | Factual — schema | *Quais são as tabelas da camada marts?* / *Qual o grão da `fct_sales`?* | Table list / grain from the dictionary documents | Sources include `dicionario_dados` cards and/or `docs/dicionario_dados.md` |
 | 4 | Exact-term retrieval | A query naming a literal identifier (e.g. `fct_daily_stock_levels`) | The matching dictionary card is retrieved | `chunk_ids` in the log include `dicionario_dados:fct_daily_stock_levels#0`; demonstrates the BM25 half of the hybrid search |
