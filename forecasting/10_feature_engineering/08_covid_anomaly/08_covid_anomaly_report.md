@@ -99,6 +99,3 @@ them, not something this check can resolve on its own.
 
 **No change to any task's training window** as a result of this task —
 2020–2024 remains the training period, 2025 the holdout, throughout Stage 2.
-
-**Stopping here — task 2.8 is independent of the cumulative chain, so this
-is not a checkpoint gating task 2.9, but is reported the same way.**

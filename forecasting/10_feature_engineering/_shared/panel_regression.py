@@ -141,20 +141,19 @@ def fit_and_evaluate(panel_df: pd.DataFrame, feature_cols: list[str], run_name: 
     represents a multi-year trend shared across the whole panel. This
     project's own Phase 1 finding (`forecasting/03_granularity_baselines`:
     the business grows ~14-17%/year, consistently) means any slowly-drifting
-    covariate tested without a trend control would risk picking up that
-    growth trend rather than its own genuine effect (discovered in task 2.5,
-    where SELIC/IPCA showed an implausibly large, wrong-signed coefficient
-    before this control was added -- see `05_economic/05_economic_report.md`).
+    covariate tested without a trend control would pick up that growth trend
+    rather than its own genuine effect (SELIC/IPCA show an implausibly large,
+    wrong-signed coefficient without it -- see
+    `05_economic/05_economic_report.md`).
     A single linear term, not a per-year or per-week fixed effect, because
-    (a) the growth was already found to be smooth/consistent year over year,
-    not lumpy, so a linear term is the correctly-shaped correction, and (b)
-    unlike a per-period fixed effect, it doesn't saturate the time dimension
-    -- every other feature (calendar, holidays, weather, economic) still has
-    within-year variation left for it to explain. `trend` gets no keep/drop
-    verdict of its own and is not subject to the cumulative-retention policy
-    debate documented in `00_feature_backlog.md` -- it's a correction that
-    makes every other feature's coefficient trustworthy, not a candidate
-    feature being tested for the production set.
+    (a) the growth is smooth/consistent year over year, not lumpy, so a
+    linear term has the right shape, and (b) unlike a per-period fixed
+    effect, it doesn't saturate the time dimension -- every other feature
+    (calendar, holidays, weather, economic) still has within-year variation
+    left for it to explain. `trend` gets no keep/drop verdict of its own and
+    is not subject to the cumulative-retention policy documented in
+    `00_feature_backlog.md` -- it makes every other feature's coefficient
+    interpretable and is not a candidate feature for the production set.
 
     `feature_cols=[]` fits the "trend + entity fixed effects only" reference
     -- the mandatory "previous run" every cumulative task's MAPE-improvement

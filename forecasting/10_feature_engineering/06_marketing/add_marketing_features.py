@@ -73,9 +73,9 @@ def load_discount_weekly() -> pd.DataFrame:
     # discount_amount/subtotal come back as Python Decimal (object dtype)
     # from the Databricks SQL connector, since they're DECIMAL columns in
     # stg_orders -- cast explicitly rather than relying on downstream
-    # libraries to silently coerce them (linearmodels does; plain pandas
-    # arithmetic against a float64 column raises TypeError instead, which is
-    # what surfaced this in task 2.9's VIF check).
+    # libraries to coerce them (linearmodels does; plain pandas arithmetic
+    # against a float64 column raises TypeError instead, as in task 2.9's VIF
+    # check).
     orders["discount_amount"] = orders["discount_amount"].astype("float64")
     orders["subtotal"] = orders["subtotal"].astype("float64")
     orders["placed_at"] = pd.to_datetime(orders["placed_at"]).dt.tz_localize(None)
@@ -104,12 +104,12 @@ def add_marketing_features(df: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
     # orders has more total discount dollars almost by definition, even at a
     # constant average discount rate), so it's really a volume/scale proxy,
     # not a causal discounting signal -- and it's collinear with
-    # `discount_rate` (same numerator). An initial fit including both showed
-    # exactly the red flag this project has now learned to check for: t-stats
-    # around 44 for each (larger than task 2.5's pre-fix SELIC anomaly) with
-    # `discount_rate` flipping sign relative to its raw correlation with
-    # demand -- a scale/collinearity confound, not a genuine finding. Dropped
-    # rather than reported at face value; see `06_marketing_report.md`.
+    # `discount_rate` (same numerator). A fit including both shows the red
+    # flag of a confound: t-stats around 44 for each (larger than task 2.5's
+    # SELIC result without the trend control) with `discount_rate` flipping
+    # sign relative to its raw correlation with demand -- a scale/collinearity
+    # artifact, not a genuine finding. It is excluded; see
+    # `06_marketing_report.md`.
     return df, ["discount_rate"]
 
 

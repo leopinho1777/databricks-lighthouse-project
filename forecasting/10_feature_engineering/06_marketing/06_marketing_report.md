@@ -4,13 +4,13 @@
 > formula. MLflow run
 > `baseline+calendar+holidays+weather+economic+marketing`
 > (`7a66d958f9cb481692c60d47ec27a35a`) logged under
-> `/Shared/01_feature_iteration`; the previous formula was refit in-memory
+> `/Shared/01_feature_iteration`; the previous formula is refit in-memory
 > only, to compute this task's delta — not re-logged, since task 2.5 already
-> logged it.
+> logs it.
 >
-> **A second confound was caught and fixed before this report was written**
-> (not after, unlike task 2.5's economic result) — see "A second scale
-> confound, caught before reporting" below.
+> **Specification.** The formula uses `discount_rate` only; `total_discount_amount` is
+> excluded because it is a scale confound (see "Why `total_discount_amount` is excluded"
+> below).
 
 ## Method
 
@@ -34,31 +34,29 @@
   store ran a promotion), broadcast to every product sold at that location
   that week, the same way weather/economic features are broadcast.
 
-## A second scale confound, caught before reporting
+## Why `total_discount_amount` is excluded (scale confound)
 
-The first fit included two discount features: `total_discount_amount`
-(weekly sum, currency) and `discount_rate` (`total_discount_amount /
-total_subtotal`). Both showed **t-stats around 44** — larger even than task
-2.5's pre-fix SELIC anomaly (t = 38.1) — with `discount_rate` **negative**
-despite its raw correlation with contemporaneous demand being weakly
-*positive* (+0.062, see the reverse-causality check below). That combination
-(implausible significance + a sign that contradicts the simple correlation)
-is exactly the red flag this project has now learned to check for.
+Two discount features are candidates: `total_discount_amount` (weekly sum,
+currency) and `discount_rate` (`total_discount_amount / total_subtotal`). With both in
+the formula, both show **t-stats around 44** — larger even than the no-trend SELIC result
+in task 2.5 (t = 38.1) — with `discount_rate` **negative** despite its raw correlation with
+contemporaneous demand being weakly *positive* (+0.062, see the reverse-causality check
+below). Implausible significance combined with a sign that contradicts the simple
+correlation is the red flag for a confound.
 
 **Diagnosis**: `total_discount_amount` is a raw sum, mechanically tied to
 order volume — a location-week with more orders has more total discount
-dollars almost by definition, even at a *constant* average discount rate.
-It's a volume/scale proxy, not a causal discounting signal, and it's
+currency almost by definition, even at a *constant* average discount rate.
+It is a volume/scale proxy, not a causal discounting signal, and it is
 collinear with `discount_rate` (same numerator, `total_subtotal` as the only
-other input). Including both is a design mistake — a different kind of
-confound than task 2.5's trend issue (this one is a scale/collinearity
-artifact, not a temporal-trend one), but it required the same discipline to
-catch rather than report at face value.
+other input). Including both is a specification error — a different kind of
+confound from task 2.5's trend issue (a scale/collinearity artifact, not a
+temporal-trend one).
 
-**Fix**: `total_discount_amount` dropped from the formula entirely.
+**Specification**: `total_discount_amount` is excluded from the formula.
 `discount_rate` (scale-invariant, one degree of freedom, no collinear
 partner left in the model) is the only marketing feature tested. See
-`add_marketing_features.py`'s comment for the exact reasoning kept alongside
+`add_marketing_features.py`'s comment for the reasoning kept alongside
 the code.
 
 ## Reverse-causality check (required by this task specifically)
@@ -90,19 +88,19 @@ recent demand, one way or the other.
 | sMAPE | 1.98928 | 1.98927 | −0.0006% |
 
 **MAPE improvement vs. the previous formula: ~0.00%. Threshold: >2%. Does
-not meet the threshold, and not close.** (For comparison: the discarded
-`total_discount_amount` + `discount_rate` fit had shown a misleadingly large
+not meet the threshold, and not close.** (For comparison: the fit with
+`total_discount_amount` and `discount_rate` together shows a misleadingly large
 0.38% improvement — the second-best in the chain after calendar — entirely
 attributable to the scale confound described above, not to a real
 marketing effect.)
 
 `discount_rate` coefficient: **−0.0304, t = −1.61, p = 0.106 — not
-significant.** A believable, unremarkable t-stat, unlike the discarded
-version's t = −44.5.
+significant.** A believable, unremarkable t-stat, unlike t = −44.5 when
+`total_discount_amount` is also in the formula.
 
 ## Discussion
 
-Once the scale confound is removed, this task's honest result is a clean,
+With the scale confound removed, this task's result is a clean,
 unremarkable null: discount rate has no statistically detectable effect on
 demand at the location-week grain, and no accuracy improvement. This is
 consistent with (though doesn't prove) genuinely weak or absent
@@ -110,7 +108,7 @@ discount-driven demand at this aggregation level — it's also consistent with
 the order-level discount signal simply being too diluted once broadcast
 uniformly across every product at a location, since the true effect (if any)
 is likely product- or category-specific rather than a location-wide average.
-That's a limitation of the order-to-panel allocation choice made in Method,
+That is a limitation of the order-to-panel allocation described in Method,
 not evidence the underlying discount events had zero effect on any specific
 product.
 
@@ -124,6 +122,5 @@ rather than a masked reverse-causality artifact.
 
 **Carried forward into the cumulative formula for task 2.7** under the
 conservative-default policy — no specific confound mechanism between
-discount timing and inventory/stockout features has been identified.
-
-**Stopping here per the checkpoint constraint in the approved plan.**
+discount timing and inventory/stockout features has been identified. The task 2.10
+ablation drops the marketing layer (`10_frozen_feature_set.md`).

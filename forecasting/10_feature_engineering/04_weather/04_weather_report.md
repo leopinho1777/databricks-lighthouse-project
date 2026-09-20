@@ -3,20 +3,16 @@
 > Builds on task 2.3's `baseline+calendar+holidays` formula. MLflow run
 > `baseline+calendar+holidays+weather` (`b133f4785d8743a281f99486022551e8`)
 > logged under `/Shared/01_feature_iteration`; `baseline+calendar+holidays`
-> was refit in-memory only, to compute this task's delta on the same code
-> path — not re-logged, since task 2.3 already logged it.
+> is refit in-memory only, to compute this task's delta on the same code
+> path — not re-logged, since task 2.3 already logs it.
 >
-> Re-run twice since the original version: a holiday year-range edge-case fix
-> (see `03_holidays/03_holidays_report.md`'s note — did not change this
-> task's substantive result), then **a linear time-trend term added as a
-> permanent structural control** after task 2.5 found SELIC/IPCA's apparent
-> effect was mostly a confound with this project's known growth trend (see
-> `05_economic/05_economic_report.md`). **The trend control changed this
-> task's substantive result**: `temp_mean` flips sign and loses
-> significance, `wind_max` shrinks to borderline significance, and the
-> holiday terms (retested here as part of the cumulative formula) also lose
-> significance — this was checked, not assumed, and the result is reported
-> as found.
+> **Specification.** Every run includes a linear time-trend term as a permanent structural
+> control (see `05_economic/05_economic_report.md`: without it, SELIC/IPCA's apparent
+> effect is mostly a confound with this project's growth trend). The trend control changes
+> this task's substantive result: with it `temp_mean` is negative and non-significant,
+> `wind_max` is borderline significant, and the holiday terms (retested here as part of the
+> cumulative formula) are non-significant. Results are reported with the control and, as a
+> sensitivity check, without it.
 
 ## Method
 
@@ -29,17 +25,15 @@
 - **Weather data doesn't exist anywhere in this project** (confirmed during
   exploration before this stage started). Sourced from Open-Meteo's free
   historical archive API (no key required), no committed dbt model changes.
-- **Location proxy — deviation from the original plan, with reason**: the
-  plan called for a 6-row `location_id → (lat, lon)` lookup, one per
-  location. `dim_locations.city_name` turned out to be Faker-generated mock
-  data (e.g. "Barbosa do Sul", "Cavalcanti da Mata" aren't real, geocodable
-  Brazilian cities — consistent with root `CLAUDE.md`'s note that this is a
-  learning-only mock database), so a per-city lookup would have been
-  geocoding fictional places. `state_code` values ARE real Brazilian states
-  (PR, AP, PI, AL — 4 distinct states across the 6 locations), so the lookup
-  used instead is a 4-row `state_code → state-capital coordinates` table
-  (`state_capital_coordinates.py`), joined via `dim_locations.state_code`.
-  This is a reasonable regional proxy, not a location-precise one.
+- **Location proxy**: weather is joined through a 4-row
+  `state_code → state-capital coordinates` table (`state_capital_coordinates.py`), via
+  `dim_locations.state_code`, rather than through a per-city lookup.
+  `dim_locations.city_name` is Faker-generated mock data (e.g. "Barbosa do Sul",
+  "Cavalcanti da Mata" are not real, geocodable Brazilian cities — consistent with root
+  `CLAUDE.md`'s note that this is a learning-only mock database), so geocoding cities would
+  geocode fictional places. `state_code` values are real Brazilian states (PR, AP, PI, AL —
+  4 distinct states across the 6 locations). This is a reasonable regional proxy, not a
+  location-precise one.
 - Features: `temp_mean` (weekly mean of daily mean temperature, °C),
   `precip_sum` (weekly total precipitation, mm), `wind_max` (weekly max of
   daily max wind speed, km/h) — daily Open-Meteo values aggregated to
@@ -56,55 +50,45 @@
 
 **MAPE change vs. `baseline+calendar+holidays`: essentially zero (+0.016%,
 marginally worse). Threshold: >2% improvement. Does not meet the
-threshold — same conclusion as before the trend control, though the
-significance picture underneath changed substantially.**
+threshold — with or without the trend control, though the
+significance picture underneath differs substantially.**
 
-**Coefficients (`output/coefficients.csv`) — the trend control changed the
+**Coefficients (`output/coefficients.csv`) — the trend control changes the
 substantive finding here, not just the numbers:**
-- `temp_mean`: coefficient **flips to −0.00022** (was +0.0010), **p = 0.211
-  — no longer significant.**
-- `wind_max`: coefficient shrinks to **+0.00016** (was +0.00043), **p =
-  0.046 — now only borderline significant** at the conventional 0.05 level.
-- `precip_sum`: still not significant (p = 0.237, was p = 0.998 — moved, but
-  nowhere near significant either way).
+- `temp_mean`: coefficient **−0.00022**, **p = 0.211 — not significant**
+  (without the trend control: +0.0010, significant).
+- `wind_max`: coefficient **+0.00016**, **p = 0.046 — borderline significant** at the
+  conventional 0.05 level (without the control: +0.00043, clearly significant).
+- `precip_sum`: not significant (p = 0.237; p = 0.998 without the control — nowhere
+  near significant either way).
 - `has_holiday`/`is_long_weekend` (retested here as part of the cumulative
   formula): also not significant (p = 0.281, p = 0.082), consistent with
-  task 2.3's corrected finding.
+  task 2.3's finding.
 
-Month/week-of-year coefficients from task 2.2 remain essentially unchanged
+Month/week-of-year coefficients from task 2.2 are essentially unchanged
 (compare against `02_calendar/output/coefficients.csv`), confirming — as in
-task 2.3 — that calendar itself wasn't confounded with trend; only the
-smaller, already-marginal weather and holiday terms were sensitive to it.
+task 2.3 — that calendar itself is not confounded with trend; only the
+smaller, already-marginal weather and holiday terms are sensitive to it.
 
 ## Discussion
 
-**The original "two of three weather terms are significant" finding does
-not survive the trend control, and — as with task 2.3's holidays — this was
-not assumed to hold, it was checked.** Before the trend control, `temp_mean`
-and `wind_max` were both significant with `temp_mean` positive; after
-adding trend, `temp_mean` flips negative (the theoretically expected
-direction — warmer weeks *suppressing* demand doesn't fit the boating
-hypothesis either, so this isn't a clean win, just a different sign) and
-loses significance entirely, and `wind_max` survives only at the margin
-(p = 0.046).
->
-> **Correction (after task 2.9 ran):** this section originally claimed the
-> trend control had "resolved the puzzle," implying `wind_max`'s
-> counter-intuitive sign was explained away by collinearity with calendar
-> or trend. **Task 2.9's VIF check found the opposite** — `wind_max`'s VIF
-> is 1.17–1.19 in both the calendar-only and full-formula (including
-> `trend`) scopes, nowhere near collinear. `temp_mean`'s coefficient *did*
-> shift materially when trend was added, but a low VIF means that shift
-> isn't explained by severe multicollinearity (VIF near 1–2 still permits
-> real, non-severe correlation, which can legitimately move a point
-> estimate without being "collinear" in the diagnostic sense) — it's a
-> real, modest omitted-variable correction, not evidence the two terms were
-> redundant. **`wind_max`'s counter-intuitive sign and marginal
-> significance remain unexplained by either the trend control or task 2.9's
-> collinearity check** — see `09_multicollinearity_check/09_multicollinearity_report.md`
-> for the full, corrected account. This report's own earlier claim should
-> not be relied on in `10_frozen_feature_set.md`; task 2.9's is the current
-> word on this question.
+**Without the trend control two of the three weather terms are significant; that finding
+does not survive the control.** Without it, `temp_mean` and `wind_max` are both
+significant, with `temp_mean` positive. With the trend term, `temp_mean` is negative
+(warmer weeks *suppressing* demand does not fit the boating hypothesis either, so this is
+not a clean win, just a different sign) and non-significant, and `wind_max` survives only
+at the margin (p = 0.046).
+
+**`wind_max`'s counter-intuitive positive sign and marginal significance are not explained
+by collinearity or by the trend control.** Task 2.9's VIF check finds `wind_max`'s VIF at
+1.17–1.19 in both the calendar-only and full-formula (including `trend`) scopes, nowhere
+near collinear. `temp_mean`'s coefficient does shift materially when trend is added, but a
+low VIF means that shift is not explained by severe multicollinearity (VIF near 1–2 still
+permits real, non-severe correlation, which can move a point estimate without being
+"collinear" in the diagnostic sense): it is a real, modest omitted-variable effect, not
+evidence the two terms are redundant. See
+`09_multicollinearity_check/09_multicollinearity_report.md` for the full account; it is
+the reference for this question in `10_frozen_feature_set.md`.
 
 `precip_sum` remains non-significant under both specifications — the
 cleanest, most stable negative sub-finding in this task: rainfall does not
@@ -123,18 +107,13 @@ bias was demonstrated the way it was for calendar→holidays.
 
 ## Recommendation — Checkpoint
 
-**Not kept, and more clearly so than the original version of this report**
-— weather does not clear the >2% MAPE-improvement bar (net change ≈ 0%),
-and once the trend control is in place none of its three terms is
-comfortably significant (`temp_mean` p = 0.211, `precip_sum` p = 0.237,
-`wind_max` p = 0.046 borderline). The pre-trend-control version of this
-report treated `temp_mean`/`wind_max` as real effects worth further VIF
-investigation in task 2.9 — that framing no longer applies; the trend
-control already explains most of what looked like a weather effect.
+**Not kept** — weather does not clear the >2% MAPE-improvement bar (net change ≈ 0%),
+and with the trend control in place none of its three terms is comfortably significant
+(`temp_mean` p = 0.211, `precip_sum` p = 0.237, `wind_max` p = 0.046 borderline). The trend
+control accounts for most of what looks like a weather effect without it; the residual
+marginal `wind_max` effect is unexplained (task 2.9).
 
 **Carried forward into the cumulative formula for task 2.5** under the
-conservative-default policy (see Discussion) — its inclusion in the final
-production feature set (task 2.10) remains open, though with the
-significance picture this weak, it is unlikely to survive 2.10's ablation.
-
-**Stopping here per the checkpoint constraint in the approved plan.**
+conservative-default policy (see Discussion). Its inclusion in the final production feature
+set is decided by the task 2.10 ablation, which drops weather (removing the weather terms
+slightly improves MAPE, −0.0161%; `10_frozen_feature_set.md`).

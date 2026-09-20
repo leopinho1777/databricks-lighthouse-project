@@ -2,8 +2,8 @@
 
 > Builds on task 2.6's `baseline+calendar+holidays+weather+economic+marketing`
 > formula. **No new MLflow run was logged for this task** — see "The
-> stockout signal is not testable with this instrument" below. This is a
-> deliberate departure from every prior task's pattern, not an oversight.
+> stockout signal is not testable with this instrument" below. This differs from
+> the other tasks by design: there is no valid test to log.
 
 ## Method and two exclusions decided before fitting anything
 
@@ -100,18 +100,18 @@ here — not a "not kept" verdict**, which would misleadingly imply a valid
 test happened and failed. No new MLflow run was logged: there is no viable
 feature to report a test result for.
 
-## The tracker's censored-demand correction, addressed
+## The tracker's censored-demand check
 
 The tracker's task 2.7 asks to "check whether `qty_sold_net` was ever capped
 by stock-on-hand... and correct for this before using inventory features."
-The check was already run in `02_schema_design` and is reconfirmed here with
-fresh numbers: censoring is flagged on only 0.01% of product-location-weeks
-in this dataset. **No correction is needed or possible with current data**
-— there isn't a meaningful population of censored periods to correct, and
-the underlying reason (near-total absence of real stock snapshots) isn't
-fixable by a modeling choice. This is the documented correction method the
-tracker asks for: the conclusion is "not applicable at current data
-density," reached by checking, not assumed.
+The check is run in `02_schema_design` and repeated here: censoring is flagged on only
+0.01% of product-location-weeks in this dataset. **No censoring adjustment is needed or
+possible with current data**
+— there isn't a meaningful population of censored periods to adjust, and
+the underlying reason (near-total absence of real stock snapshots) cannot be
+addressed by a modeling choice. This is the check the tracker asks for: the
+conclusion is "not applicable at current data density," reached by measurement, not
+assumed.
 
 ## Recommendation — Checkpoint
 
@@ -120,7 +120,7 @@ features are excluded not because they failed a test, but because no valid
 test was possible with current data (`is_demand_censored_flag`) or because
 there isn't enough real variation to trust a result (`is_stockout_day`,
 confirmed empirically). Price-change remains excluded for the
-previously-confirmed data-availability reason.
+data-availability reason above.
 
 **Carried forward unchanged into task 2.8**: the cumulative formula for the
 COVID-anomaly investigation (independent of this chain) and for task 2.9's
@@ -128,18 +128,18 @@ VIF check is `baseline+calendar+holidays+weather+economic+marketing` — the
 same formula task 2.6 produced, since task 2.7 added nothing to it.
 
 **For task 2.10**: this task contributes no ablation candidate (nothing was
-added to ablate) but should be recorded plainly as "internal/inventory data
-was not testable with this stage's fixed-effects instrument" in
-`10_frozen_feature_set.md`, distinct from the "not kept despite a valid
-test" verdicts for calendar, holidays, weather, economic, and marketing.
+added to ablate). It is recorded in `10_frozen_feature_set.md` §5 as "internal/inventory
+data was not testable with this stage's fixed-effects instrument", distinct from the "not
+kept despite a valid test" verdicts for calendar, holidays, weather, economic, and
+marketing.
 
-**Three distinct failure modes have now shown up across tasks 2.5–2.7, and
-`10_frozen_feature_set.md` should keep them separately labeled rather than
-collapsing all of it into "didn't work":**
+**Three distinct outcomes appear across tasks 2.5–2.7, and
+`10_frozen_feature_set.md` keeps them separately labeled rather than collapsing them into
+"didn't work":**
 - **Confound** (task 2.5's SELIC/trend, task 2.6's discount-amount/volume):
   real data, a real fit, wrong interpretation without the right control.
-  Might resurface as a genuine finding with more data or a different
-  control — SELIC already did, partially, once trend was added.
+  Can resurface as a genuine finding with the right control — SELIC does, partially,
+  once trend is included.
 - **Leakage** (`is_demand_censored_flag`, this task): shouldn't be fit at
   all, definitionally — never becomes usable in this form regardless of
   data volume or estimator choice.
@@ -148,11 +148,9 @@ collapsing all of it into "didn't work":**
   this estimator's within-entity identification requirement. Might become
   testable later, either with a different (non-fixed-effects) specification
   or if stock-snapshot density improves — this ties back to the
-  still-open stock-history-sparsity item flagged in Phase 1
+  stock-history-sparsity item flagged in Phase 1
   (`01_data_exploration_summary.md`, `OVERVIEW.md`'s stage-01 summary) and
-  should be logged in `10_frozen_feature_set.md` as: **stock-derived
+  is recorded in `10_frozen_feature_set.md` as: **stock-derived
   features remain untested for demand modeling, for reasons distinct from
-  (but related to) the original Phase 1 sparse-snapshot finding** — not
+  (but related to) the Phase 1 sparse-snapshot finding** — not
   "found to have no effect."
-
-**Stopping here per the checkpoint constraint in the approved plan.**

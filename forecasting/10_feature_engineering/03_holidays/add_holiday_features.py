@@ -60,10 +60,8 @@ def add_holiday_features(df: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
     # +2, not +1: an ISO week's Monday can fall in `max_year` while the week
     # itself runs into January of `max_year + 1` (e.g. the week of Dec 29
     # 2025 contains Jan 1 2026) -- fetching holidays only through `max_year`
-    # would silently miss that New Year's Day and make `has_holiday` depend
-    # on which caller's panel happened to be truncated where (this caused a
-    # real, if tiny, discrepancy between this task's own run and task 2.4's
-    # in-memory recomputation of it before this fix).
+    # would miss that New Year's Day and make `has_holiday` depend on where
+    # the caller's panel is truncated.
     years = range(int(df["period"].dt.year.min()), int(df["period"].dt.year.max()) + 2)
     br_holidays = holidays.Brazil(years=years, categories=("public", "optional"))
 

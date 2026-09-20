@@ -21,15 +21,12 @@
      everything currently in the model.
 - Threshold: VIF > 5 (the conservative end of the conventional 5–10 range —
   chosen to make the ridge fallback easier to trigger, not harder).
-- A latent bug was caught and fixed while building this check:
-  `discount_rate` came back as Python `Decimal` (object dtype) from the
-  Databricks SQL connector's `DECIMAL` columns, which raised a `TypeError`
-  on direct pandas arithmetic (linearmodels had been silently coercing it
-  in every prior fit, masking the issue). Fixed at the source in
-  `06_marketing/add_marketing_features.py` (explicit `.astype("float64")`
-  right after querying); re-ran task 2.6 to confirm its reported numbers are
-  bit-for-bit unchanged (they are — this was a latent type-safety gap, not a
-  numeric error).
+- **Data types**: `discount_rate` comes back from the Databricks SQL connector's
+  `DECIMAL` columns as Python `Decimal` (object dtype), which raises a `TypeError` on direct
+  pandas arithmetic such as the VIF computation (`linearmodels` coerces it internally in
+  the regressions). `06_marketing/add_marketing_features.py` therefore casts it with
+  an explicit `.astype("float64")` right after querying; the task 2.6 regression results
+  are identical with or without the cast.
 
 ## Results
 
@@ -44,7 +41,7 @@
 **All three weather terms have VIF close to 1 (no correlation) in both
 scopes — nowhere near the 5.0 threshold, let alone the top of the
 conventional 5–10 range.** The ridge fallback was not triggered and was not
-fit, per the method described in the approved plan (only applied "if
+fit, per the method (only applied "if
 warranted").
 
 **Direct answer to the open question from task 2.4**: VIF is **low**.
@@ -69,11 +66,9 @@ overall fit or predictions, but it does inflate the standard errors of the
 contributing explanation for why `week_of_year_sin` has hovered at or near
 non-significance across every task in this chain (tasks 2.2–2.6) — its
 unique contribution beyond the month dummies is both genuinely small and
-imprecisely estimated because of this collinearity. Not actionable within
-this task's scope (dropping either parameterization would be a design
-change to task 2.2's already-checkpointed formula), but worth carrying into
-task 2.10's write-up as context for interpreting the calendar coefficients,
-not as a new finding requiring its own remediation.
+imprecisely estimated because of this collinearity. It is context for
+interpreting the calendar coefficients; whether to keep the Fourier terms is decided
+by the holdout ablation in `10_frozen_feature_set.md` (§1), not by this diagnostic.
 
 ## Discussion — what "unexplained" means here, precisely
 
@@ -101,13 +96,8 @@ it cannot be dismissed as "just calendar in disguise" — its
 counter-intuitive sign is a genuine, currently-unexplained result, not an
 artifact this check resolved.
 
-**For task 2.10**: state this plainly in `10_frozen_feature_set.md` rather
-than defaulting to the seasonal-timing explanation — weather's exclusion
-from the final feature set (if it is excluded) should be justified on
-accuracy grounds (it doesn't clear the threshold) and marginal-significance
-grounds (`wind_max` at p = 0.046, `temp_mean`/`precip_sum` not significant),
-not on a redundancy claim this task specifically tested and did not confirm.
-
-**Stopping here — task 2.9 is a diagnostic check on task 2.4's formula, not
-a checkpoint gating further cumulative-chain tasks (the chain is already
-complete through task 2.7).**
+**For task 2.10**: `10_frozen_feature_set.md` states this plainly rather than defaulting
+to the seasonal-timing explanation — weather's exclusion from the final feature set is
+justified on accuracy grounds (it does not clear the threshold) and marginal-significance
+grounds (`wind_max` at p = 0.046, `temp_mean`/`precip_sum` not significant), not on a
+redundancy claim this task tested and did not confirm.

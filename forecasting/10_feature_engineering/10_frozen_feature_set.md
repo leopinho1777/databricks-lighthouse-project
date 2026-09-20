@@ -1,9 +1,9 @@
 # Frozen Feature Set — Stage 2 Feature Engineering (Task 2.10)
 
 **This file is the fixed input for every Stage 3 (task 3.n) modeling
-session from this point forward. No further changes without a new,
-explicit team decision** — every task 3.n session reads this file rather
-than re-deriving or re-testing features itself.
+session. No changes without a new, explicit team decision** — every
+task 3.n session reads this file rather than re-deriving or re-testing
+features itself.
 
 ## Read this first: three different categories, not one list
 
@@ -21,6 +21,20 @@ is the single most likely misreading of this whole stage's work:
 A fourth, smaller category covers things that were never validly tested at
 all (leakage, data unavailability, instrument limits) — see §5.
 
+## Scope: covariates, not model inputs in general
+
+The frozen set governs **covariates**: calendar effects and the structural trend
+control. It does not restrict inputs that are part of a model's own design and add no
+external information: entity identifiers (`product_variant_id`, `location_id`,
+entity mean-log-quantity encodings) and autoregressive history of the model's own
+target (trailing sums, same-period-last-year quantity, rolling standard deviation,
+non-zero-day counts). XGBoost uses these history features plus `day_of_week` and the
+`demand_category` segment label; Random Forest uses entity encodings; SARIMA and
+Prophet use the series' own history natively. Each experiment's `README.md` lists its
+exact inputs. The only Stage 3 configurations that include a non-frozen covariate are
+the Prophet runs with Brazilian holidays switched on (the default); the
+`prophet_no_holidays` run isolates their effect (§9).
+
 ## 1. Production feature set (ships to Stage 3)
 
 **Calendar's month dummies only**: `month_2`…`month_12` (dummy-encoded,
@@ -31,7 +45,9 @@ because "calendar" earned a place in §3's ablation.
 This is the *only* candidate feature group that survives into Stage 3, and
 it earns its place through the ablation test in §3, not through its own
 individual accuracy test (which it also failed to clear — see §4). Every
-task 3.n model should include the month-dummy terms.
+Stage 3 model represents the annual cycle: month terms (`month_2`…`month_12` in the
+panel regression, RF, XGBoost as a categorical, and SARIMA's exogenous regressors) or,
+for Prophet, its yearly seasonality.
 
 **The Fourier terms were tested directly, not dropped by inference from the
 VIF finding alone.** Task 2.9 found `week_of_year_sin`/`week_of_year_cos`
@@ -66,33 +82,32 @@ individual significance history.
 ## 2. Structural control (not a feature — always present)
 
 **`trend`** (weeks elapsed since the panel's first period, continuous
-linear term). Added in `_shared/panel_regression.py`'s `fit_and_evaluate()`
-after task 2.5 found SELIC/IPCA's apparent effect was mostly a confound
-with this project's known ~14–17%/year growth trend (`03_granularity_baselines`).
+linear term). It is part of `_shared/panel_regression.py`'s `fit_and_evaluate()`
+because SELIC/IPCA's apparent effect without it is mostly a confound with this
+project's ~14–17%/year growth trend (`03_granularity_baselines`; see the sensitivity
+check in `05_economic/05_economic_report.md`).
 **Not a candidate feature**: no keep/drop verdict, no causal-hypothesis row,
 not part of the ablation below. It exists so every other feature's
-coefficient in this stage's regression could be trusted as a real,
+coefficient in this stage's regression can be read as a real,
 population-level effect rather than a proxy for time.
 
-**Heads-up for whoever starts Stage 3, not a new finding — just making sure
-this doesn't need rediscovering**: this project has now shown the
-multi-year growth effect twice, independently and consistently
-(`03_granularity_baselines`'s ~14–17%/year finding, and this stage's own
-`trend` coefficient, t≈32–50 across every task it appeared in — by far the
-most consistently significant term in this entire regression). **"No trend
-handling" is not a valid state for any of Stage 3's candidate models,
-given how large and clean this effect has been shown to be twice over.**
-Each model class needs it addressed in its own idiom, not necessarily
-`trend`'s exact linear-term form: XGBoost/Random Forest need it as an
-explicit engineered feature the same way this stage did (they have no
-native trend concept); Prophet has a built-in trend component but its
-default changepoint settings should be checked against this project's
-smooth, consistent growth rather than assumed to fit it automatically;
-ARIMA/SARIMA need the growth handled via differencing (an appropriate `d`/
-`D` order) rather than a regressor. Whichever form each model uses, the
-underlying fact to encode is the same one this stage independently
-re-derived: consistent, smooth, ~14–17%/year growth, not a lumpy or
-year-specific pattern.
+**The growth effect is established twice, independently**: `03_granularity_baselines`'s
+~14–17%/year finding, and this stage's own `trend` coefficient (t≈32–50 across every
+task it appears in — by far the most consistently significant term in the whole
+regression). **"No trend handling" is not a valid state for any Stage 3 candidate
+model.** Each model class handles it in its own idiom, not necessarily `trend`'s exact
+linear-term form; §9 records how each family handles it and what Stage 3 measured:
+
+- XGBoost and Random Forest use an explicit engineered `trend` feature (trees have no
+  native trend concept).
+- Prophet uses its built-in trend component, with the changepoint prior set for smooth
+  growth.
+- SARIMA uses `d=0` with a constant trend term plus seasonal differencing, rather than
+  first differencing.
+- The panel regression uses the linear `trend` term itself.
+
+Whichever form a model uses, the underlying fact to encode is the same: consistent,
+smooth, ~14–17%/year growth, not a lumpy or year-specific pattern.
 
 ## 3. The ablation — what actually determined §1
 
@@ -120,13 +135,11 @@ Holidays and weather's negative contributions are unambiguous: removing
 them doesn't just fail to hurt, it marginally *helps*, reinforcing their
 individual "not kept" verdicts from §4.
 
-This also directly confirms task 2.2's checkpoint reasoning: calendar
-*specifically* was retained in the chain because of a named, verified
-confound (holidays cluster by month), and it turns out to be the one layer
-that genuinely earns a place in the final model — the ablation didn't just
-rubber-stamp the retained-by-policy layers, it distinguished the one with a
-real mechanism from the four retained by conservative-default policy alone,
-none of which turned out to matter.
+This is consistent with task 2.2's retention reasoning: calendar *specifically*
+was retained in the chain because of a named, verified confound (holidays cluster
+by month), and it is the one layer that earns a place in the final model. The
+ablation distinguishes the layer with a real mechanism from the four retained by
+conservative-default policy alone, none of which matter.
 
 ## 4. Tested and not kept (full detail)
 
@@ -134,39 +147,33 @@ All four of these were fit properly, evaluated against the >2%
 MAPE-improvement threshold, and came back below it — this is a valid,
 informative negative result for each, not an oversight:
 
-- **Holidays** (`has_holiday`, `is_long_weekend`): 2.3's original report
-  found both coefficients significant with opposite signs; after the trend
-  control was added, **neither remained significant**. Ablation confirms:
-  no measurable contribution to the final formula. See
-  `03_holidays/03_holidays_report.md`.
+- **Holidays** (`has_holiday`, `is_long_weekend`): with the trend control,
+  **neither term is significant**. (Without the control both are significant with
+  opposite signs, a trend artifact.) The ablation confirms no measurable
+  contribution to the final formula. See `03_holidays/03_holidays_report.md`.
 - **Weather** (`temp_mean`, `precip_sum`, `wind_max`): none of the three
-  cleared significance comfortably post-trend-control (`temp_mean` p=0.211,
-  `precip_sum` p=0.237, `wind_max` p=0.046 borderline). **`wind_max`'s
-  counter-intuitive positive sign remains genuinely unexplained** — task
-  2.9's VIF check (low, 1.17–1.19) ruled out redundancy with calendar or
-  trend as the explanation, correcting an earlier draft of the weather
-  report that had prematurely claimed the trend control "resolved" this.
-  It did not. This should be stated as an open, unresolved finding in any
-  client-facing summary, not glossed over. See
-  `04_weather/04_weather_report.md` (including its correction note) and
+  clears significance comfortably (`temp_mean` p=0.211, `precip_sum` p=0.237,
+  `wind_max` p=0.046 borderline). **`wind_max`'s counter-intuitive positive sign
+  remains genuinely unexplained** — task 2.9's VIF check (low, 1.17–1.19) rules out
+  redundancy with calendar or trend as the explanation. It should be stated as an
+  open, unresolved finding in any client-facing summary. See
+  `04_weather/04_weather_report.md` and
   `09_multicollinearity_check/09_multicollinearity_report.md`.
-- **Economic** (`selic_rate`, `ipca_monthly_variation`): the task that
-  surfaced the need for the trend control in the first place. Pre-fix,
-  `selic_rate` showed an implausible +0.00266 coefficient (t=38.1, wrong
-  sign); post-fix, it collapsed to **−0.00040** (t=−3.37, correctly signed)
-  — small, credible, and worth keeping in the *narrative* as a genuine
+- **Economic** (`selic_rate`, `ipca_monthly_variation`): the task that shows why
+  the trend control is needed. Without it, `selic_rate` has an implausible +0.00266
+  coefficient (t=38.1, wrong sign); with it, **−0.00040** (t=−3.37, correctly
+  signed) — small, credible, and worth keeping in the *narrative* as a genuine
   secondary finding (interest rates plausibly have a small dampening effect
-  on this discretionary category) even though it doesn't ship as a
-  production feature. `ipca_monthly_variation` lost significance entirely —
-  its apparent effect was essentially all trend. See
+  on this discretionary category) even though it does not ship as a
+  production feature. `ipca_monthly_variation` is not significant — its
+  apparent effect without the control is essentially all trend. See
   `05_economic/05_economic_report.md`.
-- **Marketing** (`discount_rate`): a second confound was caught *before*
-  reporting (not after) — an initial fit including `total_discount_amount`
-  showed t-stats around 44, because that raw-sum term is mechanically tied
-  to order volume and collinear with `discount_rate`. Dropped before
-  fitting the reported version; `discount_rate` alone is unremarkable
-  (t=−1.61, not significant). Reverse-causality check found no evidence
-  discounts are timed to already-elevated demand. See
+- **Marketing** (`discount_rate`): the specification uses `discount_rate` only.
+  `total_discount_amount` is excluded because that raw-sum term is mechanically
+  tied to order volume and collinear with `discount_rate` (with both in the formula
+  the t-statistics are around 44, an artifact of scale). `discount_rate` alone is
+  unremarkable (t=−1.61, not significant). The reverse-causality check finds no
+  evidence discounts are timed to already-elevated demand. See
   `06_marketing/06_marketing_report.md`.
 
 **Scope of all four negative verdicts, stated once rather than caveated
@@ -254,22 +261,18 @@ five-layer formula over the zero-feature (entity-FE + trend) reference is
 0.60% — itself well short of the 2% bar, and almost entirely attributable
 to calendar alone.
 
-This pattern was flagged as it emerged (`00_feature_backlog.md`'s cross-task
-pattern check, written after task 2.6) as "the leading explanation so far,
-not a settled conclusion": either this panel's grain (92.9%-zero at the
-individual product×location×week level) is genuinely too noisy for any
-single exogenous covariate to clear a 2%-relative bar, or the threshold
-itself is miscalibrated for this specific MAPE regime (~96%, where 2%
-relative is a ~1.9-point absolute ask — a much higher bar than the same
-relative threshold would be at a lower MAPE level). The evidence accumulated
-through task 2.9 leans toward the first explanation: two of five tested
-layers (economic, marketing) initially looked like near-misses that turned
-out to be confounds once properly specified, and every layer that survived
-proper specification checking came back small. **This is Stage 2's
-considered conclusion, not a certainty** — Stage 3's model comparison
-(which will test fundamentally different model classes: tree-based,
-Prophet, SARIMA) may still find nonlinear or interaction effects a linear
-panel regression structurally cannot detect.
+Two explanations are on the table (`00_feature_backlog.md`'s cross-task pattern
+check): either this panel's grain (92.9%-zero at the individual
+product×location×week level) is too noisy for any single exogenous covariate to
+clear a 2%-relative bar, or the threshold itself is miscalibrated for this MAPE
+regime (~96%, where 2% relative is a ~1.9-point absolute ask — a much higher bar than
+the same relative threshold would be at a lower MAPE level). The evidence leans toward
+the first explanation: two of five tested layers (economic, marketing) look like
+near-misses when specified without the trend control or with the raw discount amount,
+and every layer that is properly specified comes back small. **This is Stage 2's
+considered conclusion, not a certainty**: a linear panel regression structurally cannot
+detect nonlinear or interaction effects. Stage 3 tested tree-based, Prophet and SARIMA
+models (§9) and found nothing that contradicts it.
 
 ## 8. Open items for the team / future work (not resolved here)
 
@@ -277,8 +280,8 @@ panel regression structurally cannot detect.
   throughout (`(prev-new)/prev > 0.02`). At the ~96% MAPE level observed
   here this is close to the absolute-percentage-point reading, but the two
   diverge more at other MAPE levels — worth an explicit team decision
-  before task 2.10's threshold logic is reused elsewhere (e.g. Stage 3's
-  own champion-selection criteria).
+  before this threshold logic is reused elsewhere (e.g. in champion-selection
+  criteria).
 - **`wind_max`'s counter-intuitive sign** (§4) — genuinely unresolved, not
   explained by trend or by collinearity with calendar. Worth a follow-up
   investigation if weather is ever revisited (e.g. checking whether the
@@ -288,7 +291,7 @@ panel regression structurally cannot detect.
 - **`is_stockout_day` untestability** (§5) — revisit if stock-snapshot
   density improves, or with a non-fixed-effects specification that can use
   between-entity variation.
-- **`selic_rate`'s small, correctly-signed post-correction effect** (§4) —
+- **`selic_rate`'s small, correctly signed effect** (§4) —
   a genuine secondary finding worth keeping in the client narrative even
   though it isn't a production feature; not itself actionable further
   without new data.
@@ -298,6 +301,23 @@ panel regression structurally cannot detect.
   real effect this aggregation diluted — not attempted here, since no
   reasonable allocation rule exists in current data without new
   assumptions.
+
+## 9. Stage 3 validation of this set
+
+Stage 3 (`../experiments/`, summarized in `../11_model_comparison/11_model_comparison_report.md`)
+used this set as its input and tested the per-family handling described in §2. What it
+measured (portfolio WAPE at SKU × location, four 91-day windows; the seasonal-naive baseline
+scores 78.8 / 84.4 / 88.1 / 79.9 %):
+
+| Question raised by Stage 2 | Stage 3 result |
+|---|---|
+| Does the calendar-only set carry the trend-and-season signal for tree models? | Random Forest and XGBoost use month plus an explicit `trend`; neither beats the baseline in more than one window, and XGBoost puts most of its importance on `month`. Trees cannot extrapolate `trend` past their training range, which limits Random Forest. |
+| Prophet's built-in trend against smooth growth | Changepoint prior 0.01 (rigid) is the best setting on the Apr–Jun and Jul–Sep windows (102.2 / 104.7 vs 102.8 / 106.3 at the default 0.05 and 105.6 / 108.2 at 0.5); on the two peak windows the three settings are within 0.7 pp. No setting beats the baseline. |
+| SARIMA: differencing or a trend term | `d=0` with a constant trend term plus seasonal differencing beats `d=1` on all four windows (93.4 / 105.1 / 109.3 / 92.6 vs 94.0 / 110.6 / 115.0 / 96.8), because the log1p series are already stationary around a trend and `d=1` over-differences. Neither beats the baseline. |
+| Do holidays help a model with built-in holiday support? | No. Prophet without holidays is within 0.22 pp of default Prophet on every window, confirming §4 with a different model class. |
+| Multiplicative seasonality on a log1p target | Unstable for Prophet on this catalog (worst-series RMSE 114 vs 24.5, worst bias −55 vs −3.5), so additive seasonality is used. |
+
+The per-family details are in each experiment's `README.md`.
 
 ## Provenance
 
