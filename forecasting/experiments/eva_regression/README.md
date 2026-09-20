@@ -1,10 +1,28 @@
-# Panel regression under the Stage 3 protocol (task 3.n)
+# Panel regression under the Stage 3 protocol (task 3.1)
 
-Stage 2's specification — `log1p(qty) ~ month_2..month_12 + trend` with entity
-fixed effects per (product_variant_id, location_id) — refit once per 91-day
-window and scored through `experiments/_shared/evaluate.py`. Two runs, both in
-`/Shared/02_model_comparison`: `panel_regression_fe_trend_month` and
-`panel_regression_fe_trend_month_smearing`.
+The Stage 2 specification — `log1p(qty) ~ month_2..month_12 + trend` with entity
+fixed effects per (product_variant_id, location_id), estimated with
+`linearmodels.PanelOLS(entity_effects=True)` — refit once per 91-day window and
+scored through `experiments/_shared/evaluate.py`. This is the Stage 3 linear model:
+a log-linear fixed-effects regression rather than a scikit-learn `LinearRegression`.
+Two runs, both in `/Shared/02_model_comparison`: `panel_regression_fe_trend_month`
+(uncorrected) and `panel_regression_fe_trend_month_smearing` (with Duan's smearing
+correction).
+
+## Running it
+
+```bash
+uv sync --dev --group forecasting
+uv run python forecasting/experiments/eva_regression/run_panel_regression.py               # uncorrected run
+SMEARING=1 uv run python forecasting/experiments/eva_regression/run_panel_regression.py    # smearing run
+SAMPLE_ENTITIES=200 uv run python forecasting/experiments/eva_regression/run_panel_regression.py   # mechanics check
+```
+
+The scripts read the scratch table `<catalog>.<dev_schema>_forecasting_scratch.fact_demand_daily`
+(`../../02_schema_design/build_prototype.py`). Outputs are prefixed with the run name in `output/`:
+`_window_totals.csv` (input to `../../11_model_comparison`), `_baseline_comparison.csv`,
+`_portfolio_metrics.csv`, `_portfolio_metrics_category.csv` and `_per_series_metrics.csv`.
+`SAMPLE_ENTITIES` restricts the run to a subset for a fast check; its results are not comparable with the baseline.
 
 **Headline: the regression does not beat the seasonal naive baseline at SKU x
 location.** It wins one window of four, and only after a bias correction that
@@ -38,7 +56,7 @@ Per series, across the four windows:
 | No correction | 6.378 | 5.789 | 3.626 |
 | Smearing | 5.737 | 4.792 | 1.163 |
 
-## 1. The uncorrected run under-forecasts by ~71%, and that is a known artefact
+## 1. Retransformation bias: the uncorrected run under-forecasts by ~71%
 
 Window 1 predicted 13,181 units against 46,163 actual. This is not the model
 failing to see demand: it is fitting on `log1p(qty)` and predicting `expm1(x'b)`,
@@ -47,18 +65,17 @@ which estimates the conditional **median**, not the mean. On a catalog where
 frequently 0 while its mean is not, so the gap is structural and predictable
 from the specification alone.
 
-Stage 2 never surfaced this because it reported MAPE on weekly values, where a
-proportional under-prediction is diluted across 92.9% zero rows. Summing into a
-91-day window total — what this protocol scores — makes it immediately visible.
-**This is an argument for the window-total protocol itself**, not only a finding
-about this model.
+Stage 2's weekly MAPE hides this, because a proportional under-prediction is
+diluted across 92.9% zero rows. Summing into a 91-day window total — what this
+protocol scores — makes it immediately visible. **This is an argument for the
+window-total protocol itself**, not only a finding about this model.
 
-## 2. Duan's smearing estimator fixes the aggregate and breaks the seasons
+## 2. Duan's smearing estimator corrects the aggregate but over-corrects the low season
 
 The standard non-parametric correction: multiply `exp(x'b)` by the mean
 exponentiated training residual, then subtract 1. It assumes the residual
-distribution out of sample matches the training one — which is why it was tested
-rather than applied silently.
+distribution out of sample matches the training one, so it is reported next to the
+uncorrected run rather than replacing it.
 
 It does what it claims: mean bias per series drops from 3.63 to 1.16 units, RMSE
 mean from 6.38 to 5.74, and window 1 goes from losing by 8.3pp to **beating the
@@ -74,7 +91,7 @@ The reading: a single smearing factor is estimated across the whole training
 panel and applied uniformly, so it scales peak and trough alike. The correction
 is sized for the average week, which over-corrects the quiet ones. A
 season-specific (or segment-specific) smearing factor is the obvious follow-up,
-untested here for time reasons.
+untested here.
 
 Note the two metrics disagree on purpose, and both are reported per the protocol:
 per-series RMSE and bias improve while portfolio WAPE worsens in two windows.
@@ -93,14 +110,13 @@ same one measured at the grain the business can act on.
 
 ## 4. Caveats a reviewer should know
 
-- **The `actual` drifted.** Total demand per window in PROD is 0.55%-1.67% higher
-  than when `09_baseline_close_out` computed the baseline — verified with three
-  queries: `date_id` and `date(placed_at)` agree exactly, and this scratch table
-  matches PROD exactly, so the movement is in PROD itself (retroactive orders
-  arriving through ingestion). `evaluate.py`'s 0.5% tolerance warning fires on
+- **Actual demand differs from the baseline's.** Total demand per window in PROD is
+  0.55%-1.67% higher than when `09_baseline_close_out` computed the baseline —
+  verified with three queries: `date_id` and `date(placed_at)` agree exactly, and this
+  scratch table matches PROD exactly, so the difference is in PROD itself (retroactive
+  orders arriving through ingestion). `evaluate.py`'s 0.5% tolerance warning fires on
   every run above, correctly. It does not change the ranking here (the gaps are
-  8-44pp) but the baseline should be re-run on the current snapshot before the
-  final champion call.
+  8-44pp); re-running the baseline on the current snapshot would remove it.
 - **Target definition.** This run trains and scores on `qty_sold_gross`
   (`quantity` on `paid`/`confirmed` orders), matching the baseline's own
   definition. Stage 2's `load_weekly_panel()` uses `qty_sold_net`.
@@ -108,13 +124,13 @@ same one measured at the grain the business can act on.
   Weekly predictions are prorated by how many of each week's days fall inside it
   (`pred_week * days_inside / 7`), verified to sum to exactly 91 days in all four
   windows.
-- **No trend-free variant was run.** `10_frozen_feature_set.md` rules out "no
-  trend handling" as a valid state, so it was not tested as an option.
+- **No trend-free variant.** `10_frozen_feature_set.md` rules out "no trend handling"
+  as a valid state, so it is not tested as an option.
 
 ## 5. What would be worth trying next
 
 1. A season- or segment-specific smearing factor, since the single global factor
-   demonstrably over-corrects the low season.
+   over-corrects the low season.
 2. Dropping the log transform entirely (fit on raw counts, or a Poisson/negative
    binomial GLM) — the retransformation problem disappears rather than being
    corrected after the fact.

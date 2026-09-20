@@ -3,7 +3,7 @@
 
 The model itself is Stage 2's: `log1p(qty) ~ month_2..month_12 + trend` with
 entity fixed effects per (product_variant_id, location_id) series. What is new
-here is the evaluation, and that is the whole point of this session: Stage 2
+here is the evaluation, and that is the whole point of this script: Stage 2
 measured this regression as weekly MAPE against a single holdout year and
 against its own no-features reference, so its numbers cannot be compared with
 `00_baseline`'s champion. This script refits the same specification once per
@@ -28,10 +28,10 @@ Three choices worth knowing before reading the code:
    drift from the baseline's.
 
 3. **`expm1` of a log-scale prediction is a median, not a mean.** On an
-   intermittent catalog this is expected to under-forecast. It is a known
-   retransformation bias with a known correction (Duan's smearing estimator);
-   measure it first via the per-window bias column, then decide -- do not
-   pre-correct something that has not been observed yet.
+   intermittent catalog this under-forecasts. It is a known retransformation
+   bias with a known correction (Duan's smearing estimator, `SMEARING=1`); the
+   uncorrected and smearing runs are kept side by side so the effect is visible
+   per window.
 """
 
 import importlib.util
@@ -71,9 +71,9 @@ HORIZON_DAYS = 91
 EXPERIMENT = "/Shared/02_model_comparison"
 
 # Duan's smearing estimator, off by default so the uncorrected run stays on
-# record as the thing that motivated it. Fitting on log1p(y) and predicting
-# expm1(x'b) estimates the conditional MEDIAN, not the mean: the first full
-# run under-forecast total demand by ~71%. Smearing multiplies the prediction
+# record next to it. Fitting on log1p(y) and predicting expm1(x'b) estimates
+# the conditional MEDIAN, not the mean: the uncorrected run under-forecasts
+# total demand by ~71%. Smearing multiplies the prediction
 # by the average exponentiated training residual, the standard non-parametric
 # correction (Duan 1983) -- it assumes the residual distribution is the same
 # out of sample, which is why it is tested rather than assumed.
@@ -221,8 +221,8 @@ def log_to_mlflow(portfolio: pd.DataFrame, summary: pd.DataFrame, comparison: pd
 
     # Point the SDK at the same workspace `db_connection.py` authenticates
     # against. Without this, `databricks-cli` auth resolves whichever profile
-    # happens to be default in ~/.databrickscfg -- which on this machine is a
-    # different workspace entirely, and the run would land there silently.
+    # is default in ~/.databrickscfg, which may be a different workspace, and
+    # the run would land there silently.
     profile = _db._load_dev_profile()
     os.environ["DATABRICKS_HOST"] = f"https://{profile['host']}"
     if profile.get("token"):
@@ -309,8 +309,8 @@ if __name__ == "__main__":
     print(get_library_versions(["linearmodels", "pandas", "numpy"]))
 
     if not SAMPLE_ENTITIES:
-        # Prefixed by run name so the corrected run does not overwrite the
-        # uncorrected one -- both are evidence, and the pair is the finding.
+        # Prefixed by run name so the smearing run does not overwrite the
+        # uncorrected one -- the pair is the comparison.
         window_totals.to_csv(OUTPUT_DIR / f"{RUN_NAME}_window_totals.csv", index=False)
         results["portfolio"].to_csv(OUTPUT_DIR / f"{RUN_NAME}_portfolio_metrics.csv", index=False)
         results["per_series"].to_csv(OUTPUT_DIR / f"{RUN_NAME}_per_series_metrics.csv", index=False)
