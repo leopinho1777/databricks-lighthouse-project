@@ -93,6 +93,11 @@ _ESTILO = """
 [data-testid="stChatInput"] textarea { color: var(--texto); background: var(--card); }
 [data-testid="stChatInput"]:focus-within { border-color: var(--teal); }
 
+/* cartão de fontes */
+[data-testid="stExpander"] { background: var(--card); border: 1px solid var(--borda);
+  border-radius: 12px; margin-top: 0.4rem; }
+[data-testid="stExpander"] summary { color: var(--teal); font-weight: 600; }
+
 /* avatares */
 [data-testid="stChatMessageAvatarUser"], [data-testid="stChatMessageAvatarAssistant"] {
   background: var(--teal-soft); border: 1px solid #BFE0EA; }
@@ -101,7 +106,8 @@ _ESTILO = """
 st.markdown(_ESTILO, unsafe_allow_html=True)
 
 
-@st.cache_resource(show_spinner="Conectando ao índice e ao modelo...")
+# show_spinner=False: o único indicador de carregamento é o da própria caixa da resposta
+@st.cache_resource(show_spinner=False)
 def _carregar():
     """Instancia config, retriever, generator e logger uma única vez por processo."""
     cfg = Config.load()
@@ -110,10 +116,11 @@ def _carregar():
     return cfg, Retriever(cfg), Generator(cfg), logger
 
 
-def _responder(pergunta: str) -> str:
+def _responder(pergunta: str) -> tuple[str, str]:
     """Recupera trechos, gera a resposta e registra a interação (sem derrubar o chat).
 
-    Devolve só o texto para o cliente; o log guarda a resposta original com as fontes.
+    Devolve (texto, fontes): o texto sem o bloco "Fontes:" e as fontes separadas, para
+    aparecerem num cartão recolhível. O log guarda a resposta original.
     """
     cfg, retriever, generator, logger = _carregar()
     erro = None
@@ -142,12 +149,38 @@ def _responder(pergunta: str) -> str:
             lat_llm_ms=lat_llm,
             erro=erro,
         )
-    return _limpar_fontes(resposta)
+    texto, bloco = _separar_fontes(resposta)
+    return texto, _nomes_fontes(chunks, bloco)
 
 
-def _limpar_fontes(resposta: str) -> str:
-    """Remove o bloco final "Fontes:" da resposta exibida ao cliente."""
-    return _BLOCO_FONTES.sub("", resposta).strip()
+def _nome_fonte(fonte: str) -> str:
+    """Só o nome: "docs/arquitetura.md" -> "arquitetura.md"; tabela "cat.sch.tab" -> "tab"."""
+    fonte = (fonte or "").strip().replace("\\", "/")
+    if "/" in fonte:
+        return fonte.rsplit("/", 1)[-1]
+    if "information_schema" in fonte:
+        return "information_schema.columns"
+    return fonte.rsplit(".", 1)[-1]
+
+
+def _nomes_fontes(chunks, bloco: str) -> str:
+    """Lista (markdown) só com os nomes das fontes que o modelo citou na resposta."""
+    if not bloco:
+        return ""  # recusa ou resposta sem fontes
+    citados = [c.fonte for c in chunks if c.titulo and c.titulo.lower() in bloco.lower()]
+    if not citados:  # o modelo parafraseou o título: usa a "origem" escrita por ele
+        citados = re.findall(r"origem:\s*([^,)]+)", bloco)
+    nomes = list(dict.fromkeys(n for n in map(_nome_fonte, citados) if n))
+    return "\n".join(f"- {n}" for n in nomes)
+
+
+def _separar_fontes(resposta: str) -> tuple[str, str]:
+    """Separa o texto da resposta do bloco final "Fontes:" (devolvido sem o cabeçalho)."""
+    m = _BLOCO_FONTES.search(resposta)
+    if not m:
+        return resposta.strip(), ""
+    bloco = re.sub(r"^\s*[*_#]*\s*Fontes\s*:?[*_]*\s*", "", m.group(0), flags=re.IGNORECASE)
+    return resposta[: m.start()].strip(), bloco.strip()
 
 
 def _nome_usuario() -> str:
@@ -159,13 +192,20 @@ def _nome_usuario() -> str:
     return login.split("@")[0] or "Você"
 
 
-def _mensagem(role: str, nome: str, texto: str | None = None):
+def _fontes(caixa, fontes: str) -> None:
+    """Cartão recolhível (com a setinha) listando só as fontes usadas na resposta."""
+    if fontes:
+        caixa.expander("Fontes", expanded=False).markdown(fontes)
+
+
+def _mensagem(role: str, nome: str, texto: str | None = None, fontes: str = ""):
     """Desenha uma mensagem do chat com o nome do autor em negrito acima do texto."""
     avatar = AVATAR_BOT if role == "assistant" else AVATAR_USUARIO
     caixa = st.chat_message(role, avatar=avatar)
     caixa.markdown(f"**{nome}**")
     if texto is not None:
         caixa.markdown(texto)
+        _fontes(caixa, fontes)
     return caixa
 
 
@@ -191,7 +231,8 @@ cabecalho.markdown(_cabecalho(bool(st.session_state.mensagens)), unsafe_allow_ht
 
 # Reexibe o histórico da sessão (só visual)
 for m in st.session_state.mensagens:
-    _mensagem(m["role"], NOME_BOT if m["role"] == "assistant" else NOME_USUARIO, m["conteudo"])
+    _mensagem(m["role"], NOME_BOT if m["role"] == "assistant" else NOME_USUARIO,
+              m["conteudo"], m.get("fontes", ""))
 
 # Sugestões de pergunta só aparecem antes da primeira interação
 pergunta = None
@@ -212,6 +253,7 @@ if pergunta:
     _mensagem("user", NOME_USUARIO, pergunta)
     caixa = _mensagem("assistant", NOME_BOT)
     with caixa, st.spinner("Consultando os documentos..."):
-        resp = _responder(pergunta)
+        resp, fontes = _responder(pergunta)
     caixa.markdown(resp)
-    st.session_state.mensagens.append({"role": "assistant", "conteudo": resp})
+    _fontes(caixa, fontes)
+    st.session_state.mensagens.append({"role": "assistant", "conteudo": resp, "fontes": fontes})
