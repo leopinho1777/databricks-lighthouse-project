@@ -97,20 +97,16 @@ def time_prophet_fits(sample: pd.DataFrame, panel: pd.DataFrame, cutoff: pd.Time
     train = panel[panel["period"] <= cutoff - STRADDLE_LAG]
     horizon_periods = pd.date_range(cutoff + pd.Timedelta(days=1), periods=HORIZON_WEEKS, freq="W-MON")
     # Grouped once, not re-filtered per series with a boolean mask -- see train_prophet.py's
-    # run_walk_forward comment. A first live full-catalog run measured this filtering cost at
-    # ~92 of 155.8 real minutes, NOT captured by this pilot's original timed window (t0 used to
-    # start after the per-series selection). Fixed here too so a future re-run of this pilot
-    # measures the real per-iteration cost, not just Prophet's own fit+predict cost.
+    # run_walk_forward comment. The timed window below includes the per-series selection, so
+    # the pilot measures the real per-iteration cost, not just Prophet's own fit+predict cost.
     grouped_train = train.groupby(["product_variant_id", "location_id"])
 
     timings = []
     warmed_up = False
     for pv_id, loc_id, category in sample.itertuples(index=False):
-        # Timed from HERE, before series selection -- this pilot's original version started the
-        # clock after the (then boolean-mask) series filter, so it measured only Prophet's own
-        # cost and missed the per-series data-selection overhead entirely. get_group() is cheap
-        # after the one-time groupby, but timing it anyway keeps this pilot's number honestly
-        # representative of "cost per real loop iteration", not just "cost of Prophet itself".
+        # Timed from HERE, before series selection. get_group() is cheap after the one-time
+        # groupby, but timing it keeps this pilot's number representative of "cost per real loop
+        # iteration", not just "cost of Prophet itself".
         t0 = time.perf_counter()
         try:
             series_train = grouped_train.get_group((pv_id, loc_id))

@@ -68,7 +68,7 @@ MIN_TRAIN_POINTS = 10  # ~2.5 months of weekly history. Below this, or on any ot
 # forecast 0" convention train_random_forest.py documents for genuinely new entities, applied here
 # per-series. This threshold is NOT derived from this catalog's actual history depths; pilot_timing.py
 # reports the cold-start fallback rate on its own sample so this can be sanity-checked before the
-# full run inherits it (see notes.md).
+# full run inherits it (see README.md).
 
 PILOT_DECISION_CSV = OUTPUT_DIR / "timing_pilot_decision.csv"
 PILOT_SAMPLE_CSV = OUTPUT_DIR / "timing_pilot_sample_ids.csv"
@@ -101,7 +101,7 @@ _LAST_CUTOFF = get_cutoffs()[-1]
 _train_for_exemplar = panel[panel["period"] <= _LAST_CUTOFF - STRADDLE_LAG]
 _totals = _train_for_exemplar.groupby(["product_variant_id", "location_id"])["qty_sold_net"].sum().sort_values(ascending=False)
 EXEMPLAR_SERIES = _totals.index[0]  # (product_variant_id, location_id) tuple
-EXEMPLAR_VOLUME = float(_totals.iloc[0])  # total training-period qty_sold_net, for notes.md/output
+EXEMPLAR_VOLUME = float(_totals.iloc[0])  # total training-period qty_sold_net, for README.md/output
 print(f"Exemplar series for decomposition plot: product_variant_id={EXEMPLAR_SERIES[0]}, "
       f"location_id={EXEMPLAR_SERIES[1]}, training-period volume={EXEMPLAR_VOLUME:.1f}")
 
@@ -140,11 +140,10 @@ def fit_and_forecast_one_series(
 
     future = pd.DataFrame({"ds": horizon_periods})
     forecast = model.predict(future)
-    # forecast["yhat"] is a pandas Series (model.predict() returns a DataFrame, unlike
+    # forecast["yhat"] is a pandas Series (Prophet's model.predict() returns a DataFrame, unlike
     # sklearn's model.predict() which returns a bare ndarray) -- np.expm1() on a Series stays
-    # a Series, so pandas' .clip(lower=...) is needed here, not numpy's .clip(min=...)
-    # train_random_forest.py needed (the exact opposite mistake: that script's model.predict()
-    # returns an ndarray, so pandas' lower= there raised instead).
+    # a Series, so pandas' .clip(lower=...) applies here, whereas train_random_forest.py's ndarray
+    # takes numpy's .clip(min=...).
     pred = np.expm1(forecast["yhat"]).clip(lower=0).to_numpy()
     return pred, model
 
@@ -181,14 +180,12 @@ def run_walk_forward(prophet_params: dict, use_holidays: bool, series_ids: pd.Da
         cold_starts_this_cutoff = 0
         rows = []
 
-        # Grouped ONCE per cutoff, then looked up per series via get_group() -- NOT re-filtered
+        # Grouped ONCE per cutoff, then looked up per series via get_group() -- not re-filtered
         # with a fresh boolean mask over the full (~2.1M-row) `train` frame inside the loop. A
-        # naive `train[(train["product_variant_id"] == pv_id) & (train["location_id"] == loc_id)]`
-        # per series is an O(panel_rows) scan repeated 6,054 times per cutoff (24,216 times total)
-        # -- measured to cost ~92 of a real run's 155.8 minutes (a first live run came in at
-        # ~2.45x the timing pilot's extrapolation before this fix; see notes.md's "Pilot
-        # extrapolation was wrong" section). Grouping once is O(panel_rows) total, then each
-        # lookup is cheap.
+        # per-series `train[(train["product_variant_id"] == pv_id) & (train["location_id"] == loc_id)]`
+        # is an O(panel_rows) scan repeated 6,054 times per cutoff (24,216 times total), which
+        # costs roughly as much as the fits themselves. Grouping once is O(panel_rows) total, then
+        # each lookup is cheap.
         grouped_train = train.groupby(["product_variant_id", "location_id"])
 
         for pv_id, loc_id in pairs.itertuples(index=False):
@@ -275,7 +272,7 @@ def load_run_scale() -> tuple[str, pd.DataFrame | None]:
         raise FileNotFoundError(
             "timing_pilot_decision.csv not found -- run `python pilot_timing.py` first. "
             "The run-scale (full catalog vs. stratified subsample) is an empirical decision, "
-            "not a default; see forecasting/experiments/eros_prophet/notes.md."
+            "not a default; see forecasting/experiments/eros_prophet/README.md."
         )
     decision_row = pd.read_csv(PILOT_DECISION_CSV).iloc[0]
     decision = decision_row["decision"]
@@ -443,7 +440,7 @@ if __name__ == "__main__":
         run_name = f"{args.full_catalog}_full_catalog_final"
         print(f"Running {run_name} at full catalog scale (6,054 series)...")
         log_run(cfg["params"], run_name, cfg["use_holidays"], mlflow, data_version, lib_versions, "full_catalog", None)
-        print(f"\n{run_name} logged under {EXPERIMENT_PATH}. See notes.md for the running log.")
+        print(f"\n{run_name} logged under {EXPERIMENT_PATH}. See README.md for the results.")
     else:
         selected = {name: RUNS[name] for name in (args.run_names or RUNS)}
         if run_scale == "stratified_subsample":
@@ -460,4 +457,4 @@ if __name__ == "__main__":
                 "    python train_prophet.py --full-catalog <best_run_name>\n"
                 "That run becomes the tracker's actual 3.4 MLflow-run deliverable."
             )
-        print(f"\n{list(selected)} logged under {EXPERIMENT_PATH}. See notes.md for the running log.")
+        print(f"\n{list(selected)} logged under {EXPERIMENT_PATH}. See README.md for the results.")
