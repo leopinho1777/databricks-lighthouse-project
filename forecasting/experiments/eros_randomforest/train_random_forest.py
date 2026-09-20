@@ -9,7 +9,7 @@
 # `entity_mean_log_qty` combined with `month_*` can implicitly approximate
 # that segmentation without an explicit label -- answered per run via the
 # post-hoc per-segment RMSE/bias join in `run_walk_forward()`, not just
-# asserted. See `notes.md` for the running log and results.
+# asserted. See `README.md` for the design and results.
 #
 # Scored against the Stage 3 protocol (`experiments/_shared/evaluate.py`):
 # refit per rolling-origin cutoff, sum weekly predictions into a 91-day
@@ -106,8 +106,8 @@ _segments["location_id"] = _segments["location_id"].astype(str)
 # <= cutoff - 6 days (guaranteeing the whole Mon-Sun week is <= cutoff); the horizon
 # starts at the first Monday strictly after cutoff (guaranteeing the whole week is
 # > cutoff). This costs at most a handful of days at each boundary relative to the
-# baseline's exact 91-day daily-grain window -- an accepted, documented approximation
-# of weekly-grain bucketing, not a leakage bug.
+# baseline's exact 91-day daily-grain window -- an accepted approximation of
+# weekly-grain bucketing that keeps every scored day strictly after the cutoff.
 
 
 # %%
@@ -157,7 +157,7 @@ def run_walk_forward(rf_params: dict, run_name: str) -> dict:
         # after the cutoff has no row in `future` (not in `pairs`), so its qty_pred is NaN
         # after the merge below; `.sum(skipna=True)` (pandas default) then reduces an
         # all-NaN entity-window to a predicted total of 0 -- a legitimate "no training
-        # history -> forecast 0", not a bug, same as run_genuine_baseline.py's COALESCE(0).
+        # history -> forecast 0", the same convention as run_genuine_baseline.py's COALESCE(0).
         actual = panel[panel["period"].isin(horizon_periods)]
         weekly = actual.merge(
             future[["product_variant_id", "location_id", "period", "qty_pred"]],
@@ -330,4 +330,4 @@ if __name__ == "__main__":
     for run_name, rf_params in selected.items():
         log_run(rf_params, run_name, mlflow, data_version, lib_versions)
 
-    print(f"\n{list(selected)} logged under {EXPERIMENT_PATH}. See notes.md for the running log.")
+    print(f"\n{list(selected)} logged under {EXPERIMENT_PATH}. See README.md for the results.")
