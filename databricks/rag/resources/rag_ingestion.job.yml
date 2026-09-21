@@ -1,7 +1,7 @@
-# Pipeline batch de preparação do RAG: gera o corpus, fatia em chunks e
-# dispara a sincronização do índice vetorial. Roda sob demanda (§6.1 da spec):
-# depois de reprocessar a modelagem, depois de editar docs/*.md, e antes de
-# testar no notebook `04_chat_teste`.
+# Pipeline completo do RAG, de ponta a ponta e idempotente: cria schema e tabelas, gera o
+# corpus, fatia em chunks, garante o índice vetorial, sincroniza e dá ao app acesso ao índice.
+# Um único `bundle run rag_ingestion` prepara o ambiente de quem fez o deploy, sem passos
+# manuais. Reexecute sempre que a modelagem ou os docs/*.md mudarem.
 resources:
   jobs:
     rag_ingestion:
@@ -18,9 +18,19 @@ resources:
           default: "${var.schema_gold}"
         - name: schema_rag
           default: "${var.schema_rag}"
+        - name: app_name
+          default: "${resources.apps.lh_nautical_rag.name}"
 
       tasks:
+        - task_key: setup
+          environment_key: default
+          notebook_task:
+            notebook_path: ../notebooks/00_setup.py
+            source: WORKSPACE
+
         - task_key: build_documents
+          depends_on:
+            - task_key: setup
           environment_key: default
           notebook_task:
             notebook_path: ../notebooks/01_build_documents.py
@@ -34,12 +44,28 @@ resources:
             notebook_path: ../notebooks/02_build_chunks.py
             source: WORKSPACE
 
-        - task_key: sync_index
+        - task_key: ensure_index
           depends_on:
             - task_key: build_chunks
           environment_key: default
           notebook_task:
+            notebook_path: ../notebooks/03_create_index.py
+            source: WORKSPACE
+
+        - task_key: sync_index
+          depends_on:
+            - task_key: ensure_index
+          environment_key: default
+          notebook_task:
             notebook_path: ../notebooks/03_sync_index.py
+            source: WORKSPACE
+
+        - task_key: grant_app
+          depends_on:
+            - task_key: sync_index
+          environment_key: default
+          notebook_task:
+            notebook_path: ../notebooks/03_grant_app.py
             source: WORKSPACE
 
       environments:
@@ -52,6 +78,7 @@ resources:
               # (from databricks.vector_search.client import VectorSearchClient).
               - databricks-ai-search
               - pyyaml>=6.0
+              - databricks-sdk>=0.60.0
 
       max_concurrent_runs: 1
       queue:

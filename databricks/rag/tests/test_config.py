@@ -27,10 +27,10 @@ def test_parametros_de_retrieval_e_chunking():
 
 def test_override_por_variavel_de_ambiente(monkeypatch):
     monkeypatch.setenv("RAG_CATALOG", "develop")
-    monkeypatch.setenv("RAG_SCHEMA_GOLD", "leo_analytics_marts")
+    monkeypatch.setenv("RAG_SCHEMA_GOLD", "exemplo_analytics_marts")
     cfg = Config.load(CONFIG_PATH)
     assert cfg.catalog == "develop"
-    assert cfg.gold("fct_sales").startswith("develop.leo_analytics_marts.")
+    assert cfg.gold("fct_sales").startswith("develop.exemplo_analytics_marts.")
 
 
 def test_config_incompleta_falha(tmp_path):
