@@ -12,10 +12,11 @@
 
 # COMMAND ----------
 
-# Defaults para execução INTERATIVA em dev.
-dbutils.widgets.text("catalog", "develop")
-dbutils.widgets.text("schema_gold", "gabriel_analytics_marts")
-dbutils.widgets.text("schema_rag", "gabrielhs336_rag")
+# Sem valor padrão: o job recebe estes parâmetros do bundle e, ao abrir o notebook na
+# interface, o _bootstrap os descobre sozinho a partir do job implantado (sem preencher nada).
+dbutils.widgets.text("catalog", "")
+dbutils.widgets.text("schema_gold", "")
+dbutils.widgets.text("schema_rag", "")
 
 # COMMAND ----------
 

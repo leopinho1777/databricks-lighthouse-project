@@ -1,8 +1,10 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # 03_create_index — cria o endpoint e o índice vetorial (roda 1x)
+# MAGIC # 03_create_index — garante o endpoint e o índice vetorial (idempotente)
+# MAGIC Task 4 do job `rag_ingestion`: cria o endpoint e o índice se ainda não existirem e
+# MAGIC espera ficarem prontos. A sincronização é a task seguinte (`03_sync_index`).
 # MAGIC Precisa do corpus COMPLETO em `rag.chunks` antes (capacidade do índice é
-# MAGIC provisionada pelo tamanho da tabela fonte na criação — §15.2).
+# MAGIC provisionada pelo tamanho da tabela fonte na criação).
 
 # COMMAND ----------
 
@@ -11,10 +13,11 @@
 
 # COMMAND ----------
 
-# Defaults para execução INTERATIVA em dev.
-dbutils.widgets.text("catalog", "develop")
-dbutils.widgets.text("schema_gold", "gabriel_analytics_marts")
-dbutils.widgets.text("schema_rag", "gabrielhs336_rag")
+# Sem valor padrão: o job recebe estes parâmetros do bundle e, ao abrir o notebook na
+# interface, o _bootstrap os descobre sozinho a partir do job implantado (sem preencher nada).
+dbutils.widgets.text("catalog", "")
+dbutils.widgets.text("schema_gold", "")
+dbutils.widgets.text("schema_rag", "")
 
 # COMMAND ----------
 
@@ -78,9 +81,3 @@ while time.time() < deadline:
     time.sleep(30)
 else:
     raise TimeoutError("índice não ficou pronto em 30 min — verifique o endpoint")
-
-# COMMAND ----------
-
-# 4) Primeira sincronização.
-index.sync()
-print("sync disparado — acompanhe até ONLINE na aba Vector Search")

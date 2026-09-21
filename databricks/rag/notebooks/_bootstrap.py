@@ -25,15 +25,37 @@ def _add_src_to_path() -> Path:
 
 BUNDLE_ROOT = _add_src_to_path()
 
-# Parâmetros: widgets do job (catalog/schema_gold/schema_rag) -> variáveis de ambiente
-# lidas por rag.config.Config.load().
-try:
-    for _w in ("catalog", "schema_gold", "schema_rag"):
-        _v = dbutils.widgets.get(_w)  # noqa: F821
-        if _v:
-            os.environ["RAG_" + _w.upper()] = _v
-except Exception:
-    pass  # rodando interativo, sem widgets: usa o rag_config.yaml como está
+# Parâmetros de ambiente -> variáveis RAG_* lidas por rag.config.Config.load().
+# Ordem: 1) widgets (o job os recebe do bundle); 2) variáveis já definidas;
+# 3) parâmetros do job implantado (uso interativo: nada a preencher).
+_PARAMS = ("catalog", "schema_gold", "schema_rag", "app_name")
+_valores = {}
+for _w in _PARAMS:
+    try:
+        _valores[_w] = dbutils.widgets.get(_w)  # noqa: F821
+    except Exception:
+        _valores[_w] = ""  # widget não definido neste notebook
+    _valores[_w] = _valores[_w] or os.environ.get("RAG_" + _w.upper(), "")
+
+if not all(_valores[k] for k in _PARAMS[:3]):
+    from databricks.sdk import WorkspaceClient
+    from rag.runtime import params_do_job_implantado
+
+    _do_job = params_do_job_implantado(WorkspaceClient())
+    for _w in _PARAMS:
+        _valores[_w] = _valores[_w] or _do_job.get(_w, "")
+
+_faltando = [k for k in _PARAMS[:3] if not _valores[k]]
+if _faltando:
+    raise RuntimeError(
+        "Não encontrei o job 'LH Nautical RAG - Ingestion' implantado neste workspace, "
+        "então não sei o catálogo/schemas (" + ", ".join(_faltando) + "). "
+        "Faça o deploy do bundle (databricks bundle deploy) e tente novamente."
+    )
+
+for _w, _v in _valores.items():
+    if _v:
+        os.environ["RAG_" + _w.upper()] = _v
 
 os.environ.setdefault("RAG_CONFIG", str(BUNDLE_ROOT / "config" / "rag_config.yaml"))
 

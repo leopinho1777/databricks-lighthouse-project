@@ -125,7 +125,7 @@ The system has two decoupled halves that meet at the Vector Search index: a **ba
 | Prompt builder | `src/rag/prompts.py` | System prompt, context serialization, canonical refusal message. Pure Python. |
 | Generator | `src/rag/generator.py` | Chat-completion call to the Foundation Model endpoint; skips the LLM when there is no context. |
 | Query logger | `src/rag/observability.py` | Non-blocking append to `rag.query_logs`. |
-| Ingestion job | `resources/rag_ingestion.job.yml` | 3-task DAG: `build_documents → build_chunks → sync_index`. |
+| Ingestion job | `resources/rag_ingestion.job.yml` | 6-task DAG: `setup → build_documents → build_chunks → ensure_index → sync_index → grant_app`. |
 | App | `app/app.py`, `resources/rag_app.app.yml` | Streamlit chat UI and its Databricks Apps resource definition. |
 | Notebooks | `notebooks/00…06` | Bootstrap, pipeline tasks, index creation, interactive chat, evaluation, smoke test. |
 
@@ -178,7 +178,7 @@ The stored `resposta` is the raw model output, including the `Fontes:` block (th
 
 ## 4. Offline pipeline
 
-The job `LH Nautical RAG - Ingestion` (`rag_ingestion`) runs on demand — after re-running the forecasting models, after editing `docs/*.md`, and before demonstrations. It uses serverless environment version 2 with `databricks-ai-search` and `pyyaml`, `max_concurrent_runs: 1`, queueing enabled, and failure e-mail notification.
+The job `LH Nautical RAG - Ingestion` (`rag_ingestion`) is the **single entry point** that prepares a deployment end to end: it creates the schema and tables, builds the corpus, ensures the vector index, synchronises it and grants the app read access to it. Every task is idempotent, so the same command works for a first deployment and for every later refresh — after re-running the forecasting models, after editing `docs/*.md`, and before demonstrations. It uses serverless environment version 2 with `databricks-ai-search`, `databricks-sdk` and `pyyaml`, `max_concurrent_runs: 1`, queueing enabled, and failure e-mail notification.
 
 Job parameters `catalog`, `schema_gold`, `schema_rag` are populated from bundle variables per target and exported by `notebooks/_bootstrap.py` as `RAG_CATALOG`, `RAG_SCHEMA_GOLD`, `RAG_SCHEMA_RAG`, which `Config.load()` applies over the YAML.
 
@@ -238,20 +238,23 @@ The chunk DataFrame is created with an explicit DDL schema (`CHUNK_DDL`): Spark 
 
 The chunk `MERGE` mirrors the document layer (`UPDATE` on match, `INSERT` on new, `DELETE` when not in source), so removing or shortening a document removes its stale chunks.
 
-### 4.3 Task 3 — `sync_index`
+### 4.3 Task `ensure_index` — endpoint and index (`03_create_index`)
 
-Calls `index.sync()` on the Delta Sync index. The index consumes the `chunks` Change Data Feed and applies inserts, updates and deletes incrementally, embedding text with the managed embedding endpoint.
-
-### 4.4 One-time index provisioning — `03_create_index`
-
-An interactive notebook, idempotent at every step:
+Idempotent at every step, so it is a no-op once the index exists:
 
 1. Create the endpoint `lh_nautical_vs` (`STANDARD`) if absent — the Free Edition allows a single endpoint, so existence is checked against `list_endpoints()`.
 2. Create the Delta Sync index over `rag.chunks` with `primary_key=chunk_id`, `embedding_source_column=texto`, `embedding_model_endpoint_name=databricks-qwen3-embedding-0-6b`, `pipeline_type=TRIGGERED` (skipped when the index already exists).
-3. Poll `WorkspaceClient().vector_search_indexes.get_index(...).status.ready` for up to 30 minutes. A new `STANDARD` endpoint takes roughly 10–20 minutes to provision, and `sync()` is rejected with "not ready" until then.
-4. Issue the first `sync()`.
+3. Poll `WorkspaceClient().vector_search_indexes.get_index(...).status.ready` for up to 30 minutes. A new `STANDARD` endpoint takes roughly 10–20 minutes to provision.
 
-The corpus must be complete in `rag.chunks` *before* this step because index capacity is provisioned from the source-table size at creation time.
+The corpus is already complete in `rag.chunks` at this point (the task depends on `build_chunks`), which matters because index capacity is provisioned from the source-table size at creation time.
+
+### 4.4 Task `sync_index` (`03_sync_index`)
+
+Calls `index.sync()`. The index consumes the `chunks` Change Data Feed and applies inserts, updates and deletes incrementally, embedding text with the managed embedding endpoint. The vector index only accepts a sync while its pipeline is idle, so the notebook waits and retries (up to 30 minutes) when it answers *not ready to sync* — for example right after the index was created, or while a previous sync is still running. A sync already in progress is treated as success.
+
+### 4.5 Task `grant_app` — app access to the index (`03_grant_app`)
+
+The app runs as its own service principal. The bundle grants it the warehouse, the model endpoint and `query_logs`; this task grants `SELECT` on `chunks_index`, resolving the principal from the deployed app (`app_name` is a job parameter taken from the bundle resource). It runs as the deploying user, who owns the schema, so no manual grant is needed — for any deployer, in any target, and again automatically if the app is recreated.
 
 **Why `TRIGGERED` rather than `CONTINUOUS`:** a continuous pipeline holds a streaming cluster permanently for a corpus that changes once per development cycle. Triggered sync runs only at the end of the ingestion job.
 
@@ -374,7 +377,7 @@ Reference measurements on the dev workspace (Serverless, Free Edition): retrieva
 | `config.env` | `RAG_CONFIG`, `RAG_CATALOG`, `RAG_SCHEMA_GOLD`, `RAG_SCHEMA_RAG` (from bundle variables per target), `RAG_WAREHOUSE_ID` (`value_from: warehouse`) | Same runtime override mechanism as the job. |
 | `requirements.txt` | at the **bundle root** | Databricks Apps installs dependencies from the root of `source_code_path`; a file under `app/` is ignored and the app fails with `ModuleNotFoundError: databricks.ai_search`. |
 
-**Identity and permissions.** The app runs as its own service principal, which the platform provisions per app. Its access is declared as app resources plus one manual grant:
+**Identity and permissions.** The app runs as its own service principal, which the platform provisions per app. Its access is declared as app resources plus one grant issued by the `grant_app` task of the ingestion job:
 
 | Access | Declared as | Level |
 |---|---|---|
@@ -382,17 +385,15 @@ Reference measurements on the dev workspace (Serverless, Free Edition): retrieva
 | LLM endpoint | `serving_endpoint` resource | `CAN_QUERY` |
 | `query_logs` | `uc_securable` (TABLE) | `MODIFY` |
 | Catalog / schema | implied by the securable | `USE CATALOG`, `USE SCHEMA` |
-| `chunks_index` | **manual grant** | `SELECT` |
+| `chunks_index` | job task `grant_app` | `SELECT` |
 
 Inside the app, `AISearchClient` cannot auto-detect the app identity (its auto-detection understands notebook/job contexts only), so `Retriever._build_client` reads `DATABRICKS_HOST`, `DATABRICKS_CLIENT_ID` and `DATABRICKS_CLIENT_SECRET` and authenticates explicitly with the service principal. `DATABRICKS_HOST` is injected without a URL scheme in Apps and is normalised to `https://…`. `WorkspaceClient()` (used by the generator and the logger) reads the same variables natively. In notebooks and jobs the client falls back to the ambient token.
 
-**Grant on the index** — required once per app service principal (and again if the app is recreated):
+**Grant on the index** — issued automatically by the `grant_app` task each time `rag_ingestion` runs (idempotent). The equivalent manual statement, if ever needed:
 
 ```sql
 GRANT SELECT ON TABLE <catalog>.<schema_rag>.chunks_index TO `<app service principal application id>`;
 ```
-
-or in the UI: **Catalog → `<catalog>` → `<schema_rag>` → `chunks_index` → Permissions → Grant**. The principal's application ID is shown in the app's details page (**Compute → Apps → `lh-nautical-rag`**).
 
 ---
 
@@ -445,7 +446,7 @@ or in the UI: **Catalog → `<catalog>` → `<schema_rag>` → `chunks_index` �
 
 Each developer therefore reads their own dbt marts and writes to their own RAG schema. If the dbt schema prefix differs from the workspace `short_name`, override with `--var schema_gold=<schema>`. `warehouse_id` is resolved by lookup of the **Serverless Starter Warehouse**. `dev_schema` is declared only to remain compatible with the `databricks.local.yml` shared across bundles.
 
-Interactive notebooks expose `catalog` / `schema_gold` / `schema_rag` as widgets with development defaults; the job overrides them through job parameters.
+Notebooks carry **no environment values** (no defaults for `catalog` / `schema_gold` / `schema_rag`). The job receives them as job parameters from the bundle; a notebook opened in the UI discovers them by itself from the deployed `LH Nautical RAG - Ingestion` job (`rag.runtime`), preferring the job created by the current user. Nothing has to be typed, and nothing is tied to a person or a workspace.
 
 ---
 
@@ -457,7 +458,7 @@ databricks/rag/
 ├── requirements.txt              # app dependencies (must sit at the source_code_path root)
 ├── pytest.ini
 ├── resources/
-│   ├── rag_ingestion.job.yml     # build_documents → build_chunks → sync_index
+│   ├── rag_ingestion.job.yml     # setup → documents → chunks → ensure_index → sync → grant_app
 │   └── rag_app.app.yml           # Databricks App (Streamlit) + resource grants
 ├── config/
 │   └── rag_config.yaml           # single source of names, models, parameters
@@ -468,20 +469,22 @@ databricks/rag/
 │   ├── retriever.py              # hybrid search, cut-off, dedup, app-aware auth
 │   ├── prompts.py                # system prompt, context serialization, refusal text
 │   ├── generator.py              # Foundation Model call
-│   └── observability.py          # fire-and-forget query logging
+│   ├── observability.py          # fire-and-forget query logging
+│   └── runtime.py                # discovers catalog/schemas/app from the deployed job
 ├── app/
 │   └── app.py                    # Streamlit UI
 ├── notebooks/
-│   ├── _bootstrap.py             # sys.path + widget → env → Config
-│   ├── 00_setup.py               # schema + 5 tables
-│   ├── 01_build_documents.py     # job task 1
-│   ├── 02_build_chunks.py        # job task 2
-│   ├── 03_sync_index.py          # job task 3
-│   ├── 03_create_index.py        # one-time endpoint + index provisioning
+│   ├── _bootstrap.py             # sys.path + widgets/deployed job → env → Config
+│   ├── 00_setup.py               # job task: schema + 5 tables
+│   ├── 01_build_documents.py     # job task
+│   ├── 02_build_chunks.py        # job task
+│   ├── 03_create_index.py        # job task: endpoint + index (idempotent)
+│   ├── 03_sync_index.py          # job task: sync (waits while the index is busy)
+│   ├── 03_grant_app.py           # job task: SELECT on the index for the app
 │   ├── 04_chat_teste.py          # interactive single-question test
 │   ├── 05_evaluate.py            # golden-set evaluation
 │   └── 06_smoke.py               # non-interactive integration checklist
-├── tests/                        # test_chunking, test_prompts, test_config (15 tests)
+├── tests/                        # test_chunking, test_prompts, test_config, test_runtime (20 tests)
 └── docs/                         # curated documents that enter the corpus
     ├── arquitetura.md
     ├── decisoes_tecnicas.md
@@ -494,32 +497,33 @@ databricks/rag/
 
 ## 10. Deployment
 
+The deployment is the same for any person and any workspace: **deploy, then run the ingestion job, then start the app.** No widget, grant or name has to be filled in by hand — the bundle supplies every environment value and the job prepares everything else.
+
 Prerequisites: Databricks CLI authenticated to the target workspace, a Serverless SQL Warehouse named *Serverless Starter Warehouse*, marts materialised in `schema_gold`, and the `databricks-*` serving endpoints listed in [§8](#8-configuration-reference) available in the workspace.
 
 ```bash
 databricks auth login
 cd databricks/rag
-databricks bundle validate --target dev
-databricks bundle deploy   --target dev
+databricks bundle validate --target <dev|prod>
+databricks bundle deploy   --target <dev|prod>
+databricks bundle run rag_ingestion   --target <dev|prod>   # schema, corpus, index, app access
+databricks bundle run lh_nautical_rag --target <dev|prod>   # start the app
 ```
 
-### First-time bootstrap (in this order)
+`rag_ingestion` runs all six tasks in order (`setup → build_documents → build_chunks → ensure_index → sync_index → grant_app`). On a brand-new workspace the `ensure_index` task waits for the vector endpoint to provision (10–20 minutes); afterwards the job takes minutes. Then open **Compute → Apps → `lh-nautical-rag`**.
 
-| Step | Action | Result |
-|---|---|---|
-| 1 | Run `notebooks/00_setup.py` | Schema and the 5 tables exist |
-| 2 | `databricks bundle run rag_ingestion --target dev` | `documents` and `chunks` populated. `sync_index` will fail on this first run because the index does not exist yet; that is expected |
-| 3 | Run `notebooks/03_create_index.py` | Endpoint + index created, first sync issued; wait for `ONLINE` |
-| 4 | `databricks bundle run lh_nautical_rag --target dev` | App deployed and started |
-| 5 | Grant `SELECT` on `chunks_index` to the app's service principal ([§6](#6-serving-layer--databricks-app)) | App can query the index |
+- **`dev`**: each developer reads their own dbt marts and writes to their own RAG schema, both derived from the workspace user. If the dbt schema prefix differs from the workspace user name, add `--var schema_gold=<schema>` to the commands above.
+- **`prod`**: fixed names (`lh_nautical` / `marts` / `rag`). The deploying user must be able to write to the target's `root_path`, and the people who should use the chat need `CAN_USE` on the app (**Compute → Apps → `lh-nautical-rag` → Permissions**, or a `permissions` entry in the bundle target).
+
+**Start and restart the app with `bundle run lh_nautical_rag`, not with the *Deploy* or *Start* buttons of the app page.** The start command and the environment variables live in the bundle; only `bundle run` sends them. A deployment made from the page only sees the source folder, finds no `app.yaml` and fails with *"No command to run and no Python file found"*. After changing `src/`, `app/`, `config/` or `requirements.txt`, run `bundle deploy` first: `bundle run` restarts the code that was last deployed.
 
 ### Steady-state refresh
 
 ```bash
-databricks bundle run rag_ingestion --target dev
+databricks bundle run rag_ingestion --target <dev|prod>
 ```
 
-Regenerates documents, chunks and syncs the index. No app redeploy is needed for corpus changes; redeploy the app only when `src/`, `app/`, `config/` or `requirements.txt` change.
+Regenerates documents and chunks, syncs the index and re-applies the app grant. No app redeploy is needed for corpus changes.
 
 ---
 
@@ -536,23 +540,24 @@ cd databricks/rag
 python -m pytest        # or: uv run pytest
 ```
 
-15 tests:
+20 tests:
 
 | Suite | Assertions |
 |---|---|
 | `test_chunking.py` | A card (`SEM_DIVISAO`) yields exactly one chunk · no chunk exceeds `max_chars` · every chunk starts with a breadcrumb containing the document title · markdown table rows are never split · `produto_id`, `loja_id`, `cd_id`, `fonte`, `atualizado_em` reach every chunk · chunk IDs are unique and ordered |
 | `test_prompts.py` | Context carries title/type/origin/date · empty context serializes to empty · the no-context message is a refusal · message structure (system + user) · the system prompt declares context-as-data |
+| `test_runtime.py` | Deployed-job discovery: dev-prefixed job name · preference for the current user's job · prod job without prefix · no job → empty · incomplete parameters ignored |
 | `test_config.py` | Qualified name resolution · retrieval/chunking parameters · environment override precedence · incomplete config fails validation (skipped if `pyyaml` is absent) |
 
 ### 11.2 Notebook validation in the Databricks UI
 
-Workspace path: **Workspace → Users → *your user* → `.bundle` → `rag` → `dev` → `files` → `notebooks`**. For each notebook: **Connect → Serverless → Run all**.
+Workspace path: **Workspace → Users → *your user* → `.bundle` → `rag` → `dev` → `files` → `notebooks`**. For each notebook: **Connect → Serverless → Run all**. Nothing needs to be filled in: the notebook discovers the catalog and schemas from the deployed job.
 
 | Notebook | Verifies |
 |---|---|
 | `00_setup` | Last cell lists 5 tables in `<catalog>.<schema_rag>` |
 | Job `[dev …] LH Nautical RAG - Ingestion` (**Workflows → Run now**) | `build_documents` and `build_chunks` succeed; task output shows document counts per `doc_type` and chunk-size summary |
-| `03_create_index` | **Compute → Vector Search**: endpoint `PROVISIONING → ONLINE`, index `ONLINE` with *N rows indexed* |
+| Job task `ensure_index` | **Compute → Vector Search**: endpoint `PROVISIONING → ONLINE`, index `ONLINE` with *N rows indexed* |
 | `04_chat_teste` | Edit the **`pergunta`** widget at the top and re-run only the *RESPONDER* cell; displays answer, latency, refusal flag and the retrieved chunks with scores. (Native widgets are used because the notebook's automatic auth token is injected only during regular cell execution, not inside widget callbacks.) |
 | `06_smoke` | Runs 5 canonical questions end-to-end and `assert`s the outcome (see checklist below) |
 | **Catalog → `<catalog>` → `<schema_rag>` → `documents` / `chunks` / `query_logs` → Sample Data** | Inspect rendered documents, chunk breadcrumbs and logged interactions |
@@ -645,15 +650,16 @@ Acceptance targets: refusal correctness = 1.00, numeric correctness = 1.00 (chec
 | Symptom | Cause | Resolution |
 |---|---|---|
 | `CANNOT_DETERMINE_TYPE` in `02_build_chunks` | Spark Connect cannot infer a fully-`NULL` column | Already handled: `CHUNK_DDL` passed to `createDataFrame` |
-| `BadRequest: … is not ready` on `index.sync()` | Endpoint still provisioning | `03_create_index` polls `status.ready` (30 min timeout); wait, then re-run |
-| `sync_index` task red on the first job run | Index not yet created | Expected; create the index with `03_create_index` |
+| `BadRequest: … is not ready` on `index.sync()` | Endpoint still provisioning, or a previous sync still running | `ensure_index` polls `status.ready`; `sync_index` waits and retries (30 min each). Re-run the job if a timeout is hit |
+| Notebook opened in the UI: *"Não encontrei o job 'LH Nautical RAG - Ingestion' implantado"* | The bundle was not deployed in this workspace | `databricks bundle deploy` (the deployed job supplies catalog and schemas) |
+| App page *Deploy*/*Start* fails with *"No command to run and no Python file found"* | The start command lives in the bundle, not in a file the page can read | Use `databricks bundle run lh_nautical_rag` |
 | `ModuleNotFoundError: openai` in notebooks | `openai` is absent from the serverless runtime | Notebooks 04/05/06 `%pip install "databricks-sdk[openai]" openai` |
 | `400 unknown field seed` | `databricks-llama-4-maverick` does not accept `seed` | Leave `llm.seed` unset |
 | `RuntimeError: Missing api_token` / `APIConnectionError` in `04_chat_teste` | LLM called from an `ipywidgets` callback outside normal cell execution | Use the widget + *RESPONDER* cell flow |
 | App: `ModuleNotFoundError: databricks.ai_search` | `requirements.txt` not at the root of `source_code_path` | Keep `requirements.txt` at the bundle root |
 | App: `InvalidInputException: Please specify either personal access token or service principal client ID and secret` | `AISearchClient()` cannot auto-detect an app identity | Handled by `Retriever._build_client` |
 | App: `MissingSchema: Invalid URL 'dbc-….cloud.databricks.com/oidc/v1/token'` | `DATABRICKS_HOST` has no scheme in Apps | Handled: `https://` is prepended |
-| App: permission denied on `chunks_index` | Service principal lacks `SELECT` on the index | Grant per [§6](#6-serving-layer--databricks-app) |
+| App: permission denied on `chunks_index` | Service principal lacks `SELECT` on the index (e.g. the app was recreated) | Re-run `databricks bundle run rag_ingestion` (task `grant_app`) |
 | App shows *"Ocorreu um erro ao consultar o assistente…"* | Any backend exception | Read `query_logs.erro` |
 | Old `fonte` values (workspace paths) in answers | `content_hash` covers `corpo` only, so metadata-only changes do not update rows | Truncate `documents`, re-run the job |
 | Answer cites nothing / refuses a known topic | Index empty or stale | Check `rag.chunks` row count and **Compute → Vector Search** status; re-run the job |
@@ -696,7 +702,7 @@ Condensed; the prose versions live in `docs/decisoes_tecnicas.md` and are themse
 
 **Add curated knowledge:** drop a `.md` file into `docs/` (use `#`/`##` headers — they become the breadcrumb) and re-run the job. A filename containing `arquitetura` is typed `arquitetura`; any other is typed `decisao_tecnica`.
 
-**Change the embedding model:** update `vector_search.embedding_model` and recreate the index (`03_create_index` against a removed index). Vectors are model-specific.
+**Change the embedding model:** update `vector_search.embedding_model` and recreate the index (delete the index, then re-run `rag_ingestion`). Vectors are model-specific.
 
 **Tune retrieval:** adjust `num_results`, `final_k`, `relative_score_threshold`, `max_chunks_per_doc` in `rag_config.yaml`, iterate in `04_chat_teste`, and confirm with `05_evaluate` — the stored `config_json` makes runs comparable.
 
