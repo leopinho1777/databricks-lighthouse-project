@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Portfolio goal
+This repo is a team trainee project that I'm presenting in my portfolio.
+Audience: recruiters and hiring managers (junior/mid developer roles).
+
 ## Project Configuration
 
 ### to-tickets skill
