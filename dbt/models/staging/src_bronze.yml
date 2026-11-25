@@ -1,678 +1,1004 @@
 sources:
   - name: bronze
+    description: Raw Bronze layer in Unity Catalog (lh_nautical.bronze). 1:1 copies of the SQL Server source tables, loaded incrementally or restored from the archive, plus ingestion control/audit tables and BCB exchange rates. Rows can be duplicated across ingestion batches, so staging models keep the latest version of each key.
     tables:
       - name: _ingestion_audit
+        description: "Ingestion audit log: one row per table run with status, duration, row count and error message."
         columns:
           - name: table_name
+            description: Source table that was ingested.
             data_type: string
           - name: status
+            description: "Outcome of the run: success or failed."
             data_type: string
           - name: row_count
+            description: Number of rows written (null on failure).
             data_type: bigint
           - name: duration_seconds
+            description: Wall-clock time of the ingestion in seconds.
             data_type: double
           - name: error_message
+            description: Exception message (null on success).
             data_type: string
           - name: ingested_at
+            description: UTC timestamp when the audit record was written.
             data_type: timestamp
 
       - name: _ingestion_control
+        description: "Ingestion control state: last processed incremental key (watermark) per source table."
         columns:
           - name: source_table
+            description: Source table being ingested.
             data_type: string
           - name: last_processed_id
+            description: Last incremental key value successfully processed.
             data_type: bigint
           - name: updated_at
+            description: UTC timestamp of the last update of this watermark.
             data_type: timestamp
 
       - name: addresses
+        description: Customer postal addresses, one row per address.
         columns:
           - name: id
+            description: Primary key of the address in the source system.
             data_type: int
           - name: customer_id
+            description: Customer who owns the address (customers.id).
             data_type: int
           - name: address_type
+            description: Type of address (e.g. billing or shipping).
             data_type: string
           - name: postal_code
+            description: Brazilian postal code (CEP) as loaded from the source.
             data_type: string
           - name: street
+            description: Street name.
             data_type: string
           - name: number
+            description: Street number.
             data_type: string
           - name: complement
+            description: Address complement (apartment, suite, etc.).
             data_type: string
           - name: district
+            description: District (neighborhood).
             data_type: string
           - name: city
+            description: City.
             data_type: string
           - name: state
+            description: State (UF).
             data_type: string
           - name: country
+            description: Country.
             data_type: string
           - name: is_primary
+            description: Whether this is the customer's primary address.
             data_type: boolean
           - name: _ingested_at
+            description: Timestamp when the row was loaded into Bronze. Used to keep the latest version of a key.
             data_type: timestamp
           - name: _source_origin
+            description: Name of the source table the row was loaded from.
             data_type: string
           - name: _batch_id
+            description: Identifier of the ingestion batch that loaded the row.
             data_type: string
 
       - name: attributes
+        description: Catalog of product attributes (e.g. color or size) that variants can have values for.
         columns:
           - name: id
+            description: Primary key of the attribute in the source system.
             data_type: int
           - name: name
+            description: Attribute name.
             data_type: string
           - name: data_type
+            description: Data type of the attribute's values.
             data_type: string
           - name: _ingested_at
+            description: Timestamp when the row was loaded into Bronze. Used to keep the latest version of a key.
             data_type: timestamp
           - name: _source_origin
+            description: Name of the source table the row was loaded from.
             data_type: string
           - name: _batch_id
+            description: Identifier of the ingestion batch that loaded the row.
             data_type: string
 
       - name: brands
+        description: Product brands.
         columns:
           - name: id
+            description: Primary key of the brand in the source system.
             data_type: int
           - name: name
+            description: Name.
             data_type: string
           - name: country
+            description: Country associated with the brand.
             data_type: string
           - name: is_active
+            description: Whether the record is active.
             data_type: boolean
           - name: created_at
+            description: Timestamp when the record was created in the source system.
             data_type: timestamp
           - name: updated_at
+            description: Timestamp of the last update in the source system.
             data_type: timestamp
           - name: _ingested_at
+            description: Timestamp when the row was loaded into Bronze. Used to keep the latest version of a key.
             data_type: timestamp
           - name: _source_origin
+            description: Name of the source table the row was loaded from.
             data_type: string
           - name: _batch_id
+            description: Identifier of the ingestion batch that loaded the row.
             data_type: string
 
       - name: categories
+        description: Product categories, organized as a hierarchy through parent_category_id.
         columns:
           - name: id
+            description: Primary key of the category in the source system.
             data_type: int
           - name: name
+            description: Name.
             data_type: string
           - name: slug
+            description: URL-friendly identifier of the category.
             data_type: string
           - name: parent_category_id
+            description: Parent category (categories.id); null for top-level categories.
             data_type: int
           - name: is_active
+            description: Whether the record is active.
             data_type: boolean
           - name: created_at
+            description: Timestamp when the record was created in the source system.
             data_type: timestamp
           - name: updated_at
+            description: Timestamp of the last update in the source system.
             data_type: timestamp
           - name: _ingested_at
+            description: Timestamp when the row was loaded into Bronze. Used to keep the latest version of a key.
             data_type: timestamp
           - name: _source_origin
+            description: Name of the source table the row was loaded from.
             data_type: string
           - name: _batch_id
+            description: Identifier of the ingestion batch that loaded the row.
             data_type: string
 
       - name: customers
+        description: Customers, individuals (PF) or companies (PJ). Contains personal data (LGPD).
         columns:
           - name: id
+            description: Primary key of the customer in the source system.
             data_type: int
           - name: person_type
+            description: PF for an individual or PJ for a company.
             data_type: string
           - name: legal_name
+            description: Registered legal name (personal data, LGPD).
             data_type: string
           - name: trade_name
+            description: Trade name, mainly for companies.
             data_type: string
           - name: tax_id
+            description: Brazilian tax identifier of the person or company (CPF/CNPJ; personal data, LGPD).
             data_type: string
           - name: state_registration
+            description: State tax registration number (Inscricao Estadual).
             data_type: string
           - name: email
+            description: Email address (personal data, LGPD).
             data_type: string
           - name: phone
+            description: Phone number (personal data, LGPD).
             data_type: string
           - name: is_active
+            description: Whether the record is active.
             data_type: boolean
           - name: created_at
+            description: Timestamp when the record was created in the source system.
             data_type: timestamp
           - name: updated_at
+            description: Timestamp of the last update in the source system.
             data_type: timestamp
           - name: _ingested_at
+            description: Timestamp when the row was loaded into Bronze. Used to keep the latest version of a key.
             data_type: timestamp
           - name: _source_origin
+            description: Name of the source table the row was loaded from.
             data_type: string
           - name: _batch_id
+            description: Identifier of the ingestion batch that loaded the row.
             data_type: string
 
       - name: employees
+        description: Employees, including salespeople and buyers. Contains personal data (LGPD).
         columns:
           - name: id
+            description: Primary key of the employee in the source system.
             data_type: int
           - name: full_name
+            description: Employee full name (personal data, LGPD).
             data_type: string
           - name: cpf
+            description: Brazilian individual taxpayer ID (personal data, LGPD).
             data_type: string
           - name: email
+            description: Email address (personal data, LGPD).
             data_type: string
           - name: role
+            description: Job role of the employee.
             data_type: string
           - name: primary_location_id
+            description: Main location the employee works at (locations.id).
             data_type: int
           - name: hire_date
+            description: Date the employee was hired.
             data_type: date
           - name: termination_date
+            description: Date the employment ended; null while employed.
             data_type: date
           - name: is_active
+            description: Whether the record is active.
             data_type: boolean
           - name: created_at
+            description: Timestamp when the record was created in the source system.
             data_type: timestamp
           - name: updated_at
+            description: Timestamp of the last update in the source system.
             data_type: timestamp
           - name: _ingested_at
+            description: Timestamp when the row was loaded into Bronze. Used to keep the latest version of a key.
             data_type: timestamp
           - name: _source_origin
+            description: Name of the source table the row was loaded from.
             data_type: string
           - name: _batch_id
+            description: Identifier of the ingestion batch that loaded the row.
             data_type: string
 
       - name: fiscal_invoices
+        description: Fiscal invoices (NF-e) issued for sales orders.
         columns:
           - name: id
+            description: Primary key of the fiscal invoice in the source system.
             data_type: int
           - name: order_id
+            description: Order the invoice was issued for (orders.id).
             data_type: int
           - name: nfe_number
+            description: NF-e invoice number.
             data_type: string
           - name: nfe_access_key
+            description: NF-e access key that identifies the invoice with the tax authority.
             data_type: string
           - name: series
+            description: NF-e series number.
             data_type: string
           - name: issued_at
+            description: Timestamp when the invoice was issued.
             data_type: timestamp
           - name: status
+            description: Current status of the record in the source system.
             data_type: string
           - name: total_amount
+            description: Total amount of the invoice.
             data_type: decimal(14, 2)
           - name: xml_storage_uri
+            description: Storage location of the invoice XML file.
             data_type: string
           - name: created_at
+            description: Timestamp when the record was created in the source system.
             data_type: timestamp
           - name: updated_at
+            description: Timestamp of the last update in the source system.
             data_type: timestamp
           - name: _ingested_at
+            description: Timestamp when the row was loaded into Bronze. Used to keep the latest version of a key.
             data_type: timestamp
           - name: _source_origin
+            description: Name of the source table the row was loaded from.
             data_type: string
           - name: _batch_id
+            description: Identifier of the ingestion batch that loaded the row.
             data_type: string
 
       - name: goods_receipt_items
+        description: Items received in each goods receipt, linked to the purchase order item they fulfil.
         columns:
           - name: id
+            description: Primary key of the goods receipt item in the source system.
             data_type: int
           - name: goods_receipt_id
+            description: Goods receipt the item belongs to (goods_receipts.id).
             data_type: int
           - name: purchase_order_item_id
+            description: Purchase order item being received (purchase_order_items.id).
             data_type: int
           - name: quantity_received
+            description: Quantity received.
             data_type: decimal(14, 3)
           - name: _ingested_at
+            description: Timestamp when the row was loaded into Bronze. Used to keep the latest version of a key.
             data_type: timestamp
           - name: _source_origin
+            description: Name of the source table the row was loaded from.
             data_type: string
           - name: _batch_id
+            description: Identifier of the ingestion batch that loaded the row.
             data_type: string
 
       - name: goods_receipts
+        description: "Goods receipt headers: deliveries of purchase orders received at a location."
         columns:
           - name: id
+            description: Primary key of the goods receipt in the source system.
             data_type: int
           - name: purchase_order_id
+            description: Purchase order being received (purchase_orders.id).
             data_type: int
           - name: received_by_employee_id
+            description: Employee who received the goods (employees.id).
             data_type: int
           - name: received_at
+            description: Timestamp when the goods were received.
             data_type: timestamp
           - name: notes
+            description: Free-text notes.
             data_type: string
           - name: created_at
+            description: Timestamp when the record was created in the source system.
             data_type: timestamp
           - name: _ingested_at
+            description: Timestamp when the row was loaded into Bronze. Used to keep the latest version of a key.
             data_type: timestamp
           - name: _source_origin
+            description: Name of the source table the row was loaded from.
             data_type: string
           - name: _batch_id
+            description: Identifier of the ingestion batch that loaded the row.
             data_type: string
 
       - name: locations
+        description: Physical locations (stores and warehouses) where sales, stock and receipts happen.
         columns:
           - name: id
+            description: Primary key of the location in the source system.
             data_type: int
           - name: name
+            description: Location name.
             data_type: string
           - name: location_type
+            description: Type of location (e.g. store or distribution center).
             data_type: string
           - name: postal_code
+            description: Brazilian postal code (CEP) as loaded from the source.
             data_type: string
           - name: street
+            description: Street name.
             data_type: string
           - name: number
+            description: Street number.
             data_type: string
           - name: complement
+            description: Address complement (apartment, suite, etc.).
             data_type: string
           - name: district
+            description: District (neighborhood).
             data_type: string
           - name: city
+            description: City.
             data_type: string
           - name: state
+            description: State (UF).
             data_type: string
           - name: country
+            description: Country.
             data_type: string
           - name: is_active
+            description: Whether the record is active.
             data_type: boolean
           - name: created_at
+            description: Timestamp when the record was created in the source system.
             data_type: timestamp
           - name: updated_at
+            description: Timestamp of the last update in the source system.
             data_type: timestamp
           - name: _ingested_at
+            description: Timestamp when the row was loaded into Bronze. Used to keep the latest version of a key.
             data_type: timestamp
           - name: _source_origin
+            description: Name of the source table the row was loaded from.
             data_type: string
           - name: _batch_id
+            description: Identifier of the ingestion batch that loaded the row.
             data_type: string
 
       - name: order_items
+        description: Sales order lines, one row per product variant sold in an order.
         columns:
           - name: id
+            description: Primary key of the order item in the source system.
             data_type: int
           - name: order_id
+            description: Order the item belongs to (orders.id).
             data_type: int
           - name: product_variant_id
+            description: Product variant sold (product_variants.id).
             data_type: int
           - name: quantity
+            description: Quantity sold.
             data_type: decimal(14, 3)
           - name: unit_price
+            description: Unit sale price.
             data_type: decimal(14, 2)
           - name: icms_rate
+            description: ICMS (state sales tax) rate, in percent.
             data_type: decimal(5, 2)
           - name: ipi_rate
+            description: IPI (federal excise tax) rate, in percent.
             data_type: decimal(5, 2)
           - name: line_total
+            description: Total amount of the line.
             data_type: decimal(14, 2)
           - name: _ingested_at
+            description: Timestamp when the row was loaded into Bronze. Used to keep the latest version of a key.
             data_type: timestamp
           - name: _source_origin
+            description: Name of the source table the row was loaded from.
             data_type: string
           - name: _batch_id
+            description: Identifier of the ingestion batch that loaded the row.
             data_type: string
 
       - name: orders
+        description: Sales order headers, one row per order.
         columns:
           - name: id
+            description: Primary key of the order in the source system.
             data_type: int
           - name: order_number
+            description: Business-facing order number.
             data_type: string
           - name: channel
+            description: Sales channel the order was placed through.
             data_type: string
           - name: customer_id
+            description: Customer who placed the order (customers.id).
             data_type: int
           - name: salesperson_id
+            description: Employee who handled the sale (employees.id).
             data_type: int
           - name: location_id
+            description: Location where the order was placed or fulfilled (locations.id).
             data_type: int
           - name: status
+            description: Order status (e.g. paid, confirmed, cancelled, draft).
             data_type: string
           - name: subtotal
+            description: Sum of the line amounts before discounts.
             data_type: decimal(14, 2)
           - name: discount_amount
+            description: Total discount applied to the order.
             data_type: decimal(14, 2)
           - name: total
+            description: Total amount.
             data_type: decimal(14, 2)
           - name: placed_at
+            description: Timestamp when the order was placed.
             data_type: timestamp
           - name: created_at
+            description: Timestamp when the record was created in the source system.
             data_type: timestamp
           - name: updated_at
+            description: Timestamp of the last update in the source system.
             data_type: timestamp
           - name: _ingested_at
+            description: Timestamp when the row was loaded into Bronze. Used to keep the latest version of a key.
             data_type: timestamp
           - name: _source_origin
+            description: Name of the source table the row was loaded from.
             data_type: string
           - name: _batch_id
+            description: Identifier of the ingestion batch that loaded the row.
             data_type: string
 
       - name: payments
+        description: Payments made against sales orders.
         columns:
           - name: id
+            description: Primary key of the payment in the source system.
             data_type: int
           - name: order_id
+            description: Order the payment belongs to (orders.id).
             data_type: int
           - name: method
+            description: Payment method.
             data_type: string
           - name: installments
+            description: Number of installments.
             data_type: smallint
           - name: amount
+            description: Payment amount.
             data_type: decimal(14, 2)
           - name: status
+            description: Current status of the record in the source system.
             data_type: string
           - name: paid_at
+            description: Timestamp when the payment was made.
             data_type: timestamp
           - name: created_at
+            description: Timestamp when the record was created in the source system.
             data_type: timestamp
           - name: updated_at
+            description: Timestamp of the last update in the source system.
             data_type: timestamp
           - name: _ingested_at
+            description: Timestamp when the row was loaded into Bronze. Used to keep the latest version of a key.
             data_type: timestamp
           - name: _source_origin
+            description: Name of the source table the row was loaded from.
             data_type: string
           - name: _batch_id
+            description: Identifier of the ingestion batch that loaded the row.
             data_type: string
 
       - name: product_suppliers
+        description: Which suppliers provide which product variants, with quoted cost and lead time.
         columns:
           - name: product_variant_id
+            description: Product variant supplied (product_variants.id).
             data_type: int
           - name: supplier_id
+            description: Supplier of the variant (suppliers.id).
             data_type: int
           - name: supplier_sku
+            description: SKU code the supplier uses for the variant.
             data_type: string
           - name: last_quoted_cost
+            description: Last unit cost quoted by the supplier.
             data_type: decimal(14, 2)
           - name: lead_time_days
+            description: Supplier lead time in days.
             data_type: int
           - name: is_preferred
+            description: Whether this is the preferred supplier for the variant.
             data_type: boolean
           - name: created_at
+            description: Timestamp when the record was created in the source system.
             data_type: timestamp
           - name: updated_at
+            description: Timestamp of the last update in the source system.
             data_type: timestamp
           - name: _ingested_at
+            description: Timestamp when the row was loaded into Bronze. Used to keep the latest version of a key.
             data_type: timestamp
           - name: _source_origin
+            description: Name of the source table the row was loaded from.
             data_type: string
           - name: _batch_id
+            description: Identifier of the ingestion batch that loaded the row.
             data_type: string
 
       - name: product_variants
+        description: Sellable product variants (SKUs) with prices, cost and tax rates.
         columns:
           - name: id
+            description: Primary key of the product variant in the source system.
             data_type: int
           - name: product_id
+            description: Product the variant belongs to (products.id).
             data_type: int
           - name: sku
+            description: Stock keeping unit code of the variant.
             data_type: string
           - name: barcode_ean
+            description: EAN barcode of the variant.
             data_type: string
           - name: sale_price
+            description: Standard sale price.
             data_type: decimal(14, 2)
           - name: cost_price
+            description: Standard unit cost.
             data_type: decimal(14, 2)
           - name: weight_kg
+            description: Weight in kilograms.
             data_type: decimal(10, 3)
           - name: icms_rate
+            description: ICMS (state sales tax) rate, in percent.
             data_type: decimal(5, 2)
           - name: ipi_rate
+            description: IPI (federal excise tax) rate, in percent.
             data_type: decimal(5, 2)
           - name: is_active
+            description: Whether the record is active.
             data_type: boolean
           - name: created_at
+            description: Timestamp when the record was created in the source system.
             data_type: timestamp
           - name: updated_at
+            description: Timestamp of the last update in the source system.
             data_type: timestamp
           - name: _ingested_at
+            description: Timestamp when the row was loaded into Bronze. Used to keep the latest version of a key.
             data_type: timestamp
           - name: _source_origin
+            description: Name of the source table the row was loaded from.
             data_type: string
           - name: _batch_id
+            description: Identifier of the ingestion batch that loaded the row.
             data_type: string
 
       - name: products
+        description: Base products; each product has one or more variants.
         columns:
           - name: id
+            description: Primary key of the product in the source system.
             data_type: int
           - name: name
+            description: Name.
             data_type: string
           - name: description
+            description: Product description text.
             data_type: string
           - name: brand_id
+            description: Brand of the product (brands.id).
             data_type: int
           - name: category_id
+            description: Category of the product (categories.id).
             data_type: int
           - name: ncm_code
+            description: NCM code (Mercosur Common Nomenclature) used to classify the product for tax purposes.
             data_type: string
           - name: unit_of_measure
+            description: Unit of measure the product is sold in.
             data_type: string
           - name: is_active
+            description: Whether the record is active.
             data_type: boolean
           - name: created_at
+            description: Timestamp when the record was created in the source system.
             data_type: timestamp
           - name: updated_at
+            description: Timestamp of the last update in the source system.
             data_type: timestamp
           - name: _ingested_at
+            description: Timestamp when the row was loaded into Bronze. Used to keep the latest version of a key.
             data_type: timestamp
           - name: _source_origin
+            description: Name of the source table the row was loaded from.
             data_type: string
           - name: _batch_id
+            description: Identifier of the ingestion batch that loaded the row.
             data_type: string
 
       - name: purchase_order_items
+        description: Purchase order lines, one row per product variant ordered from a supplier.
         columns:
           - name: id
+            description: Primary key of the purchase order item in the source system.
             data_type: int
           - name: purchase_order_id
+            description: Purchase order the item belongs to (purchase_orders.id).
             data_type: int
           - name: product_variant_id
+            description: Product variant ordered (product_variants.id).
             data_type: int
           - name: quantity_ordered
+            description: Quantity ordered.
             data_type: decimal(14, 3)
           - name: unit_cost
+            description: Unit cost agreed with the supplier.
             data_type: decimal(14, 2)
           - name: line_total
+            description: Total amount of the line.
             data_type: decimal(14, 2)
           - name: _ingested_at
+            description: Timestamp when the row was loaded into Bronze. Used to keep the latest version of a key.
             data_type: timestamp
           - name: _source_origin
+            description: Name of the source table the row was loaded from.
             data_type: string
           - name: _batch_id
+            description: Identifier of the ingestion batch that loaded the row.
             data_type: string
 
       - name: purchase_orders
+        description: Purchase order headers sent to suppliers.
         columns:
           - name: id
+            description: Primary key of the purchase order in the source system.
             data_type: int
           - name: po_number
+            description: Business-facing purchase order number.
             data_type: string
           - name: supplier_id
+            description: Supplier the order was sent to (suppliers.id).
             data_type: int
           - name: buyer_id
+            description: Employee who placed the order (employees.id).
             data_type: int
           - name: destination_location_id
+            description: Location the goods should be delivered to (locations.id).
             data_type: int
           - name: status
+            description: Current status of the record in the source system.
             data_type: string
           - name: currency
+            description: Currency of the order amounts.
             data_type: string
           - name: subtotal
+            description: Sum of the line amounts before discounts.
             data_type: decimal(14, 2)
           - name: total
+            description: Total amount.
             data_type: decimal(14, 2)
           - name: placed_at
+            description: Timestamp when the order was placed.
             data_type: timestamp
           - name: expected_delivery_at
+            description: Expected delivery date.
             data_type: date
           - name: created_at
+            description: Timestamp when the record was created in the source system.
             data_type: timestamp
           - name: updated_at
+            description: Timestamp of the last update in the source system.
             data_type: timestamp
           - name: _ingested_at
+            description: Timestamp when the row was loaded into Bronze. Used to keep the latest version of a key.
             data_type: timestamp
           - name: _source_origin
+            description: Name of the source table the row was loaded from.
             data_type: string
           - name: _batch_id
+            description: Identifier of the ingestion batch that loaded the row.
             data_type: string
 
       - name: return_items
+        description: Returned items, linked to the original order item, with the action taken (e.g. refund or exchange).
         columns:
           - name: id
+            description: Primary key of the return item in the source system.
             data_type: int
           - name: return_id
+            description: Return the item belongs to (returns.id).
             data_type: int
           - name: order_item_id
+            description: Original order item being returned (order_items.id).
             data_type: int
           - name: quantity
+            description: Quantity returned.
             data_type: decimal(14, 3)
           - name: action
+            description: Action taken for the item (e.g. refund or exchange).
             data_type: string
           - name: exchange_variant_id
+            description: Replacement product variant when the action is an exchange (product_variants.id).
             data_type: int
           - name: unit_refund_amount
+            description: Refund amount per unit.
             data_type: decimal(14, 2)
           - name: _ingested_at
+            description: Timestamp when the row was loaded into Bronze. Used to keep the latest version of a key.
             data_type: timestamp
           - name: _source_origin
+            description: Name of the source table the row was loaded from.
             data_type: string
           - name: _batch_id
+            description: Identifier of the ingestion batch that loaded the row.
             data_type: string
 
       - name: returns
+        description: Return headers for sales orders.
         columns:
           - name: id
+            description: Primary key of the return in the source system.
             data_type: int
           - name: return_number
+            description: Business-facing return number.
             data_type: string
           - name: order_id
+            description: Order the return refers to (orders.id).
             data_type: int
           - name: customer_id
+            description: Customer who made the return (customers.id).
             data_type: int
           - name: received_at_location_id
+            description: Location where the returned goods were received (locations.id).
             data_type: int
           - name: status
+            description: Current status of the record in the source system.
             data_type: string
           - name: reason
+            description: Reason given for the return.
             data_type: string
           - name: total_refund_amount
+            description: Total amount refunded.
             data_type: decimal(14, 2)
           - name: created_at
+            description: Timestamp when the record was created in the source system.
             data_type: timestamp
           - name: updated_at
+            description: Timestamp of the last update in the source system.
             data_type: timestamp
           - name: _ingested_at
+            description: Timestamp when the row was loaded into Bronze. Used to keep the latest version of a key.
             data_type: timestamp
           - name: _source_origin
+            description: Name of the source table the row was loaded from.
             data_type: string
           - name: _batch_id
+            description: Identifier of the ingestion batch that loaded the row.
             data_type: string
 
       - name: stock_levels
+        description: Current stock per product variant and location.
         columns:
           - name: product_variant_id
+            description: Product variant in stock (product_variants.id).
             data_type: int
           - name: location_id
+            description: Location holding the stock (locations.id).
             data_type: int
           - name: quantity_on_hand
+            description: Quantity currently in stock.
             data_type: decimal(14, 3)
           - name: reorder_point
+            description: Stock quantity at or below which the variant should be replenished.
             data_type: decimal(14, 3)
           - name: updated_at
+            description: Timestamp of the last stock update.
             data_type: timestamp
           - name: _ingested_at
+            description: Timestamp when the row was loaded into Bronze. Used to keep the latest version of a key.
             data_type: timestamp
           - name: _source_origin
+            description: Name of the source table the row was loaded from.
             data_type: string
           - name: _batch_id
+            description: Identifier of the ingestion batch that loaded the row.
             data_type: string
 
       - name: stock_movements
+        description: Stock movement history (entries and exits) per product variant and location.
         columns:
           - name: id
+            description: Primary key of the stock movement in the source system.
             data_type: bigint
           - name: product_variant_id
+            description: Product variant moved (product_variants.id).
             data_type: int
           - name: location_id
+            description: Location where the movement happened (locations.id).
             data_type: int
           - name: movement_type
+            description: Type of stock movement (e.g. receipt, sale or adjustment).
             data_type: string
           - name: quantity
+            description: Quantity moved.
             data_type: decimal(14, 3)
           - name: reference_table
+            description: Table of the document that originated the movement.
             data_type: string
           - name: reference_id
+            description: Id of the originating document in reference_table.
             data_type: int
           - name: employee_id
+            description: Employee who registered the movement (employees.id).
             data_type: int
           - name: notes
+            description: Free-text notes.
             data_type: string
           - name: occurred_at
+            description: Timestamp when the movement occurred.
             data_type: timestamp
           - name: created_at
+            description: Timestamp when the record was created in the source system.
             data_type: timestamp
           - name: _ingested_at
+            description: Timestamp when the row was loaded into Bronze. Used to keep the latest version of a key.
             data_type: timestamp
           - name: _source_origin
+            description: Name of the source table the row was loaded from.
             data_type: string
           - name: _batch_id
+            description: Identifier of the ingestion batch that loaded the row.
             data_type: string
 
       - name: suppliers
+        description: Suppliers. Contains contact and tax data.
         columns:
           - name: id
+            description: Primary key of the supplier in the source system.
             data_type: int
           - name: legal_name
+            description: Registered legal name of the supplier.
             data_type: string
           - name: trade_name
+            description: Trade name of the supplier.
             data_type: string
           - name: country
+            description: Country.
             data_type: string
           - name: tax_id
+            description: Brazilian tax identifier of the person or company (CPF/CNPJ; personal data, LGPD).
             data_type: string
           - name: tax_id_type
+            description: Type of the supplier's tax identifier.
             data_type: string
           - name: email
+            description: Email address (personal data, LGPD).
             data_type: string
           - name: phone
+            description: Phone number (personal data, LGPD).
             data_type: string
           - name: contact_name
+            description: Name of the supplier's contact person (personal data, LGPD).
             data_type: string
           - name: is_active
+            description: Whether the record is active.
             data_type: boolean
           - name: created_at
+            description: Timestamp when the record was created in the source system.
             data_type: timestamp
           - name: updated_at
+            description: Timestamp of the last update in the source system.
             data_type: timestamp
           - name: _ingested_at
+            description: Timestamp when the row was loaded into Bronze. Used to keep the latest version of a key.
             data_type: timestamp
           - name: _source_origin
+            description: Name of the source table the row was loaded from.
             data_type: string
           - name: _batch_id
+            description: Identifier of the ingestion batch that loaded the row.
             data_type: string
 
       - name: variant_attribute_values
+        description: Value of each attribute for each product variant.
         columns:
           - name: product_variant_id
+            description: Product variant the value applies to (product_variants.id).
             data_type: int
           - name: attribute_id
+            description: Attribute the value is for (attributes.id).
             data_type: int
           - name: value
+            description: Attribute value for the variant.
             data_type: string
           - name: _ingested_at
+            description: Timestamp when the row was loaded into Bronze. Used to keep the latest version of a key.
             data_type: timestamp
           - name: _source_origin
+            description: Name of the source table the row was loaded from.
             data_type: string
           - name: _batch_id
+            description: Identifier of the ingestion batch that loaded the row.
             data_type: string
       - name: raw_exchange_rates
+        description: USD/BRL exchange rates from the Brazilian Central Bank (BCB) API, series 10813.
         columns:
           - name: exchange_date
+            description: Date of the exchange rate.
             data_type: date
           - name: currency_from
+            description: Source currency (USD).
             data_type: string
           - name: currency_to
+            description: Target currency (BRL).
             data_type: string
           - name: exchange_rate
-            data_type: double
+            description: USD/BRL commercial selling rate published by the BCB.
+            data_type: decimal(10,4)
           - name: _ingested_at
+            description: Timestamp when the row was loaded into Bronze. Used to keep the latest version of a key.
             data_type: timestamp
