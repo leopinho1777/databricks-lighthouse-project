@@ -1,0 +1,24 @@
+resources:
+  jobs:
+    restore:
+      name: Restore Bronze From Archive
+      #Single task: creates every Bronze table from its archived DDL and loads the parquet data.
+      #Replaces the SQL Server ingestion when the source database is no longer available.
+      tasks:
+        - task_key: restore_bronze
+          notebook_task:
+            notebook_path: ../src/restore_bronze_from_archive.py
+            source: WORKSPACE
+            base_parameters:
+              catalog: "${var.catalog}"
+              schema: "${var.schema}"
+              archive_path: "/Volumes/${var.catalog}/${var.schema}/archive/sqlserver_bronze"
+          environment_key: Default
+
+      environments:
+        - environment_key: Default
+          spec:
+            environment_version: "5"
+      max_concurrent_runs: 1
+      queue:
+        enabled: true

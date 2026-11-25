@@ -1,0 +1,12 @@
+version: 2
+
+seeds:
+  - name: seed_category_fix
+    description: Manual lookup that maps each product type from the source system to a canonical category, correcting misspelled or miscategorized types. Joined by int_products_categorized on product_type.
+    columns:
+      - name: product_type
+        description: Product type exactly as it appears in the source system, including known misspellings.
+      - name: correct_category
+        description: Canonical category name the product type should be reported under.
+      - name: is_categorized
+        description: Whether the mapping is a real classification (true) or a catch-all for types that could not be classified (false).
