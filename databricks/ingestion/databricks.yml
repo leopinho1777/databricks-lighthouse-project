@@ -6,6 +6,7 @@ bundle:
 
 include:
   - resources/ingestion.job.yml
+  - resources/restore.job.yml
   - ../../databricks.local.yml
 
 artifacts:

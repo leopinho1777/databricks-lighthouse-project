@@ -39,3 +39,8 @@ models:
     marts:
       +materialized: table
       +schema: marts
+
+# Configuring seeds: the manual lookup is kept in the staging schema instead of the bare target schema
+seeds:
+  desafio_lh:
+    +schema: staging

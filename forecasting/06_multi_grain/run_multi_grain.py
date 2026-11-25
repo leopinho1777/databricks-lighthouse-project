@@ -1,4 +1,4 @@
-# %% [markdown]
+/# %% [markdown]
 # # Multi-grain / ADIDA backtest (Strategy 3 — Step C)
 #
 # Two things, per `05`'s recommendation and `04`'s own "fast follow" suggestion:
