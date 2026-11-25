@@ -1,0 +1,88 @@
+version: 2
+
+macros:
+  - name: dedupe_latest
+    description: Keeps the latest ingested version of each key, ordering by _ingested_at then _batch_id (nulls last). Used in staging models because Bronze can hold the same key more than once.
+    arguments:
+      - name: relation_name
+        type: string
+        description: CTE or relation to deduplicate.
+      - name: partition_by
+        type: string
+        description: Column(s) that identify one entity (the key).
+      - name: order_by
+        type: string
+        description: Ordering that puts the version to keep first; defaults to latest _ingested_at, then _batch_id.
+
+  - name: keep_required_rows
+    description: Drops rows where any mandatory column is null.
+    arguments:
+      - name: relation_name
+        type: string
+        description: CTE or relation to filter.
+      - name: required_columns
+        type: list
+        description: Columns that must not be null.
+
+  - name: filter_valid_orders
+    description: Keeps only rows whose order id still exists in stg_orders, dropping rows tied to orders that were filtered out (for example future-dated orders).
+    arguments:
+      - name: relation_name
+        type: string
+        description: CTE or relation to filter.
+      - name: order_id_column
+        type: string
+        description: Name of the order id column; defaults to order_id.
+
+  - name: filter_future_dated
+    description: Returns a WHERE fragment that keeps rows whose event timestamp is not in the future. Not meant for forward-looking columns such as an expected delivery date.
+    arguments:
+      - name: column_name
+        type: string
+        description: DATE or TIMESTAMP column holding when the event happened.
+
+  - name: test_no_future_dates
+    description: Generic test that fails when any row has a future-dated value in the column. Pairs with filter_future_dated so a regression fails dbt build.
+    arguments:
+      - name: model
+        type: relation
+        description: Model under test.
+      - name: column_name
+        type: string
+        description: DATE or TIMESTAMP column to check.
+
+  - name: convert_currency
+    description: Converts an amount between BRL and USD with an exchange rate column; keeps the amount unchanged when the currency already matches the target or the pair is not mapped.
+    arguments:
+      - name: amount_column
+        type: string
+        description: Column with the amount to convert.
+      - name: currency_column
+        type: string
+        description: Column with the amount's currency (BRL or USD).
+      - name: exchange_rate_column
+        type: string
+        description: Column with the USD/BRL exchange rate.
+      - name: target_currency
+        type: string
+        description: Currency to convert to; defaults to BRL.
+
+  - name: days_between
+    description: Whole-day difference between two dates or timestamps (end minus start).
+    arguments:
+      - name: start_date
+        type: string
+        description: Start date or timestamp expression.
+      - name: end_date
+        type: string
+        description: End date or timestamp expression.
+
+  - name: generate_schema_name
+    description: Overrides dbt's schema naming. In prod each layer uses its own schema (staging, intermediate, marts); in dev the layer is appended to the developer's schema.
+    arguments:
+      - name: custom_schema_name
+        type: string
+        description: Layer schema set in dbt_project.yml.
+      - name: node
+        type: any
+        description: Node being built.
