@@ -1,6 +1,6 @@
 # Source data
 
-The Bronze layer of the Lighthouse project: the tables this pipeline ingests and transforms. This folder holds the table definitions and small samples that can be read on GitHub. The complete rows are Parquet files that are not stored in the repository.
+The Bronze layer of the Lighthouse project: the tables this pipeline ingests and transforms. This folder holds the table definitions and small samples that can be read on GitHub. The complete rows are Parquet files, distributed as a [release download](#download-and-restore) instead of being stored in the repository.
 
 > **Synthetic data.** LH Nautical is a fictional company. The dataset was provided by Indicium AI for the Lighthouse Trainee program and is shared with permission. Names, tax IDs, emails, phone numbers and addresses are mock values; any match with a real person or company is coincidental.
 
@@ -11,6 +11,35 @@ The Bronze layer of the Lighthouse project: the tables this pipeline ingests and
 | [`ddl/`](ddl) | One `CREATE TABLE` statement per table (28) |
 | [`samples/`](samples) | One CSV file per table with related sample rows (28) |
 | [`build_samples.py`](build_samples.py) | Rebuilds the samples from the Parquet archive |
+
+## Download and restore
+
+[`bronze-archive.zip`](https://github.com/leopinho1777/databricks-lighthouse-project/releases/download/data-v1/bronze-archive.zip) (about 12 MB, release `data-v1`) contains a `sqlserver_bronze/` folder with `ddl/` and `parquet/` for all 28 tables.
+
+SHA-256: `ae611aed7341fbf6ff911a4ca4920614b6b788ae97a14a8aeb96cb7a7fe275c0`
+
+Restoring it needs a Databricks workspace with Unity Catalog and an authenticated [Databricks CLI](https://docs.databricks.com/dev-tools/cli/). First complete steps 1 and 2 of [Running it](../README.md#running-it); the catalog and schema below must match the ones set there.
+
+```bash
+# 1. Download, verify and unzip, outside the repository
+mkdir -p ~/lighthouse-data && cd ~/lighthouse-data
+curl -LO https://github.com/leopinho1777/databricks-lighthouse-project/releases/download/data-v1/bronze-archive.zip
+echo "ae611aed7341fbf6ff911a4ca4920614b6b788ae97a14a8aeb96cb7a7fe275c0  bronze-archive.zip" | sha256sum -c -
+unzip bronze-archive.zip
+
+# 2. Create the target and upload the folder to a volume (skip what already exists)
+databricks catalogs create lh_nautical
+databricks schemas create bronze lh_nautical
+databricks volumes create lh_nautical bronze archive MANAGED
+databricks fs cp -r sqlserver_bronze dbfs:/Volumes/lh_nautical/bronze/archive/sqlserver_bronze
+
+# 3. Restore the tables, from the repository root
+cd <path-to-repository>/databricks/ingestion
+databricks bundle deploy --target dev
+databricks bundle run restore --target dev
+```
+
+The restore job creates or replaces the 28 tables and checks that each one holds as many rows as its Parquet file. See [Table definitions and masking](#table-definitions-and-masking) before running it on a workspace with masked tables.
 
 ## Tables
 
