@@ -1,0 +1,43 @@
+id,customer_id,address_type,postal_code,street,number,complement,district,city,state,country,is_primary,_ingested_at,_source_origin,_batch_id
+458,227,billing,25747-774,Praia Porto,31,Apto 384,São Benedito,Macedo de Freitas,MG,BR,true,2026-06-24 19:32:40.225388,addresses,4c1eb288-e45c-4d58-a0e4-d92106cc10c1
+459,227,secondary,91898755,Trecho Stephany Câmara,12,,Vila  Cloris,Araújo,MT,BR,false,2026-06-24 19:32:40.225388,addresses,4c1eb288-e45c-4d58-a0e4-d92106cc10c1
+460,227,billing,54517365,Núcleo de da Paz,6,,Vila Olhos D'água,Oliveira,ES,BR,false,2026-06-24 19:32:40.225388,addresses,4c1eb288-e45c-4d58-a0e4-d92106cc10c1
+510,251,billing,22799752,Condomínio Ana Vitória Moura,98,Apto 916,Outro,Brito,PR,BR,true,2026-06-24 19:32:40.225388,addresses,4c1eb288-e45c-4d58-a0e4-d92106cc10c1
+511,251,secondary,51114241,Lago Sampaio,545,,Nova Floresta,Cunha de Barbosa,RO,BR,false,2026-06-24 19:32:40.225388,addresses,4c1eb288-e45c-4d58-a0e4-d92106cc10c1
+512,251,secondary,71741906,Trevo Aurora das Neves,90,,Maria Goretti,Sousa de Abreu,DF,BR,false,2026-06-24 19:32:40.225388,addresses,4c1eb288-e45c-4d58-a0e4-d92106cc10c1
+856,426,billing,72314920,Travessa Oliver Almeida,14,Apto 412,Boa Esperança,Marques,AL,BR,true,2026-06-24 19:32:40.225388,addresses,4c1eb288-e45c-4d58-a0e4-d92106cc10c1
+965,484,billing,45883660,Trecho Pedro da Costa,90,Apto 337,Santana Do Cafezal,Gonçalves,RS,BR,true,2026-06-24 19:32:40.225388,addresses,4c1eb288-e45c-4d58-a0e4-d92106cc10c1
+966,484,billing,59266866,Rua de Alves,607,,Nova Floresta,da Costa do Norte,AC,BR,false,2026-06-24 19:32:40.225388,addresses,4c1eb288-e45c-4d58-a0e4-d92106cc10c1
+1030,519,billing,18811133,Vale Aylla Rios,43,,Cabana Do Pai Tomás,da Costa da Serra,GO,BR,true,2026-06-24 19:32:59.482831,addresses,fd850a7f-97cb-423b-86f3-3c081e3f401b
+1031,519,billing,70712787,Pátio de da Costa,88,,Vila Santa Monica 2ª Seção,Moraes,SC,BR,false,2026-06-24 19:32:59.482831,addresses,fd850a7f-97cb-423b-86f3-3c081e3f401b
+1032,519,billing,32208220,Lago Rafaela da Rocha,25,Apto 978,Vila São João Batista,Leão,GO,BR,false,2026-06-24 19:32:59.482831,addresses,fd850a7f-97cb-423b-86f3-3c081e3f401b
+1242,619,billing,50041-951,Chácara de Costa,4,Apto 076,Ipiranga,Barbosa do Amparo,AC,BR,true,2026-06-24 19:32:59.482831,addresses,fd850a7f-97cb-423b-86f3-3c081e3f401b
+1243,619,billing,16684-648,Conjunto de Vieira,9,Apto 728,João Paulo Ii,Moraes,AM,BR,false,2026-06-24 19:32:59.482831,addresses,fd850a7f-97cb-423b-86f3-3c081e3f401b
+1244,619,billing,96923-444,Largo Freitas,52,Apto 772,Bom Jesus,Vasconcelos,RJ,BR,false,2026-06-24 19:32:59.482831,addresses,fd850a7f-97cb-423b-86f3-3c081e3f401b
+1297,649,billing,64686-676,Viaduto de Siqueira,26,Apto 428,Jatobá,Almeida,AC,BR,true,2026-06-24 19:32:59.482831,addresses,fd850a7f-97cb-423b-86f3-3c081e3f401b
+1298,649,billing,13743784,Colônia Arthur Gabriel Teixeira,93,Apto 232,Cônego Pinheiro 2ª Seção,Silveira da Prata,RR,BR,false,2026-06-24 19:32:59.482831,addresses,fd850a7f-97cb-423b-86f3-3c081e3f401b
+1299,649,secondary,37622334,Área Igor Fernandes,81,Apto 765,Pindura Saia,Lopes de Minas,AL,BR,false,2026-06-24 19:32:59.482831,addresses,fd850a7f-97cb-423b-86f3-3c081e3f401b
+1459,729,billing,47961265,Rua Nascimento,697,,Madre Gertrudes,Correia do Amparo,RJ,BR,true,2026-06-24 19:32:59.482831,addresses,fd850a7f-97cb-423b-86f3-3c081e3f401b
+1460,729,billing,88166-809,Loteamento Eduardo Caldeira,988,Apto 744,Vila Nossa Senhora Do Rosário,Correia de Vieira,CE,BR,false,2026-06-24 19:32:59.482831,addresses,fd850a7f-97cb-423b-86f3-3c081e3f401b
+1481,741,billing,82743832,Passarela de Teixeira,62,,Barreiro,Viana do Oeste,MA,BR,true,2026-06-24 19:32:59.482831,addresses,fd850a7f-97cb-423b-86f3-3c081e3f401b
+1482,741,secondary,73230146,Praça Maria Sophia Fonseca,4,Apto 809,Leticia,Barros da Prata,MT,BR,false,2026-06-24 19:32:59.482831,addresses,fd850a7f-97cb-423b-86f3-3c081e3f401b
+1483,741,billing,03971010,Ladeira Pedro Cunha,6,,Vila Santo Antônio,Pacheco,PI,BR,false,2026-06-24 19:32:59.482831,addresses,fd850a7f-97cb-423b-86f3-3c081e3f401b
+1727,869,billing,96199-097,Setor de Vieira,265,Apto 311,Satelite,Almeida de Ribeiro,PE,BR,true,2026-06-24 19:32:59.482831,addresses,fd850a7f-97cb-423b-86f3-3c081e3f401b
+1728,869,billing,81574-916,Campo Lavínia Duarte,17,,Vila Independencia 2ª Seção,Lopes do Amparo,SE,BR,false,2026-06-24 19:32:59.482831,addresses,fd850a7f-97cb-423b-86f3-3c081e3f401b
+1882,947,billing,18464-876,Rua Rios,77,,Jatobá,Alves do Oeste,MG,BR,true,2026-06-24 19:32:59.482831,addresses,fd850a7f-97cb-423b-86f3-3c081e3f401b
+2103,1055,billing,32662510,Colônia Fonseca,90,Apto 703,Eymard,Castro,GO,BR,true,2026-06-24 19:33:08.946129,addresses,5e2f7bca-0954-42d3-a317-289205262345
+2126,1066,billing,62233936,Praça Cecília da Mata,646,Apto 920,Marieta 1ª Seção,Moreira da Prata,PE,BR,true,2026-06-24 19:33:08.946129,addresses,5e2f7bca-0954-42d3-a317-289205262345
+2127,1066,secondary,07325-791,Estação Danilo Mendes,72,Apto 925,Coqueiros,Cardoso,AL,BR,false,2026-06-24 19:33:08.946129,addresses,5e2f7bca-0954-42d3-a317-289205262345
+2128,1066,billing,62725-070,Conjunto Vargas,1,Apto 840,Primeiro De Maio,Moreira do Galho,CE,BR,false,2026-06-24 19:33:08.946129,addresses,5e2f7bca-0954-42d3-a317-289205262345
+2265,1136,billing,80554700,Pátio de Sá,487,Apto 029,Nova Floresta,Alves,TO,BR,true,2026-06-24 19:33:08.946129,addresses,5e2f7bca-0954-42d3-a317-289205262345
+2350,1175,billing,09894-793,Rua de Ramos,56,,São Pedro,Pereira do Sul,RS,BR,true,2026-06-24 19:33:08.946129,addresses,5e2f7bca-0954-42d3-a317-289205262345
+2427,1215,billing,42060-993,Vereda de Gonçalves,1,,Vila Nossa Senhora Do Rosário,Novaes de Oliveira,SC,BR,true,2026-06-24 19:33:08.946129,addresses,5e2f7bca-0954-42d3-a317-289205262345
+2428,1215,billing,93506-177,Favela Moraes,80,Apto 511,Frei Leopoldo,Novais das Pedras,MT,BR,false,2026-06-24 19:33:08.946129,addresses,5e2f7bca-0954-42d3-a317-289205262345
+2429,1215,secondary,96810-320,Esplanada da Luz,2,,Santa Branca,Rocha,CE,BR,false,2026-06-24 19:33:08.946129,addresses,5e2f7bca-0954-42d3-a317-289205262345
+2653,1326,billing,60194-611,Aeroporto Stephany Camargo,8,Apto 452,Maria Helena,Porto da Prata,MG,BR,true,2026-06-24 19:33:08.946129,addresses,5e2f7bca-0954-42d3-a317-289205262345
+2654,1326,billing,50855110,Setor de Almeida,70,Apto 154,Providencia,Araújo,MT,BR,false,2026-06-24 19:33:08.946129,addresses,5e2f7bca-0954-42d3-a317-289205262345
+2655,1326,billing,87037-131,Trecho das Neves,27,,Atila De Paiva,Costa,PA,BR,false,2026-06-24 19:33:08.946129,addresses,5e2f7bca-0954-42d3-a317-289205262345
+3302,1654,billing,09749937,Praia Leonardo Mendonça,9,,Milionario,Correia de Minas,MG,BR,true,2026-06-24 19:33:17.758773,addresses,0825bf63-f884-404e-905b-74cdf05569c7
+3370,1688,billing,55925-324,Largo da Mata,65,,Pongelupe,Cavalcanti da Mata,TO,BR,true,2026-06-24 19:33:17.758773,addresses,0825bf63-f884-404e-905b-74cdf05569c7
+3371,1688,secondary,98961875,Rua Novais,28,,Paraíso,Castro,PA,BR,false,2026-06-24 19:33:17.758773,addresses,0825bf63-f884-404e-905b-74cdf05569c7
+3399,1700,billing,29193051,Quadra Azevedo,181,,Funcionários,Viana Paulista,SE,BR,true,2026-06-24 19:33:17.758773,addresses,0825bf63-f884-404e-905b-74cdf05569c7
