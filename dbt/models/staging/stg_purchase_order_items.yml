@@ -10,7 +10,10 @@ models:
           - not_null
           - unique
       - name: purchase_order_id
-        description: Purchase order parent identifier. (Rows for future-dated purchase orders are filtered out.)
+        description: >-
+          Purchase order parent identifier. Items of future-dated purchase orders are kept here, since this model has no
+          date to filter on, and dropped by the inner join in int_purchases_enriched. The relationship test warns about
+          them.
         data_tests:
           - not_null
           - relationships:
