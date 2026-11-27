@@ -4,7 +4,7 @@ An end-to-end data project on Databricks, built during the Indicium AI Lighthous
 
 **[dbt documentation site](https://leopinho1777.github.io/databricks-lighthouse-project/)**: every model, column, test, source, seed, snapshot and macro, with the lineage graph.
 
-The data is a **mock database** of a fictional nautical retailer (LH Nautical). It is static: no new data arrives.
+The data is a **mock database** of a fictional nautical retailer (LH Nautical). It is static: no new data arrives. The [source data page](data/README.md) shows every table with its definition, sample rows and relationships, and links the complete download.
 
 ## Architecture
 
@@ -59,6 +59,7 @@ databricks/
   rag/              Bundle for the RAG chat assistant (Streamlit app + offline indexing pipeline)
 dbt/                dbt project "desafio_lh": staging -> intermediate -> marts
 forecasting/        Demand-forecasting analysis (not deployed): baselines, features, model experiments
+data/               Source data: table definitions, CSV samples and ER diagrams
 docs/               Power BI dashboard guide
 ```
 
@@ -66,7 +67,7 @@ Each bundle has its own `databricks.yml` and is deployed on its own; there is no
 
 ## Running it
 
-You need a Databricks workspace with Unity Catalog, the [Databricks CLI](https://docs.databricks.com/dev-tools/cli/), [`uv`](https://docs.astral.sh/uv/), dbt with the Databricks adapter and a SQL warehouse. The original SQL Server source is no longer available, so the Bronze layer is rebuilt from an archive of the Bronze tables (`ddl/*.sql` and `parquet/*.parquet`) that is not part of this repository.
+You need a Databricks workspace with Unity Catalog, the [Databricks CLI](https://docs.databricks.com/dev-tools/cli/), [`uv`](https://docs.astral.sh/uv/), dbt with the Databricks adapter and a SQL warehouse. The original SQL Server source is no longer available, so the Bronze layer is rebuilt from an archive of the Bronze tables (`ddl/*.sql` and `parquet/*.parquet`), available as a release download: [`bronze-archive.zip`](https://github.com/leopinho1777/databricks-lighthouse-project/releases/download/data-v1/bronze-archive.zip).
 
 ```bash
 # 1. Install dependencies and authenticate
@@ -79,7 +80,8 @@ databricks auth login
 #        workspace: {host: https://<your-databricks-workspace>, profile: <your-profile>}
 #        variables: {catalog: lh_nautical, schema: bronze}
 
-# 3. Restore Bronze: upload the archive to the volume <catalog>.<schema>.archive, then
+# 3. Restore Bronze: download the archive and upload it to the volume <catalog>.<schema>.archive
+#    (commands in data/README.md, "Download and restore", steps 1 and 2), then, from the repository root
 cd databricks/ingestion
 databricks bundle deploy --target dev
 databricks bundle run restore --target dev        # re-runnable; replaces the 28 Bronze tables
@@ -91,12 +93,14 @@ dbt build --target prod                           # schemas: staging, intermedia
 dbt docs generate
 ```
 
+Download, checksum and upload commands for step 3 are in [Download and restore](data/README.md#download-and-restore).
+
 With the original SQL Server available, `databricks bundle run ingestion` runs the incremental ingestion instead of the restore job (it reads credentials from the `sqlserver` secret scope). See the READMEs for [dbt](dbt/README.md), [orchestration](databricks/orchestration/README.md), [RAG](databricks/rag/README.md) and [forecasting](forecasting/README.md).
 
 ## Data notes
 
-* The source data contains future-dated records. As part of the challenge, each team chose how to treat them: some simulated them as new records arriving in later ingestions, others treated them as invalid. Our team chose the latter and filters them out in dbt (`filter_valid_orders()` and related macros in [`dbt/macros`](dbt/macros)).
-* The Bronze archive holds each row twice in 22 tables (one copy of each pair has null ingestion metadata). Staging models keep the latest version of each key with `dedupe_latest()`. Query the dbt layers, not Bronze, for analysis.
+* The source data contains future-dated records. As part of the challenge, each team chose how to treat them: some simulated them as new records arriving in later ingestions, others treated them as invalid. Our team chose the latter and filters them out in dbt: `filter_future_dated()` removes future-dated rows and `filter_valid_orders()` removes the rows that belong to removed orders (both in [`dbt/macros`](dbt/macros)).
+* The published archive is deduplicated: the original backup held two rows per key in 21 tables, identical except for the ingestion metadata ([details](data/README.md#duplicate-rows-were-removed)). Staging models still keep the latest version of each key with `dedupe_latest()`. Query the dbt layers, not Bronze, for analysis, since Bronze keeps invalid records.
 
 ## Team
 
