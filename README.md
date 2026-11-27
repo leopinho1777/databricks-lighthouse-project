@@ -32,9 +32,9 @@ flowchart LR
 ## Highlights
 
 * **Incremental ingestion with audit and alerting.** Single-key tables load by watermark; composite-key tables do a full reload with MERGE. Every run is idempotent, audited per table, and the BCB exchange-rate task sends an alert email only after three consecutive failed days; each run re-fetches the last 15 days, so short outages fill themselves in.
-* **Tested dbt project.** 44 models, 414 tests, 1 snapshot (SCD2 stock history) and 1 seed. A full `dbt build` ends with 459 of 460 nodes passing, 1 warning and no errors. The warning is expected: the source keeps only current stock levels, so the snapshot has no accumulated history to reconcile movements against. In production, successive snapshots would build that history. Shared macros handle deduplication, data-quality filters and USD/BRL conversion.
+* **Tested dbt project.** 44 models, 414 tests, 1 snapshot (SCD2 stock history) and 1 seed. A full `dbt build` of the restored data on 27 November 2026 ran 460 nodes with no errors: 455 succeeded and 5 [raised known warnings](#build-warnings). Shared macros handle deduplication, data-quality filters and USD/BRL conversion.
 * **Star schema built for BI.** Dimensions include an SCD2 customer-address history; aggregates (customer LTV and churn risk, product contribution margin, daily and regional sales) are shaped for Power BI. See the [dashboard guide](docs/dashboard_guide.md).
-* **LGPD governance.** Dynamic column masking through a Unity Catalog function driven by a JSON policy, plus role-based grants, implemented as notebooks for the original project workspace. Credentials come from Databricks secrets, never from code.
+* **LGPD governance.** Dynamic column masking through a Unity Catalog function driven by a JSON policy, plus role-based grants, implemented as notebooks for the original project workspace. The archive restore does not apply the masks: it creates the tables unmasked. Credentials come from Databricks secrets, never from code.
 * **Honest forecasting study.** Eleven stages from data exploration to a five-model comparison (regression, Random Forest, XGBoost, Prophet, SARIMA), all scored under one protocol against a seasonal-naive baseline. Result: no model beats the baseline in three or more of four windows, and forecasts are only usable at category x location level (11-39% WAPE for the two best models). The likely reasons are sparse demand (25-59% of product x location series sell nothing in a 91-day window), an annual cycle the baseline already captures, and synthetic data with no external signal to learn. Full write-up: [`forecasting/OVERVIEW.md`](forecasting/OVERVIEW.md).
 * **Grounded chat assistant.** A RAG app on Databricks Vector Search where numbers are rendered from Delta columns before indexing, so the model phrases answers but never produces a fact. See [`databricks/rag`](databricks/rag/README.md).
 
@@ -79,12 +79,13 @@ databricks auth login
 #      dev:
 #        workspace: {host: https://<your-databricks-workspace>, profile: <your-profile>}
 #        variables: {catalog: lh_nautical, schema: bronze}
+#    For the restore and dbt the catalog name is your choice; keep the schema "bronze", which dbt reads from
 
 # 3. Restore Bronze: download the archive and upload it to the volume <catalog>.<schema>.archive
 #    (commands in data/README.md, "Download and restore", steps 1 and 2), then, from the repository root
 cd databricks/ingestion
 databricks bundle deploy --target dev
-databricks bundle run restore --target dev        # re-runnable; replaces the 28 Bronze tables
+databricks bundle run restore --target dev        # re-runnable; replaces the 28 Bronze tables, unmasked
 
 # 4. Build the star schema (profile "desafio_lh" in ~/.dbt/profiles.yml, catalog = the Bronze catalog)
 cd ../../dbt
@@ -93,7 +94,7 @@ dbt build --target prod                           # schemas: staging, intermedia
 dbt docs generate
 ```
 
-Download, checksum and upload commands for step 3 are in [Download and restore](data/README.md#download-and-restore).
+The catalog creation, download, checksum and upload commands for step 3 are in [Download and restore](data/README.md#download-and-restore).
 
 With the original SQL Server available, `databricks bundle run ingestion` runs the incremental ingestion instead of the restore job (it reads credentials from the `sqlserver` secret scope). See the READMEs for [dbt](dbt/README.md), [orchestration](databricks/orchestration/README.md), [RAG](databricks/rag/README.md) and [forecasting](forecasting/README.md).
 
@@ -101,6 +102,16 @@ With the original SQL Server available, `databricks bundle run ingestion` runs t
 
 * The source data contains future-dated records. As part of the challenge, each team chose how to treat them: some simulated them as new records arriving in later ingestions, others treated them as invalid. Our team chose the latter and filters them out in dbt: `filter_future_dated()` removes future-dated rows and `filter_valid_orders()` removes the rows that belong to removed orders (both in [`dbt/macros`](dbt/macros)).
 * The published archive is deduplicated: the original backup held two rows per key in 21 tables, identical except for the ingestion metadata ([details](data/README.md#duplicate-rows-were-removed)). Staging models still keep the latest version of each key with `dedupe_latest()`. Query the dbt layers, not Bronze, for analysis, since Bronze keeps invalid records.
+
+### Build warnings
+
+A full `dbt build` on 27 November 2026 raised five warnings:
+
+| Warnings | Source | Why |
+| :---: | :--- | :--- |
+| 3 | Relationship tests on `stg_return_items`, `stg_purchase_order_items` and `stg_goods_receipt_items` | Their parent was future-dated and filtered out. The items have no date to filter on, so they stay in staging and the intermediate inner joins drop them. These warnings stop once every parent date is in the past (after 27 January 2027). |
+| 1 | 7-day reconciliation of stock movements | The source keeps only current stock levels, so the snapshot has no accumulated history to reconcile movements against. In production, successive snapshots would build that history. |
+| 1 | `fct_daily_stock_levels` (adapter notice) | `insert_overwrite` is supported on SQL warehouses with DBR 17.1 or later; on older versions it behaves like a table materialization. |
 
 ## Team
 

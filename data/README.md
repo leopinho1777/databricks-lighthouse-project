@@ -20,6 +20,14 @@ SHA-256: `ae611aed7341fbf6ff911a4ca4920614b6b788ae97a14a8aeb96cb7a7fe275c0`
 
 Restoring it needs a Databricks workspace with Unity Catalog and an authenticated [Databricks CLI](https://docs.databricks.com/dev-tools/cli/). First complete steps 1 and 2 of [Running it](../README.md#running-it); the catalog and schema below must match the ones set there.
 
+Create the catalog in the Databricks SQL editor. Use SQL for this step: on workspaces with Default Storage, `databricks catalogs create` fails unless you give a storage location.
+
+```sql
+CREATE CATALOG IF NOT EXISTS lh_nautical;
+```
+
+Then run:
+
 ```bash
 # 1. Download, verify and unzip, outside the repository
 mkdir -p ~/lighthouse-data && cd ~/lighthouse-data
@@ -27,8 +35,7 @@ curl -LO https://github.com/leopinho1777/databricks-lighthouse-project/releases/
 echo "ae611aed7341fbf6ff911a4ca4920614b6b788ae97a14a8aeb96cb7a7fe275c0  bronze-archive.zip" | sha256sum -c -
 unzip bronze-archive.zip
 
-# 2. Create the target and upload the folder to a volume (skip what already exists)
-databricks catalogs create lh_nautical
+# 2. Create the schema and volume, and upload the folder (skip what already exists)
 databricks schemas create bronze lh_nautical
 databricks volumes create lh_nautical bronze archive MANAGED
 databricks fs cp -r sqlserver_bronze dbfs:/Volumes/lh_nautical/bronze/archive/sqlserver_bronze
