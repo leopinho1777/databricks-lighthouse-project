@@ -1,0 +1,9 @@
+id,name,data_type,_ingested_at,_source_origin,_batch_id
+1,color,text,2026-06-26 19:45:16.874740,attributes,9df87551-0226-49e0-984d-2d9a15b0e47f
+2,size,text,2026-06-26 19:45:16.874740,attributes,9df87551-0226-49e0-984d-2d9a15b0e47f
+3,length_m,number,2026-06-26 19:45:16.874740,attributes,9df87551-0226-49e0-984d-2d9a15b0e47f
+4,power_hp,number,2026-06-26 19:45:16.874740,attributes,9df87551-0226-49e0-984d-2d9a15b0e47f
+5,voltage_v,number,2026-06-26 19:45:16.874740,attributes,9df87551-0226-49e0-984d-2d9a15b0e47f
+6,weight_kg,number,2026-06-26 19:45:16.874740,attributes,9df87551-0226-49e0-984d-2d9a15b0e47f
+7,waterproof,boolean,2026-06-26 19:45:16.874740,attributes,9df87551-0226-49e0-984d-2d9a15b0e47f
+8,material,text,2026-06-26 19:45:16.874740,attributes,9df87551-0226-49e0-984d-2d9a15b0e47f
