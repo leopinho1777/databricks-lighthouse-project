@@ -44,6 +44,22 @@ def test_keeps_columns_types_and_comment():
     assert "COMMENT 'BCB rates (daily)'" in out
 
 
+def test_drops_column_masks_and_keeps_the_columns():
+    # Masked columns as archived: one followed by a comma, one closing the column list
+    ddl = """CREATE TABLE lh_nautical.bronze.employees (
+  id INT,
+  cpf STRING COLLATE UTF8_BINARY MASK `lh_nautical`.`bronze`.`regra_mascaramento`,
+  email STRING COLLATE UTF8_BINARY MASK `lh_nautical`.`bronze`.`regra_mascaramento`)
+USING delta
+;
+"""
+    out = rewrite_ddl(ddl, "my_catalog", "my_schema")
+    assert "MASK" not in out
+    assert "lh_nautical" not in out
+    assert "cpf STRING COLLATE UTF8_BINARY,\n" in out
+    assert "email STRING COLLATE UTF8_BINARY)\nUSING delta" in out
+
+
 def test_is_idempotent():
     once = rewrite_ddl(ARCHIVED_DDL, "c", "s")
     assert rewrite_ddl(once, "c", "s") == once
