@@ -28,4 +28,4 @@ For questions about business rules, bug reports on visuals or data refresh issue
 * **Tech Lead:** Eva Carrasquel
 * **Analytics Engineering:** Gabriel Henrique Silva
 * **Data Engineering:** Leonardo Pinho
-* **Data Engineering:** Eros Gonçalves
+* **Data Engineering:** Eros Boni
